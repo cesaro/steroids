@@ -77,11 +77,9 @@ struct steroid_po
    struct da max_lock; // array of steroid_event
 };
 
-
 // constructor and destructor
 struct steroid * steroid_init ();
 int steroid_term (struct steroid *s);
-
 
 // load an LLVM bytecode file
 int steroid_load_bytecode (struct steroid *s, const char *path);
