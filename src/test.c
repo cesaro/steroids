@@ -1,5 +1,4 @@
 
-
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +8,7 @@
 
 void test1 ()
 {
-   int i;
+   int i, ret;
    struct steroid *s;
    struct steroid_exec stream;
    struct steroid_action *a;
@@ -32,11 +31,10 @@ void test1 ()
 
    for (i = 0; i < stream.tab.len; i++)
    {
-      a = da_i (&stream.tab, i, struct steroid_action);
-      printf ("%p type %d addr %p val %llu", a, a->type, a->addr, a->val);
+      a = &da_i (&stream.tab, i, struct steroid_action);
+      printf ("%p type %d addr %016zx val %lu", a, a->type, a->addr, a->val);
    }
    printf ("\n");
-
 
    // dtor
    ret = steroid_term (s);

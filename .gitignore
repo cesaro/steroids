@@ -31,3 +31,21 @@
 # Debug files
 *.dSYM/
 *.su
+
+# Cesar's
+*.mci
+*.pdf
+*.dot
+*.cuf
+*.mp
+*.cnf
+*.bc
+*.tr
+*.r
+*.d
+*.o
+*.pyc
+*.pdftex
+*.pdftex_t
+tags
+benchmarks/basic/*.ll

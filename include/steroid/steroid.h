@@ -2,6 +2,13 @@
 #ifndef _STEROID_STEROID_H_
 #define _STEROID_STEROID_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <steroid/util/da.h>
+#include <stdint.h>
+
 // memory operations
 #define STEROID_WR         0
 #define STEROID_RD         1
@@ -21,8 +28,6 @@
 #define STEROID_CALL       11
 #define STEROID_RET        12
 
-#include <steroid/util/da.h>
-
 /* error codes
  * - 0 return code : ok
  * - non-zero return code : error
@@ -39,7 +44,7 @@ struct steroid_ctsw
 
 struct steroid_replay
 {
-   struct da tab;
+   struct da tab; // array of steroid_ctsw
 };
 
 struct steroid_action
@@ -68,13 +73,13 @@ struct steroid_event
 
 struct steroid_po
 {
-   struct da max_proc;
-   struct da max_lock;
+   struct da max_proc; // array of steroid_event
+   struct da max_lock; // array of steroid_event
 };
 
 
 // constructor and destructor
-struct steroid * steroid_init ():
+struct steroid * steroid_init ();
 int steroid_term (struct steroid *s);
 
 
@@ -90,4 +95,16 @@ int steroid_get_seqexec (struct steroid *s, struct steroid_exec *run);
 // get the (public version of) the lock partial order
 int steroid_get_poexec (struct steroid *s, struct steroid_po *po);
 
+void test1 ();
+void test2 ();
+void test3 ();
+void test4 ();
+void test5 ();
+void test6 ();
+void test7 ();
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
+
+#endif // _STEROID_STEROID_H_
