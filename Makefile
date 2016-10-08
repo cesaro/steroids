@@ -22,7 +22,7 @@ all : compile run
 compile: $(TARGETS)
 
 r run: compile
-	./src/main
+	./tools/test/main
 
 input.ll : benchmarks/basic/hello.ll src/rt/rtv.ll
 	llvm-link-$(LLVMVERS) -S $^ -o $@
@@ -32,7 +32,11 @@ src/rt/rtv.ll : src/rt/start.s src/rt/rt.bc
 	make /tmp/start.bc
 	llvm-link-$(LLVMVERS) -S src/rt/rt.bc /tmp/start.bc -o $@
 
-$(TARGETS) : % : %.o $(OBJS)
+$(LIB_TARGETS) : $(LIB_OBJS) $(LIB_MOBJS)
+	@echo "AR  $@"
+	@$(AR) r $@ $^
+
+$(TOOLS_TEST_TARGETS) : $(TOOLS_TEST_OBJS) $(TOOLS_TEST_MOBJS)
 	@echo "LD  $@"
 	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
@@ -56,11 +60,23 @@ vars :
 	@echo "CPPFLAGS $(CPPFLAGS)"
 	@echo "CXXFLAGS $(CXXFLAGS)"
 	@echo "TARGETS  $(TARGETS)"
-	@echo "MSRCS    $(MSRCS)"
 	@echo "MOBJS    $(MOBJS)"
-	@echo "SRCS     $(SRCS)"
 	@echo "OBJS     $(OBJS)"
 	@echo "DEPS     $(DEPS)"
+	@echo ""
+	@echo "Library:"
+	@echo "SRCS     $(LIB_SRCS)"
+	@echo "MSRCS    $(LIB_MSRCS)"
+	@echo "OBJS     $(LIB_OBJS)"
+	@echo "MOBJS    $(LIB_MOBJS)"
+	@echo "TARGETS  $(LIB_TARGETS)"
+	@echo ""
+	@echo "tools/test:"
+	@echo "SRCS     $(TOOLS_TEST_SRCS)"
+	@echo "MSRCS    $(TOOLS_TEST_MSRCS)"
+	@echo "OBJS     $(TOOLS_TEST_OBJS)"
+	@echo "MOBJS    $(TOOLS_TEST_MOBJS)"
+	@echo "TARGETS  $(TOOLS_TEST_TARGETS)"
 
 clean :
 	@rm -f $(TARGETS) $(MOBJS) $(OBJS)

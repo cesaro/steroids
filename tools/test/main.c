@@ -40,3 +40,10 @@ void test1 ()
    ret = steroid_term (s);
    if (ret != 0) errx (1, "term");
 }
+
+int main (int argc, char **argv)
+{
+   test1 ();
+   return 0;
+}
+
