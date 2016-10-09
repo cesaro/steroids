@@ -21,16 +21,16 @@ all : compile run
 
 compile: $(TARGETS)
 
-r run: compile
+r run: compile input.ll
 	./tools/test/main
 
-input.ll : benchmarks/basic/hello.ll src/rt/rtv.ll
+input.ll : tests/hello.ll rt/rt.ll
 	llvm-link-$(LLVMVERS) -S $^ -o $@
 
-src/rt/rtv.ll : src/rt/start.s src/rt/rt.bc
-	./utils/as2c.py < src/rt/start.s > /tmp/start.c
+rt/rt.ll : rt/start.s rt/aha.bc
+	./utils/as2c.py < rt/start.s > /tmp/start.c
 	make /tmp/start.bc
-	llvm-link-$(LLVMVERS) -S src/rt/rt.bc /tmp/start.bc -o $@
+	llvm-link-$(LLVMVERS) -S rt/aha.bc /tmp/start.bc -o $@
 
 $(LIB_TARGETS) : $(LIB_OBJS) $(LIB_MOBJS)
 	@echo "AR  $@"
@@ -51,7 +51,7 @@ tags : $(SRCS)
 	ctags -R --c++-kinds=+p --fields=+K --extra=+q include/ src/ tools/ rtv/ $(shell llvm-config-$(LLVMVERS) --includedir)
 
 g gdb : $(TARGETS)
-	gdb ./src/main
+	gdb ./tools/test/main
 
 vars :
 	@echo "CC       $(CC)"

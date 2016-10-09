@@ -23,7 +23,7 @@
 #undef DEBUG // exported by ExecutionEngine.h
 #include "verbosity.h"
 #include "misc.hh"
-#include "../rtv/rt.h"
+#include "../rt/rt.h"
 #include "executor.hh"
 
 class Instrumenter : public llvm::InstVisitor<Instrumenter>
@@ -72,7 +72,7 @@ public:
 
    bool is_rt_fun (llvm::Function *f)
    {
-      return f->getName().startswith ("dpu_rt_");
+      return f->getName().startswith ("_rt_");
    }
 
    bool instrument (llvm::Module &m)
@@ -88,14 +88,14 @@ public:
       {
          if (is_rt_fun (&f) or f.isDeclaration ()) continue;
 
-         llvm::outs() << "dpu: fe3: instrumenting function '" << f.getName() << "'\n";
+         llvm::outs() << "stid: instrumenting function '" << f.getName() << "'\n";
          count = 0;
          visit (f);
-         llvm::outs() << "dpu: fe3: done, " << count << " instructions instrumented.\n";
+         llvm::outs() << "stid: done, " << count << " instructions instrumented.\n";
 
          for (auto i : f.users())
          {
-            llvm::outs() << "dpu: fe3:  used: " << *i << "\n";
+            llvm::outs() << "stid:  used: " << *i << "\n";
          }
       }
 
@@ -107,7 +107,7 @@ public:
 
    void visitLoadInst (llvm::LoadInst &i)
    {
-      llvm::IRBuilder<> b (i.getNextNode ());
+      llvm::IRBuilder<> b (i.getNextNode ()); // we instrument AFTER the load instruction
       llvm::Value *addr;
       llvm::Value *v;
       llvm::Type *t;
@@ -116,7 +116,7 @@ public:
       //static int count = 0;
       //count++;
       //if (count >= 3) return;
-      //llvm::outs() << "dpu: fe3: " << i << "\n";
+      //llvm::outs() << "stid: " << i << "\n";
 
       // if we are tring to load a pointer, make a bitcast to uint64_t
       addr = i.getPointerOperand ();
@@ -151,7 +151,7 @@ public:
 
    void visitStoreInst (llvm::StoreInst &i)
    {
-      llvm::IRBuilder<> b (i.getNextNode ());
+      llvm::IRBuilder<> b (&i); // we instrument BEFORE the store instruction
       llvm::Value *addr;
       llvm::Value *v;
       llvm::Type *t;
@@ -160,7 +160,7 @@ public:
       //static int count = 0;
       //count++;
       //if (count >= 3) return;
-      //llvm::outs() << "dpu: fe3: " << i << "\n";
+      llvm::outs() << "stid: " << i << "\n";
 
       // if we are tring to store a pointer, make a bitcast to uint64_t
       v = i.getValueOperand ();
@@ -202,7 +202,7 @@ public:
       //static int count = 0;
       //count++;
       //if (count >= 3) return;
-      //llvm::outs() << "dpu: fe3: " << i << "\n";
+      //llvm::outs() << "stid: " << i << "\n";
 
       // get the target size of the allocated type (truncate to 32 bits)
       ts = m->getDataLayout().getTypeStoreSize (i.getAllocatedType());
@@ -221,7 +221,7 @@ public:
       static uint32_t retid = 0;
       llvm::IRBuilder<> b (&i);
 
-      llvm::outs() << "dpu: fe3: " << i << "\n";
+      llvm::outs() << "stid: " << i << "\n";
 
       b.CreateCall (ret, b.getInt32 (retid++));
       count++;
@@ -232,11 +232,11 @@ public:
 };
 
 Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
-      initialized (false),
-      conf (c),
-      ctx (mod->getContext ()),
-      m (mod.get ()),
-      ee (0)
+   initialized (false),
+   conf (c),
+   ctx (mod->getContext ()),
+   m (mod.get()),
+   ee (0)
 {
    std::string errors;
    llvm::EngineBuilder eb (std::move(mod));
@@ -276,12 +276,12 @@ Executor::~Executor ()
 void Executor::initialize ()
 {
    if (initialized) return;
-   initialize_rt ();
-   instrument_module ();
+   initialize_and_instrument_rt ();
+   instrument_events ();
    initialized = true;
 }
 
-void Executor::initialize_rt ()
+void Executor::initialize_and_instrument_rt ()
 {
    // allocate the memory space for the guest code (heap + stacks)
    rt.memsize = conf.memsize;
@@ -298,7 +298,7 @@ void Executor::initialize_rt ()
    rt.stackstart = rt.stackend - rt.stacksize;
 
    // allocate memory for the event trace
-   ASSERT (EVFULL < 256);
+   ASSERT (_EV_LAST < 256);
    rt.trace.evstart = (uint8_t *) malloc (conf.tracesize);
    if (rt.trace.evstart == 0)
       throw std::runtime_error ("malloc: cannot allocate memory for log trace");
@@ -350,7 +350,7 @@ void Executor::initialize_rt ()
    }
 }
 
-void Executor::instrument_module ()
+void Executor::instrument_events ()
 {
    // instrument the code
    Instrumenter i;
@@ -372,11 +372,17 @@ void Executor::run ()
 
    // ask LLVM to JIT the program
    ee->finalizeObject ();
-   ptr = (void *) ee->getFunctionAddress ("dpu_rt_start");
+   ptr = (void *) ee->getFunctionAddress ("_rt_start");
+   breakme ();
    entry = (int (*) (int, const char* const*, const char* const*)) ptr;
+   ASSERT (ptr);
 
    // run the user program!!
+   DEBUG ("stid: starting guest execution");
+   DEBUG ("stid: ==========================================================");
    exitcode = entry (argv.size(), argv.data(), envp.data());
+   DEBUG ("stid: ==========================================================");
+   DEBUG ("stid: guest execution terminated");
 }
 
 llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)

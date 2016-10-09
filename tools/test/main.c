@@ -6,10 +6,6 @@
 
 #include <steroid/steroid.h>
 
-void test0 ()
-{
-   stid_test ();
-}
 
 void test1 ()
 {
@@ -48,7 +44,7 @@ void test1 ()
 
 int main (int argc, char **argv)
 {
-   test0 ();
+   stid_test ();
    return 0;
 }
 

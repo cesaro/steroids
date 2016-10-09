@@ -36,30 +36,26 @@ LDFLAGS:=$(LLVMLDFLAGS) -L src
 LDLIBS=-lsteroids $(LLVMLIBS)
 
 # ### library ###
-
-# source code
 LIB_SRCS:=$(wildcard src/*.c src/*.cc src/*/*.c src/*/*.cc src/*/*/*.c src/*/*/*.cc)
 LIB_MSRCS:=
-
-# compilation targets
-LIB_OBJS:=$(LIB_SRCS:.cc=.o)
-LIB_OBJS:=$(LIB_OBJS:.c=.o)
-LIB_MOBJS:=$(LIB_MSRCS:.cc=.o)
-LIB_MOBJS:=$(LIB_MOBJS:.c=.o)
+LIB_OBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(LIB_SRCS)))
+LIB_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(LIB_MSRCS)))
 LIB_TARGETS:=src/libsteroids.a
 
 # ### tools/test ###
-
-# source code
 TOOLS_TEST_SRCS:=$(wildcard tools/test/*.c tools/test/*.cc)
 TOOLS_TEST_MSRCS:=tools/test/main.c
-
-# compilation targets
-TOOLS_TEST_OBJS:=$(TOOLS_TEST_SRCS:.cc=.o)
-TOOLS_TEST_OBJS:=$(TOOLS_TEST_OBJS:.c=.o)
-TOOLS_TEST_MOBJS:=$(TOOLS_TEST_MSRCS:.cc=.o)
-TOOLS_TEST_MOBJS:=$(TOOLS_TEST_MOBJS:.c=.o)
+TOOLS_TEST_OBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(TOOLS_TEST_SRCS)))
+TOOLS_TEST_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(TOOLS_TEST_MSRCS)))
 TOOLS_TEST_TARGETS:=$(TOOLS_TEST_MOBJS:.o=)
+
+#TOOLS_TEST_SRCS:=$(wildcard tools/test/*.c tools/test/*.cc)
+#TOOLS_TEST_MSRCS:=tools/test/main.c
+#TOOLS_TEST_OBJS:=$(TOOLS_TEST_SRCS:.cc=.o)
+#TOOLS_TEST_OBJS:=$(TOOLS_TEST_OBJS:.c=.o)
+#TOOLS_TEST_MOBJS:=$(TOOLS_TEST_MSRCS:.cc=.o)
+#TOOLS_TEST_MOBJS:=$(TOOLS_TEST_MOBJS:.c=.o)
+#TOOLS_TEST_TARGETS:=$(TOOLS_TEST_MOBJS:.o=)
 
 # ### global ###
 OBJS=$(LIB_OBJS) $(TOOLS_TEST_OBJS)

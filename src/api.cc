@@ -62,7 +62,7 @@ int stid_get_poexec (struct stid *s, struct stid_po *po)
 
 void stid_test ()
 {
-   test4 ();
+   test3 ();
 }
 
 } // extern "C"

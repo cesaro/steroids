@@ -29,7 +29,7 @@
 #include "verbosity.h"
 
 #include "executor.hh"
-#include "../rtv/rt.h"
+#include "../rt/rt.h"
 
 void ir_write_ll (const llvm::Module *m, const char *filename)
 {
@@ -490,6 +490,9 @@ void test3 ()
 
    // prepare arguments for the program
    e.argv.push_back ("prog");
+   e.argv.push_back ("a");
+   e.argv.push_back ("b");
+   e.argv.push_back ("c");
    e.envp.push_back ("HOME=/home/cesar");
    e.envp.push_back (nullptr);
 
@@ -500,11 +503,10 @@ void test3 ()
 
 void test4 ()
 {
-
    llvm::SMDiagnostic err;
    std::string errors;
    llvm::LLVMContext &ctx = llvm::getGlobalContext();
-   std::string path = "input.ll";
+   std::string path = "tests/hello.ll";
 
    printf ("test4\n");
 

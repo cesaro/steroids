@@ -10,23 +10,23 @@ extern "C" {
 #include <stdint.h>
 
 // memory operations
-#define STEROID_WR         0
-#define STEROID_RD         1
+#define STID_WR         0
+#define STID_RD         1
 
 // thread syncrhonization
-#define STEROID_LOCK       2
-#define STEROID_UNLOCK     3
-#define STEROID_CREATE     4
-#define STEROID_JOIN       5
-#define STEROID_CTSW       6
-#define STEROID_EXIT       7
+#define STID_LOCK       2
+#define STID_UNLOCK     3
+#define STID_CREATE     4
+#define STID_JOIN       5
+#define STID_CTSW       6
+#define STID_EXIT       7
 
 // memory management
-#define STEROID_MALLOC     8
-#define STEROID_FREE       9
-#define STEROID_ALLOCA     10
-#define STEROID_CALL       11
-#define STEROID_RET        12
+#define STID_MALLOC     8
+#define STID_FREE       9
+#define STID_ALLOCA     10
+#define STID_CALL       11
+#define STID_RET        12
 
 /* error codes
  * - 0 return code : ok

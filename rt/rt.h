@@ -59,7 +59,6 @@ void _rt_panic ();
 
 enum eventtype
 {
-   NOP = 0,
    // loads
    RD8,
    RD16,
@@ -70,7 +69,7 @@ enum eventtype
    WR16,
    WR32,
    WR64,
-   // memory allocation
+   // memory management
    ALLO,
    MLLO,
    FREE,
@@ -83,9 +82,9 @@ enum eventtype
    // locks
    MTXINIT,
    MTXLOCK,
-   MTXUNCLOK,
+   MTXUNLK,
    // misc
-   EVFULL,
+   _EV_LAST,
 };
 
 struct rt

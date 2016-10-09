@@ -7,7 +7,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 
-#include "../rtv/rt.h"
+#include "../rt/rt.h"
 
 struct ExecutorConfig
 {
@@ -39,8 +39,8 @@ private :
    llvm::ExecutionEngine         *ee;
 
    llvm::Constant *ptr_to_llvm (void *ptr, llvm::Type *t);
-   void initialize_rt ();
-   void instrument_module ();
+   void initialize_and_instrument_rt ();
+   void instrument_events ();
 };
 
 #endif
