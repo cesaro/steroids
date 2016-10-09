@@ -34,74 +34,68 @@ extern "C" {
  */
 
 // opaque
-struct steroid;
+struct stid;
 
-struct steroid_ctsw
+struct stid_ctsw
 {
    unsigned thid;
    unsigned nrev; 
 };
 
-struct steroid_replay
+struct stid_replay
 {
-   struct da tab; // array of steroid_ctsw
+   struct da tab; // array of stid_ctsw
 };
 
-struct steroid_action
+struct stid_action
 {
    int      type;
    size_t   addr;
    uint64_t val;
 };
 
-struct steroid_exec
+struct stid_exec
 {
-   struct da tab; // array of steroid_action's
+   struct da tab; // array of stid_action's
 };
 
-struct steroid_event
+struct stid_event
 {
-   struct steroid_action a;
+   struct stid_action a;
    struct
    {
       unsigned th;
       unsigned other; // ideally the stream position
    } idx;
-   struct steroid_event *pre_proc;
-   struct steroid_event *pre_mem;
+   struct stid_event *pre_proc;
+   struct stid_event *pre_mem;
 };
 
-struct steroid_po
+struct stid_po
 {
-   struct da max_proc; // array of steroid_event
-   struct da max_lock; // array of steroid_event
+   struct da max_proc; // array of stid_event
+   struct da max_lock; // array of stid_event
 };
 
 
 // constructor and destructor
-struct steroid * steroid_init ();
-int steroid_term (struct steroid *s);
+struct stid * stid_init ();
+int stid_term (struct stid *s);
 
 
 // load an LLVM bytecode file
-int steroid_load_bytecode (struct steroid *s, const char *path);
+int stid_load_bytecode (struct stid *s, const char *path);
 
 // run the JIT compiled code and generate the action stream
-int steroid_run (struct steroid *s, struct steroid_replay *rep);
+int stid_run (struct stid *s, struct stid_replay *rep);
 
 // get the (public version of) the action stream
-int steroid_get_seqexec (struct steroid *s, struct steroid_exec *run);
+int stid_get_seqexec (struct stid *s, struct stid_exec *run);
 
 // get the (public version of) the lock partial order
-int steroid_get_poexec (struct steroid *s, struct steroid_po *po);
+int stid_get_poexec (struct stid *s, struct stid_po *po);
 
-void test1 ();
-void test2 ();
-void test3 ();
-void test4 ();
-void test5 ();
-void test6 ();
-void test7 ();
+void stid_test ();
 
 #ifdef __cplusplus
 } // extern "C"

@@ -36,7 +36,7 @@ $(LIB_TARGETS) : $(LIB_OBJS) $(LIB_MOBJS)
 	@echo "AR  $@"
 	@$(AR) r $@ $^
 
-$(TOOLS_TEST_TARGETS) : $(TOOLS_TEST_OBJS) $(TOOLS_TEST_MOBJS)
+$(TOOLS_TEST_TARGETS) : $(TOOLS_TEST_OBJS) $(TOOLS_TEST_MOBJS) src/libsteroids.a
 	@echo "LD  $@"
 	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
@@ -48,7 +48,7 @@ prof : $(TARGETS)
 	src/main /tmp/ele4.ll_net
 
 tags : $(SRCS)
-	ctags -R --c++-kinds=+p --fields=+K --extra=+q src/ $(shell llvm-config-$(LLVMVERS) --includedir)
+	ctags -R --c++-kinds=+p --fields=+K --extra=+q include/ src/ tools/ rtv/ $(shell llvm-config-$(LLVMVERS) --includedir)
 
 g gdb : $(TARGETS)
 	gdb ./src/main
@@ -80,8 +80,6 @@ vars :
 
 clean :
 	@rm -f $(TARGETS) $(MOBJS) $(OBJS)
-	@rm -f src/rt/rt.ll
-	@rm -f src/rt/rtv.ll
 	@echo Cleaning done.
 
 distclean : clean
