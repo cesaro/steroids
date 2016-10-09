@@ -16,29 +16,27 @@ library
   build-depends:
     base >= 3 && < 5
 
-  ghc-options: -Wall
+  ghc-options: -Wall -optl-lsteroids 
+  cc-options: -fPIC
 
   if flag(developer)
     ghc-options: -Werror
 
   exposed-modules:
     Haskroid.Haskroid
+    Haskroid.DynArr
 
   include-dirs: include
+  Extra-libraries: steroids, LLVMLTO , LLVMObjCARCOpts , LLVMLinker , LLVMBitWriter , LLVMIRReader , LLVMBPFCodeGen , LLVMBPFDesc , LLVMBPFInfo , LLVMBPFAsmPrinter , LLVMAMDGPUCodeGen , LLVMAMDGPUAsmParser , LLVMAMDGPUUtils , LLVMAMDGPUDesc , LLVMAMDGPUInfo , LLVMAMDGPUAsmPrinter , LLVMSystemZDisassembler , LLVMSystemZCodeGen , LLVMSystemZAsmParser , LLVMSystemZDesc , LLVMSystemZInfo , LLVMSystemZAsmPrinter , LLVMHexagonDisassembler , LLVMHexagonCodeGen , LLVMHexagonDesc , LLVMHexagonInfo , LLVMNVPTXCodeGen , LLVMNVPTXDesc , LLVMNVPTXInfo , LLVMNVPTXAsmPrinter , LLVMCppBackendCodeGen , LLVMCppBackendInfo , LLVMMSP430CodeGen , LLVMMSP430Desc , LLVMMSP430Info , LLVMMSP430AsmPrinter , LLVMXCoreDisassembler , LLVMXCoreCodeGen , LLVMXCoreDesc , LLVMXCoreInfo , LLVMXCoreAsmPrinter , LLVMMipsDisassembler , LLVMMipsCodeGen , LLVMMipsAsmParser , LLVMMipsDesc , LLVMMipsInfo , LLVMMipsAsmPrinter , LLVMAArch64Disassembler , LLVMAArch64CodeGen , LLVMAArch64AsmParser , LLVMAArch64Desc , LLVMAArch64Info , LLVMAArch64AsmPrinter , LLVMAArch64Utils , LLVMARMDisassembler , LLVMARMCodeGen , LLVMARMAsmParser , LLVMARMDesc , LLVMARMInfo , LLVMARMAsmPrinter , LLVMPowerPCDisassembler , LLVMPowerPCCodeGen , LLVMPowerPCAsmParser , LLVMPowerPCDesc , LLVMPowerPCInfo , LLVMPowerPCAsmPrinter , LLVMSparcDisassembler , LLVMSparcCodeGen , LLVMSparcAsmParser , LLVMSparcDesc , LLVMSparcInfo , LLVMSparcAsmPrinter , LLVMMIRParser , LLVMAsmParser , LLVMLibDriver , LLVMOption , LLVMDebugInfoPDB , LLVMTableGen , LLVMOrcJIT , LLVMLineEditor , LLVMX86Disassembler , LLVMX86AsmParser , LLVMX86CodeGen , LLVMSelectionDAG , LLVMAsmPrinter , LLVMX86Desc , LLVMMCDisassembler , LLVMX86Info , LLVMX86AsmPrinter , LLVMX86Utils , LLVMMCJIT , LLVMDebugInfoDWARF , LLVMPasses , LLVMipo , LLVMVectorize , LLVMInterpreter , LLVMExecutionEngine , LLVMRuntimeDyld , LLVMCodeGen , LLVMTarget , LLVMScalarOpts , LLVMProfileData , LLVMObject , LLVMMCParser , LLVMBitReader , LLVMInstCombine , LLVMInstrumentation , LLVMTransformUtils , LLVMipa , LLVMMC , LLVMAnalysis , LLVMCore , LLVMSupport, pthread, z, ncurses, stdc++
+  Extra-lib-dirs: /home/msousa/steroid/src, /usr/lib/llvm-3.7/lib
+  extensions: CPP, ForeignFunctionInterface
 
-  C-sources:
-    src/api.cc
+executable haskroid
+  main-is: Main.hs
+  
+  build-depends:
+      base >= 3 && < 5
+    , haskroid
+  
+  hs-source-dirs: Haskroid/
 
--- executable haskroid
---   main-is: Main.hs
---   
---   build-depends:
---       base >= 3 && < 5
---     , haskroid
---   
---   hs-source-dirs: Haskroid/
--- 
---   include-dirs: include
--- 
---   C-sources:
---     src/api.cc

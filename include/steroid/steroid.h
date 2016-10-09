@@ -38,8 +38,8 @@ struct stid;
 
 struct stid_ctsw
 {
-   unsigned thid;
-   unsigned nrev; 
+   unsigned int thid;
+   unsigned int nrev; 
 };
 
 struct stid_replay
@@ -50,7 +50,7 @@ struct stid_replay
 struct stid_action
 {
    int      type;
-   size_t   addr;
+   uint64_t addr;
    uint64_t val;
 };
 
@@ -64,8 +64,8 @@ struct stid_event
    struct stid_action a;
    struct
    {
-      unsigned th;
-      unsigned other; // ideally the stream position
+      unsigned int th;
+      unsigned int other; // ideally the stream position
    } idx;
    struct stid_event *pre_proc;
    struct stid_event *pre_mem;
@@ -93,7 +93,7 @@ int stid_get_seqexec (struct stid *s, struct stid_exec *run);
 // get the (public version of) the lock partial order
 int stid_get_poexec (struct stid *s, struct stid_po *po);
 
-void stid_test ();
+int stid_test ();
 
 #ifdef __cplusplus
 } // extern "C"

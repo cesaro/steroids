@@ -3,15 +3,19 @@
 -- Module    :  Haskroid.Haskroid
 -- Synopsis  :  Steroid Bindings for Haskell 
 -- Copyright :  (c) 2016 Marcelo Sousa
+-- Notes:
+--   It might be necessary to modify the types
+--   to use WordXX.
 -------------------------------------------------------------------------------
 module Haskroid.Haskroid where
 
-import Control.Applicative ((<$>), (<*>))
 import Data.Typeable (Typeable)
 import Foreign.C.String (CString, newCString)
 import Foreign.C.Types (CDouble(..), CInt(..), CUInt(..), CLLong(..), CULLong(..), CSize(..))
-import Foreign.Ptr (Ptr, FunPtr)
+import Foreign.Ptr (Ptr)
 import Foreign.Storable
+
+import Haskroid.DynArr
 
 #include <steroid/steroid.h>
 
@@ -19,94 +23,144 @@ import Foreign.Storable
 #let alignment t = "%lu", (unsigned long)offsetof(struct {char x__; t (y__); }, y__)
 #endif
 
--- | (opaque) struct steroid 
+-- | (opaque) struct stid 
 data Steroid
   deriving (Typeable)
 type SteroidRef = Ptr Steroid
 
--- |  struct steroid_ctsw
---   @TODO: Use Integer instead of Int 
+{- 
+ - Replay data structure
+ -  Dynamic Array of Context Switches
+-}
+-- |  struct stid_ctsw
 data SteroidCTSW = SteroidCTSW
-  { thid :: Int
-  , nrev :: Int
+  { thid :: CUInt
+  , nrev :: CUInt
   }
+ deriving Show
 type SteroidCTSWRef = Ptr SteroidCTSW
 
 instance Storable SteroidCTSW where
-  alignment _ = #{alignment struct steroid_ctsw} 
-  sizeOf   _ = #{size struct steroid_ctsw}
+  alignment _ = #{alignment struct stid_ctsw} 
+  sizeOf   _ = #{size struct stid_ctsw}
   peek   ptr = do
-    thid_ <- #{peek struct steroid_ctsw, thid} ptr
-    nrev_ <- #{peek struct steroid_ctsw, nrev} ptr
+    thid_ <- #{peek struct stid_ctsw, thid} ptr
+    nrev_ <- #{peek struct stid_ctsw, nrev} ptr
     return $ SteroidCTSW thid_ nrev_ 
   poke   ptr (SteroidCTSW thid_ nrev_) = do
-    #{poke struct steroid_ctsw, thid} ptr thid_
-    #{poke struct steroid_ctsw, nrev} ptr nrev_
+    #{poke struct stid_ctsw, thid} ptr thid_
+    #{poke struct stid_ctsw, nrev} ptr nrev_
 
--- | struct steroid_replay
+-- | Replay data structure
+data SteroidReplay = SteroidReplay (DynArr SteroidCTSW)
+  deriving Show
+ 
+-- | struct stid_replay
 --     struct da tab
-data SteroidReplay
-  deriving (Typeable)
-type SteroidReplayRef = Ptr SteroidReplay
+data SteroidReplayStruct = SteroidReplayStruct
+  { tab :: DynArrStruct SteroidCTSW
+  } 
+type SteroidReplayRef = Ptr SteroidReplayStruct
 
--- | struct steroid_action
+instance Storable SteroidReplayStruct where
+  alignment _ = #{alignment struct stid_replay} 
+  sizeOf   _ = #{size struct stid_replay}
+  peek   ptr = do
+    tab_ <- #{peek struct stid_replay, tab} ptr
+    return $ SteroidReplayStruct tab_ 
+  poke   ptr (SteroidReplayStruct tab_) = do
+    #{poke struct stid_replay, tab} ptr tab_ 
+
+toSteroidReplay :: SteroidReplayStruct -> IO SteroidReplay
+toSteroidReplay (SteroidReplayStruct tab_) = do
+  table <- toDynArr tab_
+  return $ SteroidReplay table
+ 
+{- 
+ - Execution data structure
+ - Dynamic Array of Actions 
+-}
+-- | struct stid_action
 -- @TODO: Modify the types
 data SteroidAction = SteroidAction 
-  { ty   :: Int -- int
-  , addr :: Int -- size_t
-  , val  :: Int -- uint64_t
-  } 
+  { ty   :: CInt  -- int
+  , addr :: CUInt -- uint64_t 
+  , val  :: CUInt -- uint64_t
+  }
+  deriving Show 
 type SteroidActionRef = Ptr SteroidAction
 
 instance Storable SteroidAction where
-  alignment _ = #{alignment struct steroid_action} 
-  sizeOf   _ = #{size struct steroid_action}
+  alignment _ = #{alignment struct stid_action} 
+  sizeOf   _ = #{size struct stid_action}
   peek   ptr = do
-    ty_   <- #{peek struct steroid_action, type} ptr
-    addr_ <- #{peek struct steroid_action, addr} ptr
-    val_  <- #{peek struct steroid_action, val} ptr
+    ty_   <- #{peek struct stid_action, type} ptr
+    addr_ <- #{peek struct stid_action, addr} ptr
+    val_  <- #{peek struct stid_action, val} ptr
     return $ SteroidAction ty_ addr_ val_ 
   poke   ptr (SteroidAction ty_ addr_ val_) = do
-    #{poke struct steroid_action, type} ptr ty_ 
-    #{poke struct steroid_action, addr} ptr val_ 
-    #{poke struct steroid_action, val} ptr val_
+    #{poke struct stid_action, type} ptr ty_ 
+    #{poke struct stid_action, addr} ptr addr_ 
+    #{poke struct stid_action, val} ptr val_
 
--- | struct steroid_exec
+-- | struct stid_exec
 data SteroidExec
   deriving (Typeable)
 type SteroidExecRef = Ptr SteroidExec 
   
--- | struct steroid_event
+-- | struct stid_event
 data SteroidEvent
   deriving (Typeable)
 type SteroidEventRef = Ptr SteroidEvent
 
--- | struct steroid_po
+-- | struct stid_po
 data SteroidPo
   deriving (Typeable)
 type SteroidPoRef = Ptr SteroidPo
 
+-- Core API
 -- | Should all these calls be unsafe? 
-foreign import ccall unsafe "steroid_init"  
-  steroidInit :: IO SteroidRef
+foreign import ccall unsafe "stid_init"  
+  stidInit :: IO SteroidRef
 
-foreign import ccall unsafe "steroid_term"
-  steroidTerm :: SteroidRef -> IO CInt
+foreign import ccall unsafe "stid_term"
+  stidTerm :: SteroidRef -> IO CInt
 
-foreign import ccall unsafe "steroid_load_bytecode"
-  steroidLoadBytecode_ :: SteroidRef -> CString -> IO CInt
+foreign import ccall unsafe "stid_load_bytecode"
+  stidLoadBytecode_ :: SteroidRef -> CString -> IO CInt
 
-steroidLoadBytecode :: SteroidRef -> String -> IO CInt
-steroidLoadBytecode ref str = do
+stidLoadBytecode :: SteroidRef -> String -> IO CInt
+stidLoadBytecode ref str = do
   cstr <- newCString str
-  steroidLoadBytecode_ ref cstr
+  stidLoadBytecode_ ref cstr
 
-foreign import ccall unsafe "steroid_run"
-  steroidRun :: SteroidRef -> SteroidReplayRef -> IO CInt
+foreign import ccall unsafe "stid_run"
+  stidRun :: SteroidRef -> SteroidReplayRef -> IO CInt
 
-foreign import ccall unsafe "steroid_get_seqexec"
-  steroidGetSeqExec :: SteroidRef -> SteroidExecRef -> IO CInt
+foreign import ccall unsafe "stid_get_seqexec"
+  stidGetSeqExec :: SteroidRef -> SteroidExecRef -> IO CInt
 
-foreign import ccall unsafe "steroid_get_poexec"
-  steroidGetPoExec :: SteroidRef -> SteroidPoRef -> IO CInt 
+foreign import ccall unsafe "stid_get_poexec"
+  stidGetPoExec :: SteroidRef -> SteroidPoRef -> IO CInt 
 
+-- Test API
+foreign import ccall unsafe "stid_test"
+  stidTest :: IO CInt
+
+foreign import ccall unsafe "stid_new_action"
+  stidNewAction :: CInt -> CUInt -> CUInt -> IO SteroidActionRef 
+
+foreign import ccall unsafe "stid_print_action"
+  stidPrintAction :: SteroidActionRef -> IO CInt 
+
+foreign import ccall unsafe "stid_new_ctsw"
+  stidNewCTSW :: CUInt -> CUInt -> IO SteroidCTSWRef
+
+foreign import ccall unsafe "stid_print_ctsw"
+  stidPrintCTSW :: SteroidCTSWRef -> IO CInt 
+
+foreign import ccall unsafe "stid_get_replay"
+  stidGetReplay :: IO SteroidReplayRef 
+
+foreign import ccall unsafe "stid_check_replay"
+  stidCheckReplay :: SteroidReplayRef -> IO CInt 
