@@ -15,7 +15,7 @@ import Foreign.Marshal.Array
 import Haskroid.Haskroid
 import Haskroid.DynArr
 
-main = testReplay 
+main = testPrintCTSW 
 
 test1 :: IO ()
 test1 = do
@@ -39,16 +39,16 @@ test3 = do
   print s
 
 -- | Test if we can correctly read a Steroid Action
-testGetAction :: IO ()
-testGetAction = do
-  ptr <- stidGetAction
+testNewAction :: IO ()
+testNewAction = do
+  ptr <- stidNewAction 0 255 5
   act <- peek ptr
   print act 
 
 -- | Test if we can correctly print a Steroid Action
 testPrintAction :: IO ()
 testPrintAction = do
-  ptr <- stidGetAction
+  ptr <- stidNewAction 0 255 5
   ret <- stidPrintAction ptr
   print ret
   act <- peek ptr
@@ -58,12 +58,17 @@ testPrintAction = do
     stidPrintAction ptr)
   print ret2
 
+-- | Test if we can correctly read a Steroid CTSW 
+testNewCTSW :: IO ()
+testNewCTSW = do
+  ptr <- stidNewCTSW 1 2 
+  act <- peek ptr
+  print act 
+
 -- | Test if we can correctly print a Steroid CTSW
 testPrintCTSW :: IO ()
 testPrintCTSW = do
-  ptr <- stidGetCTSW
---  ret <- stidPrintCTSW ptr
---  print ret
+  ptr <- stidNewCTSW 1 2
   act <- peek ptr
   print act 
   ret2 <- alloca (\ptr -> do

@@ -50,7 +50,7 @@ struct stid_replay
 struct stid_action
 {
    int      type;
-   size_t   addr;
+   uint64_t addr;
    uint64_t val;
 };
 
@@ -64,8 +64,8 @@ struct stid_event
    struct stid_action a;
    struct
    {
-      unsigned th;
-      unsigned other; // ideally the stream position
+      unsigned int th;
+      unsigned int other; // ideally the stream position
    } idx;
    struct stid_event *pre_proc;
    struct stid_event *pre_mem;

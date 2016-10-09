@@ -3,6 +3,9 @@
 -- Module    :  Haskroid.Haskroid
 -- Synopsis  :  Steroid Bindings for Haskell 
 -- Copyright :  (c) 2016 Marcelo Sousa
+-- Notes:
+--   It might be necessary to modify the types
+--   to use WordXX.
 -------------------------------------------------------------------------------
 module Haskroid.Haskroid where
 
@@ -30,7 +33,6 @@ type SteroidRef = Ptr Steroid
  -  Dynamic Array of Context Switches
 -}
 -- |  struct stid_ctsw
---   @TODO: CUInt 
 data SteroidCTSW = SteroidCTSW
   { thid :: CUInt
   , nrev :: CUInt
@@ -81,9 +83,9 @@ toSteroidReplay (SteroidReplayStruct tab_) = do
 -- | struct stid_action
 -- @TODO: Modify the types
 data SteroidAction = SteroidAction 
-  { ty   :: Int -- int
-  , addr :: Int -- size_t
-  , val  :: Int -- uint64_t
+  { ty   :: CInt  -- int
+  , addr :: CUInt -- uint64_t 
+  , val  :: CUInt -- uint64_t
   }
   deriving Show 
 type SteroidActionRef = Ptr SteroidAction
@@ -116,6 +118,7 @@ data SteroidPo
   deriving (Typeable)
 type SteroidPoRef = Ptr SteroidPo
 
+-- Core API
 -- | Should all these calls be unsafe? 
 foreign import ccall unsafe "stid_init"  
   stidInit :: IO SteroidRef
@@ -140,17 +143,18 @@ foreign import ccall unsafe "stid_get_seqexec"
 foreign import ccall unsafe "stid_get_poexec"
   stidGetPoExec :: SteroidRef -> SteroidPoRef -> IO CInt 
 
+-- Test API
 foreign import ccall unsafe "stid_test"
   stidTest :: IO CInt
 
-foreign import ccall unsafe "stid_get_action"
-  stidGetAction :: IO SteroidActionRef 
+foreign import ccall unsafe "stid_new_action"
+  stidNewAction :: CInt -> CUInt -> CUInt -> IO SteroidActionRef 
 
 foreign import ccall unsafe "stid_print_action"
   stidPrintAction :: SteroidActionRef -> IO CInt 
 
-foreign import ccall unsafe "stid_get_ctsw"
-  stidGetCTSW :: IO SteroidCTSWRef
+foreign import ccall unsafe "stid_new_ctsw"
+  stidNewCTSW :: CUInt -> CUInt -> IO SteroidCTSWRef
 
 foreign import ccall unsafe "stid_print_ctsw"
   stidPrintCTSW :: SteroidCTSWRef -> IO CInt 

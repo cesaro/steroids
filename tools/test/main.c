@@ -6,7 +6,9 @@
 #include <steroid/steroid.h>
 #include <steroid/util/hsapi.h>
 
+// Various tests for the API
 
+// Test the entire pipeline 
 void test1 ()
 {
    int i, ret;
@@ -42,7 +44,24 @@ void test1 ()
    if (ret != 0) errx (1, "term");
 }
 
+// Create and print an action
 void test2 () 
+{
+   struct stid_action *a = stid_new_action (STID_WR, 0xFF, 5);
+   int r = stid_print_action (a);
+   printf ("ret code %d\n", r);
+}
+
+// Create and print a context
+void test3 () 
+{
+   struct stid_ctsw *c = stid_new_ctsw (1, 2);
+   int r = stid_print_ctsw (c);
+   printf ("ret code %d\n", r);
+}
+
+// Create and iterate a dummy execution
+void test4 () 
 {
    struct stid_exec run;
    struct stid_action *a;
@@ -65,14 +84,15 @@ void test2 ()
    printf ("\n");
 }
 
-void test3 () 
+void test5 ()
 {
-   struct stid_action *a = stid_get_action();
-   int r = stid_print_action(a);
+   struct stid_replay * rep;
+   rep = stid_get_replay();
+   int r = stid_check_replay (rep);
    printf ("ret code %d\n", r);
 }
 
-void test4 ()
+void test6 ()
 {
    struct stid_replay rep;
    int l = 0;
@@ -89,24 +109,9 @@ void test4 ()
    printf ("ret code %d\n", r);
 }
 
-void test5 ()
-{
-   struct stid_replay * rep;
-   rep = stid_get_replay();
-   int r = stid_check_replay (rep);
-   printf ("ret code %d\n", r);
-}
-
-void test6 () 
-{
-   struct stid_ctsw *c = stid_get_ctsw();
-   int r = stid_print_ctsw(c);
-   printf ("ret code %d\n", r);
-}
-
 int main (int argc, char **argv)
 {
-   test6();
+   test3();
    return 0;
 }
 

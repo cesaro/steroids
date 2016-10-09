@@ -11,36 +11,36 @@ extern "C"
 {
 
 // Testing steroid actions
-struct stid_action * stid_get_action()
+struct stid_action * stid_new_action (int type, uint64_t addr, uint64_t val)
 {
    struct stid_action *act;
    act = (struct stid_action*) malloc (sizeof(struct stid_action));
    if (act == 0) return 0;
-   act->type = STID_WR;
-   act->addr = 0x0FFF;
-   act->val = 5;
+   act->type = type;
+   act->addr = addr;
+   act->val  = val;
    return act; 
 }
 
-int stid_print_action(struct stid_action *act)
+int stid_print_action (struct stid_action *act)
 {
    if (act == 0) return 1;
-   printf ("%p type %d addr %016zx val %lu\n", act, act->type, act->addr, act->val);
+   printf ("%p type %d addr %lu val %lu\n", act, act->type, act->addr, act->val);
    return 0;
 }
 
 // Testing steroid context switches
-struct stid_ctsw * stid_get_ctsw()
+struct stid_ctsw * stid_new_ctsw (unsigned int thid, unsigned int nrev)
 {
    struct stid_ctsw *ctx;
    ctx  = (struct stid_ctsw*) malloc (sizeof(struct stid_ctsw));
    if (ctx == 0) return 0;
-   ctx->thid = 50;
-   ctx->nrev = 17;
+   ctx->thid = thid;
+   ctx->nrev = nrev;
    return ctx; 
 }
 
-int stid_print_ctsw(struct stid_ctsw *ctx)
+int stid_print_ctsw (struct stid_ctsw *ctx)
 {
    if (ctx == 0) return 1;
    printf ("%p thid %u nrev %u \n", ctx, ctx->thid, ctx->nrev);
