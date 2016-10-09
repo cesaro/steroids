@@ -348,6 +348,12 @@ void Executor::initialize_and_instrument_rt ()
             (llvm::Type::getInt64Ty (ctx), p.second));
       llvm::outs() << "- " << *g << "\n";
    }
+
+   // print debug info
+   DEBUG ("stid: rt       %16p", &rt);
+   DEBUG ("stid: memstart %16p", rt.memstart);
+   DEBUG ("stid: memend   %16p", rt.memend);
+   DEBUG ("stid: evmend   %16p", rt.trace.evend);
 }
 
 void Executor::instrument_events ()
@@ -373,13 +379,13 @@ void Executor::run ()
    // ask LLVM to JIT the program
    ee->finalizeObject ();
    ptr = (void *) ee->getFunctionAddress ("_rt_start");
-   breakme ();
    entry = (int (*) (int, const char* const*, const char* const*)) ptr;
    ASSERT (ptr);
 
    // run the user program!!
    DEBUG ("stid: starting guest execution");
    DEBUG ("stid: ==========================================================");
+   breakme ();
    exitcode = entry (argv.size(), argv.data(), envp.data());
    DEBUG ("stid: ==========================================================");
    DEBUG ("stid: guest execution terminated");

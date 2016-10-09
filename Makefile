@@ -52,7 +52,7 @@ prof : $(TARGETS)
 	src/main /tmp/ele4.ll_net
 
 tags : $(SRCS)
-	ctags -R --c++-kinds=+p --fields=+K --extra=+q include/ src/ tools/ rtv/ $(shell llvm-config-$(LLVMVERS) --includedir)
+	ctags -R --c++-kinds=+p --fields=+K --extra=+q include/ src/ tools/ rt/ $(shell llvm-config-$(LLVMVERS) --includedir)
 
 g gdb : $(TARGETS)
 	gdb ./tools/test/main

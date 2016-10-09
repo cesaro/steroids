@@ -23,3 +23,9 @@ To do
 - when the program does not contain all functions it calls and the remaining
   ones cannot be found in in the host process (or loaded libraries) the call to
   ee->finalizeObject() fails and I cannot catch the error
+
+Guest stack switch
+--------------
+
+- Callee-saved: RBP, RBX, and R12–R15.
+- All others must be saved by the caller if it wishes to preserve their values.

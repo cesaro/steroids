@@ -1,26 +1,71 @@
 
+# text section
 .text
 
 # exported symbols
-.globl _rt_start     # void _rt_start (int argc, char **argv)
-.globl _rt_end	    # void _rt_end (void)
+.globl _rt_start  # void _rt_start (int argc, char **argv)
+.globl _rt_end	   # void _rt_end (void)
+.type  _rt_start, @function
+.type  _rt_end,   @function
 
 _rt_start :
-	# 0. save all registers
-	# 2. save rsp into rt.host_rsp
-	# 3. rsp = rt.stackend
-	# 4. jump into C, call _rt_main, with the right arguments!
+   # at this point the parameters are like this:
+   # argc = %edi (32 bits)
+   # argv = %rsi (64 bits)
+   # env  = %rdx (64 bits)
 
-	jmp _rt_main # FIXME for the time being
+   #jmp _rt_main
 
-	# 5. execute the exit prologue
-	jmp _rt_end
+   # push calle-save registers to the host's stack
+   push %rbx
+   push %rbp
+   push %r12
+   push %r13
+   push %r14
+   push %r15
+
+   # save arguments temporarily in calle-save register
+   mov  %rdi, %r13 # argc (we copy 64 instead of 32 bits)
+   mov  %rsi, %r14 # argv
+   mov  %rdx, %r15 # env
+
+   # save the current stack pointer at rt.host_rsp using the function
+   # _rt_save_host_rsp below (in ah.c)
+   mov  %rsp, %rdi
+   call _rt_save_host_rsp
+
+   # set up a temporary stack starting from the upper limit of the guest memory
+   # (gas treats any undefined symbol as external)
+   # I don't really undestand why the memend variable needs to be accessed as an
+   # offset of the instruction pointer, could it be because we are asking to
+   # compile the entire library with -fPIC?
+   movq memend(%rip), %rax
+   andq $-16, %rax
+   mov  %rax, %rsp
+
+   # call function _rt_main with exactly the same parameters as this function
+   mov  %r13, %rdi # argc
+   mov  %r14, %rsi # argv
+   mov  %r15, %rdx # env
+	call _rt_main
+
+	# fall through the exit routine _rt_end
 
 _rt_end :
-	# 1. restore host stack: rsp = rt.host_rsp
-	# 2. restore all host registers from the stack
-	# 3. return to the host code
+	# make sure we have a correctly aligned stack and restore the host stack
+   andq $-16, %rsp
+   call _rt_get_host_rsp
+   mov  %rax, %rsp
 
-   call _rt_panic # for the time being
-	ret
+   # restore calle-save registers from the host's stack
+   pop %r15
+   pop %r14
+   pop %r13
+   pop %r12
+   pop %rbp
+   pop %rbx
 
+   # return to the host
+   ret
+
+# vim:syn=gas:

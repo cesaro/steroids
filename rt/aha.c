@@ -313,6 +313,16 @@ int _rt_main (int argc, const char * const *argv, const char * const *env)
    return ret;
 }
 
+void _rt_save_host_rsp (uint64_t rsp)
+{
+   rt->host_rsp = rsp;
+}
+
+uint64_t _rt_get_host_rsp ()
+{
+   return rt->host_rsp;
+}
+
 void _rt_panic ()
 {
    printf ("stid: rt: panic!!\n");
