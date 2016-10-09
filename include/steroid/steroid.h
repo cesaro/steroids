@@ -77,11 +77,9 @@ struct stid_po
    struct da max_lock; // array of stid_event
 };
 
-
 // constructor and destructor
 struct stid * stid_init ();
 int stid_term (struct stid *s);
-
 
 // load an LLVM bytecode file
 int stid_load_bytecode (struct stid *s, const char *path);

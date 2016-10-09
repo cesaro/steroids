@@ -49,3 +49,6 @@
 *.pdftex_t
 tags
 benchmarks/basic/*.ll
+
+# Marcelo's
+dist/*
