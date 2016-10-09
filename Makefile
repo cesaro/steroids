@@ -32,13 +32,17 @@ rt/rt.ll : rt/start.s rt/aha.bc
 	make /tmp/start.bc
 	llvm-link-$(LLVMVERS) -S rt/aha.bc /tmp/start.bc -o $@
 
-$(LIB_TARGETS) : $(LIB_OBJS) $(LIB_MOBJS)
+src/libsteroids.a : $(LIB_OBJS) $(LIB_MOBJS)
 	@echo "AR  $@"
 	@$(AR) r $@ $^
 
+src/libsteroids.so : $(LIB_OBJS) $(LIB_MOBJS)
+	@echo "LD  $@"
+	@$(CXX) -shared $(CXXFLAGS) -o $@ $^
+
 $(TOOLS_TEST_TARGETS) : $(TOOLS_TEST_OBJS) $(TOOLS_TEST_MOBJS) src/libsteroids.a
 	@echo "LD  $@"
-	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS) src/libsteroids.a
 
 #$(MINISAT)/build/release/lib/libminisat.a :
 #	cd $(MINISAT); make lr
