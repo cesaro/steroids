@@ -10,8 +10,11 @@ import Control.Applicative ((<$>), (<*>))
 import Data.Typeable (Typeable)
 import Foreign.C.String (CString, newCString)
 import Foreign.C.Types (CDouble(..), CInt(..), CUInt(..), CLLong(..), CULLong(..), CSize(..))
+import Foreign.Marshal.Array
 import Foreign.Ptr (Ptr, FunPtr)
 import Foreign.Storable
+
+import Haskroid.DynArr
 
 #include <steroid/steroid.h>
 
@@ -24,12 +27,17 @@ data Steroid
   deriving (Typeable)
 type SteroidRef = Ptr Steroid
 
+{- 
+ - Replay data structure
+ -  Dynamic Array of Context Switches
+-}
 -- |  struct stid_ctsw
 --   @TODO: Use Integer instead of Int 
 data SteroidCTSW = SteroidCTSW
-  { thid :: Int
-  , nrev :: Int
+  { thid :: CInt
+  , nrev :: CInt
   }
+ deriving Show
 type SteroidCTSWRef = Ptr SteroidCTSW
 
 instance Storable SteroidCTSW where
@@ -43,19 +51,43 @@ instance Storable SteroidCTSW where
     #{poke struct stid_ctsw, thid} ptr thid_
     #{poke struct stid_ctsw, nrev} ptr nrev_
 
+-- | Replay data structure
+data SteroidReplay = SteroidReplay (DynArr SteroidCTSW)
+  deriving Show
+ 
 -- | struct stid_replay
 --     struct da tab
-data SteroidReplay
-  deriving (Typeable)
-type SteroidReplayRef = Ptr SteroidReplay
+data SteroidReplayStruct = SteroidReplayStruct
+  { tab :: DynArrStruct SteroidCTSW
+  } 
+type SteroidReplayRef = Ptr SteroidReplayStruct
 
+instance Storable SteroidReplayStruct where
+  alignment _ = #{alignment struct stid_replay} 
+  sizeOf   _ = #{size struct stid_replay}
+  peek   ptr = do
+    tab_ <- #{peek struct stid_replay, tab} ptr
+    return $ SteroidReplayStruct tab_ 
+  poke   ptr (SteroidReplayStruct tab_) = do
+    #{poke struct stid_replay, tab} ptr tab_ 
+
+toSteroidReplay :: SteroidReplayStruct -> IO SteroidReplay
+toSteroidReplay (SteroidReplayStruct tab_) = do
+  table <- toDynArr tab_
+  return $ SteroidReplay table
+ 
+{- 
+ - Execution data structure
+ - Dynamic Array of Actions 
+-}
 -- | struct stid_action
 -- @TODO: Modify the types
 data SteroidAction = SteroidAction 
   { ty   :: Int -- int
   , addr :: Int -- size_t
   , val  :: Int -- uint64_t
-  } 
+  }
+  deriving Show 
 type SteroidActionRef = Ptr SteroidAction
 
 instance Storable SteroidAction where
@@ -111,4 +143,22 @@ foreign import ccall unsafe "stid_get_poexec"
   stidGetPoExec :: SteroidRef -> SteroidPoRef -> IO CInt 
 
 foreign import ccall unsafe "stid_test"
-  stidTest :: IO CInt 
+  stidTest :: IO CInt
+
+foreign import ccall unsafe "stid_get_action"
+  stidGetAction :: IO SteroidActionRef 
+
+foreign import ccall unsafe "stid_print_action"
+  stidPrintAction :: SteroidActionRef -> IO CInt 
+
+foreign import ccall unsafe "stid_get_ctsw"
+  stidGetCTSW :: IO SteroidCTSWRef
+
+foreign import ccall unsafe "stid_print_ctsw"
+  stidPrintCTSW :: SteroidCTSWRef -> IO CInt 
+
+foreign import ccall unsafe "stid_get_replay"
+  stidGetReplay :: IO SteroidReplayRef 
+
+foreign import ccall unsafe "stid_check_replay"
+  stidCheckReplay :: SteroidReplayRef -> IO CInt 

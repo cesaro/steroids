@@ -1,4 +1,3 @@
-
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,9 +41,71 @@ void test1 ()
    if (ret != 0) errx (1, "term");
 }
 
+void test2 () 
+{
+   struct stid_exec run;
+   struct stid_action *a;
+   int l = 0;
+   struct stid_action el;
+   el.type = STID_RD;
+   el.addr = 0x0F;
+   el.val = 5;
+   
+   da_init (&run.tab, struct stid_action);
+   da_push (&run.tab, l, el, struct stid_action);
+   el.val = 6; 
+   da_push (&run.tab, l, el, struct stid_action); 
+
+   for (int i = 0; i < run.tab.len; i++)
+   {
+      a = &da_i (&run.tab, i, struct stid_action);
+      printf ("%p type %d addr %016zx val %lu\n", a, a->type, a->addr, a->val);
+   }
+   printf ("\n");
+}
+
+void test3 () 
+{
+   struct stid_action *a = stid_get_action();
+   int r = stid_print_action(a);
+   printf ("ret code %d\n", r);
+}
+
+void test4 ()
+{
+   struct stid_replay rep;
+   int l = 0;
+   struct stid_ctsw ctx;
+   ctx.thid = 1;
+   ctx.nrev = 1;
+ 
+   da_init (&rep.tab, struct stid_ctsw);
+   da_push (&rep.tab, l, ctx, struct stid_ctsw);
+   ctx.nrev = 2; 
+   da_push (&rep.tab, l, ctx, struct stid_ctsw);
+
+   int r = stid_check_replay (&rep);
+   printf ("ret code %d\n", r);
+}
+
+void test5 ()
+{
+   struct stid_replay * rep;
+   rep = stid_get_replay();
+   int r = stid_check_replay (rep);
+   printf ("ret code %d\n", r);
+}
+
+void test6 () 
+{
+   struct stid_ctsw *c = stid_get_ctsw();
+   int r = stid_print_ctsw(c);
+   printf ("ret code %d\n", r);
+}
+
 int main (int argc, char **argv)
 {
-   stid_test ();
+   test6();
    return 0;
 }
 
