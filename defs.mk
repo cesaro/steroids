@@ -24,11 +24,11 @@ LLVMLIBS=$(shell llvm-config-$(LLVMVERS) --libs all) -lz -lpthread -lffi -lncurs
 # traditional variables
 #CFLAGS:=-Wall -Wextra -std=c11 -pg
 #CFLAGS:=-Wall -Wextra -std=c11 -g
-CFLAGS:=-Wall -std=c11 -g
+CFLAGS:=-Wall -std=c11 -g -fPIC
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -pg
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -g
-CXXFLAGS:=-Wall -std=c++11 -g
+CXXFLAGS:=-Wall -std=c++11 -g -fPIC
 #CPPFLAGS:=-I src/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -D NDEBUG
 CPPFLAGS:=-I src/ -I include/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS $(LLVMCXXFLAGS)
 #LDFLAGS:=-dead_strip -static

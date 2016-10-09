@@ -7,13 +7,27 @@
 -------------------------------------------------------------------------------
 module Main where
 
+import Foreign.Ptr 
 import Haskroid.Haskroid
+
+-- main :: IO ()
+-- main = do
+--   str <- stidInit
+--   t <- stidLoadBytecode str "/tmp/main.bc"
+--   print t
+--   c <- stidTerm str
+--   print c
+
+
+test1 :: IO ()
+test1 = do
+  s <- stidInit
+  load_ret <- stidLoadBytecode s "/tmp/main.bc"
+  run_ret <- stidRun s nullPtr
+  stidGetSeqExec s undefined -- need a pointer to the execution
+  print run_ret
 
 main :: IO ()
 main = do
-  str <- steroidInit
-  t <- steroidLoadBytecode str "/tmp/main.bc"
-  print t
-  c <- steroidTerm str
-  print c
-
+  s <- stidTest 
+  print s
