@@ -96,7 +96,6 @@ testReplay = do
     return ret2) 
   print ret
 
-
 ctx1, ctx2 :: SteroidCTSW
 ctx1 = SteroidCTSW 5 10
 ctx2 = SteroidCTSW 7 76 

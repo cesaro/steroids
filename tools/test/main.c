@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include <steroid/steroid.h>
+#include <steroid/util/hsapi.h>
 
 
 void test1 ()

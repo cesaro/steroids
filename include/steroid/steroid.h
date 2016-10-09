@@ -38,8 +38,8 @@ struct stid;
 
 struct stid_ctsw
 {
-   int thid;
-   int nrev; 
+   unsigned int thid;
+   unsigned int nrev; 
 };
 
 struct stid_replay
@@ -94,21 +94,6 @@ int stid_get_seqexec (struct stid *s, struct stid_exec *run);
 int stid_get_poexec (struct stid *s, struct stid_po *po);
 
 int stid_test ();
-
-// testing steroid actions
-struct stid_action * stid_get_action();
-
-int stid_print_action(struct stid_action *act);
-
-// testing steroid context switches
-struct stid_ctsw * stid_get_ctsw();
-
-int stid_print_ctsw(struct stid_ctsw *ctx);
-
-// testing steroid replay
-struct stid_replay * stid_get_replay();
-
-int stid_check_replay(struct stid_replay *rep);
 
 #ifdef __cplusplus
 } // extern "C"

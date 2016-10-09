@@ -6,12 +6,10 @@
 -------------------------------------------------------------------------------
 module Haskroid.Haskroid where
 
-import Control.Applicative ((<$>), (<*>))
 import Data.Typeable (Typeable)
 import Foreign.C.String (CString, newCString)
 import Foreign.C.Types (CDouble(..), CInt(..), CUInt(..), CLLong(..), CULLong(..), CSize(..))
-import Foreign.Marshal.Array
-import Foreign.Ptr (Ptr, FunPtr)
+import Foreign.Ptr (Ptr)
 import Foreign.Storable
 
 import Haskroid.DynArr
@@ -32,10 +30,10 @@ type SteroidRef = Ptr Steroid
  -  Dynamic Array of Context Switches
 -}
 -- |  struct stid_ctsw
---   @TODO: Use Integer instead of Int 
+--   @TODO: CUInt 
 data SteroidCTSW = SteroidCTSW
-  { thid :: CInt
-  , nrev :: CInt
+  { thid :: CUInt
+  , nrev :: CUInt
   }
  deriving Show
 type SteroidCTSWRef = Ptr SteroidCTSW
