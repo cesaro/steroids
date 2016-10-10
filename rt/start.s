@@ -66,6 +66,7 @@ _rt_end :
    pop %rbx
 
    # return to the host
+   xor %rax, %rax
    ret
 
 # vim:syn=gas:

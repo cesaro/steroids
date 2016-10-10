@@ -498,6 +498,8 @@ void test3 ()
 
    e.run ();
    DEBUG ("stid: exitcode %d", e.exitcode);
+   fflush (stdout);
+   fflush (stderr);
    return;
 }
 

@@ -112,6 +112,7 @@ void test6 ()
 int main (int argc, char **argv)
 {
    test3();
+   //stid_test ();
    return 0;
 }
 

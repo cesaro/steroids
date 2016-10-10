@@ -72,7 +72,12 @@ public:
 
    bool is_rt_fun (llvm::Function *f)
    {
-      return f->getName().startswith ("_rt_");
+      return
+            f->getName().startswith ("_rt_") or
+            f->getName().equals ("free") or
+            f->getName().equals ("malloc") or
+            f->getName().equals ("realloc") or
+            f->getName().equals ("calloc");
    }
 
    bool instrument (llvm::Module &m)

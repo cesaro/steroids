@@ -27,10 +27,17 @@ r run: compile input.ll
 input.ll : tests/hello.ll rt/rt.ll
 	llvm-link-$(LLVMVERS) -S $^ -o $@
 
-rt/rt.ll : rt/start.s rt/aha.bc
-	./utils/as2c.py < rt/start.s > /tmp/start.c
-	make /tmp/start.bc
-	llvm-link-$(LLVMVERS) -S rt/aha.bc /tmp/start.bc -o $@
+$(RT_TARGETS) : $(RT_OBJS) $(RT_MOBJS)
+	@echo "LD  $@"
+	llvm-link-$(LLVMVERS) -S -o $@ $^
+
+rt/start.c : rt/start.s
+	./utils/as2c.py < $< > $@
+
+#rt/rt.ll : $(RT_xx)
+#	./utils/as2c.py < rt/start.s > /tmp/start.c
+#	make /tmp/start.bc
+#	llvm-link-$(LLVMVERS) -S rt/aha.bc /tmp/start.bc -o $@
 
 src/libsteroids.a : $(LIB_OBJS) $(LIB_MOBJS)
 	@echo "AR  $@"
