@@ -27,10 +27,17 @@ bool stid_has_pre_mem (struct stid_event *);
 struct stid_event * stid_get_pre_proc(struct stid_event *);
 struct stid_event * stid_get_pre_mem(struct stid_event *);
 
+// testing steroid execution
+
 // testing steroid replay
 struct stid_replay * stid_get_replay ();
+int stid_check_replay (struct stid_replay *);
 
-int stid_check_replay (struct stid_replay *rep);
+// testing steroid po
+struct stid_po * stid_new_po ();
+int stid_free_po (struct stid_po *);
+int stid_add_max_proc_po (struct stid_po *, struct stid_event *);
+int stid_add_max_lock_po (struct stid_po *, struct stid_event *);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -5,6 +5,12 @@ A library for dynamic verification of multithreaded programs.
 Benchmark of concurrent programs
 https://github.com/unsw-corg/PTABen
 
+## Marcelo's TODO list
+
+- enviar um partial order para haskell
+- manipular os partial orders em haskell
+- ler executions 
+- transformar execucoes em partial orders de eventos
 
 ## Cesar's TODO list
 
