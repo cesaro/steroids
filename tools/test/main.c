@@ -93,6 +93,7 @@ void test5 ()
    printf ("\n");
 }
 
+// Create a dummy replay
 void test6 ()
 {
    struct stid_replay * rep;
@@ -101,6 +102,7 @@ void test6 ()
    printf ("ret code %d\n", r);
 }
 
+// 
 void test7 ()
 {
    struct stid_replay rep;
@@ -121,7 +123,7 @@ void test7 ()
 int main (int argc, char **argv)
 {
    test4 ();
-   //stid_test ();
+   // stid_test ();
    return 0;
 }
 
