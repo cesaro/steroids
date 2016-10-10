@@ -64,17 +64,16 @@ struct stid_event
    struct stid_action act;
    struct
    {
-      unsigned int th;
-      unsigned int pos; // ideally the stream position
-   } idx;
-   struct stid_event *pre_proc;
-   struct stid_event *pre_mem;
+      unsigned int tid;
+      unsigned int idx;
+   } pre;
+   unsigned int sidx; // the index in the stream
 };
 
 struct stid_po
 {
-   struct da max_proc; // array of stid_event
-   struct da max_lock; // array of stid_event
+   struct da procs;     // array of (pointers to) arrays of stid_events
+   struct da max_lock;  // array of stid_event (one per lock ever used in the execution)
 };
 
 // constructor and destructor

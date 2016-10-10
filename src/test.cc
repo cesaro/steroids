@@ -391,8 +391,9 @@ void test2 ()
    // create a JIT execution engine
    llvm::EngineBuilder eb (std::move(mod));
    eb.setErrorStr (&errors);
+   eb.setVerifyModules (true);
    //eb.setOptLevel ( !! );
-   eb.setMCJITMemoryManager(llvm::make_unique<llvm::SectionMemoryManager>());
+   //eb.setMCJITMemoryManager(llvm::make_unique<llvm::SectionMemoryManager>());
 
    llvm::ExecutionEngine *ee = eb.create();
    if (! ee)

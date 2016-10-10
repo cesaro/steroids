@@ -90,7 +90,7 @@ vars :
 
 clean :
 	@rm -f $(TARGETS) $(MOBJS) $(OBJS)
-	@rm -f rt/*.ll rt/start.c
+	@rm -f rt/*.ll rt/start.c input.ll
 	@echo Cleaning done.
 
 distclean : clean
