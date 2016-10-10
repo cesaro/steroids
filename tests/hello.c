@@ -66,7 +66,7 @@ void test2 ()
    printf ("%d", c[3].v32_2);
 }
 
-int main (int argc, char **argv)
+int main1 (int argc, char **argv)
 {
    int x;
    //x -= x; // undefined behaviour !
@@ -120,3 +120,21 @@ int main (int argc, char **argv)
    return argc + mystrlen (ptr);
 }
 
+int main2 (int argc, char **argv)
+{
+   int i;
+   strcpy (buff, "hello world, this is a test!!");
+   printf ("buff %p\n", buff);
+   for (i = 0; i < 128; i++)
+   {
+      printf ("i %d buff[i] %0x %c\n",
+            i, buff[i], isalpha (buff[i]) ? buff[i] : '.');
+   }
+   
+   return 123;
+}
+
+int main (int argc, char **argv)
+{
+   return main2 (argc, argv);
+}

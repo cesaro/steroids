@@ -228,7 +228,7 @@ public:
 
       llvm::outs() << "stid: " << i << "\n";
 
-      b.CreateCall (ret, b.getInt32 (retid++));
+      b.CreateCall (ret, b.getInt16 (retid++));
       count++;
    }
 

@@ -49,15 +49,19 @@ _rt_start :
    mov  %r15, %rdx # env
 	call _rt_main
 
-	# fall through the exit routine _rt_end
+	# save return value (exit code) and fall through the exit routine _rt_end
+   mov  %rax, %rdi
 
 _rt_end :
 	# make sure we have a correctly aligned stack and restore the host stack
    andq $-16, %rsp
+   mov  %rdi, %rbx
    call _rt_get_host_rsp
    mov  %rax, %rsp
 
-   # restore calle-save registers from the host's stack
+   # save exit code in %rax and restore calle-save registers from the host's
+   # stack
+   mov %rbx, %rax
    pop %r15
    pop %r14
    pop %r13
@@ -66,7 +70,6 @@ _rt_end :
    pop %rbx
 
    # return to the host
-   xor %rax, %rax
    ret
 
 # vim:syn=gas:

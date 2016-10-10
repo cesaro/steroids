@@ -120,8 +120,8 @@ void test7 ()
 
 int main (int argc, char **argv)
 {
-   test4 ();
-   //stid_test ();
+   //test4 ();
+   stid_test ();
    return 0;
 }
 

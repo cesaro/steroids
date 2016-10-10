@@ -89,12 +89,12 @@ YACC:=bison
 %.d : %.c
 	@echo "DEP $<"
 	@set -e; $(CC) -MM -MT $*.o $(CFLAGS) $(CPPFLAGS) $< | \
-	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' > $@;
+	sed 's,\($*\)\.o[ :]*,\1.o \1.ll \1.bc $@ : ,g' > $@;
 
 %.d : %.cc
 	@echo "DEP $<"
 	@set -e; $(CXX) -MM -MT $*.o $(CXXFLAGS) $(CPPFLAGS) $< | \
-	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' > $@;
+	sed 's,\($*\)\.o[ :]*,\1.o \1.ll \1.bc $@ : ,g' > $@;
 
 %.cc : %.l
 	@echo "LEX $<"
@@ -129,18 +129,25 @@ CFLAGS_:=-Wall -Wextra -std=c11
 CXXFLAGS_:=-Wall -Wextra -std=c++11 -O3
 
 %.ll : %.c
-	$(CC) $(CFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
+	@echo "CC  $< (c -> ll)"
+	@$(CC) $(CFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
 %.bc : %.c
-	$(CC) $(CFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
+	@echo "CC  $< (c -> bc)"
+	@$(CC) $(CFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
 %.ll : %.cc
-	$(CXX) $(CXXFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
+	@echo "CXX $< (cc -> ll)"
+	@$(CXX) $(CXXFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
 %.bc : %.cc
-	$(CXX) $(CXXFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
+	@echo "CXX $< (cc -> bc)"
+	@$(CXX) $(CXXFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
 %.bc : %.ll
-	llvm-as-$(LLVMVERS) $< -o $@
+	@echo "AS  $<"
+	@llvm-as-$(LLVMVERS) $< -o $@
 %.ll : %.bc
-	llvm-dis-$(LLVMVERS) $< -o $@
+	@echo "DIS $<"
+	@llvm-dis-$(LLVMVERS) $< -o $@
 %.s : %.bc
+	@echo "LLC $< (ll -> s)"
 	llc-$(LLVMVERS) $< -o $@
 #%.c : %.s
 #	@echo "a2c $<"
