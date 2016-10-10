@@ -73,8 +73,8 @@ struct stid_event
 
 struct stid_po
 {
-   struct da max_proc; // array of stid_event
-   struct da max_lock; // array of stid_event
+   struct da max_proc; // array of stid_event's
+   struct da max_lock; // array of stid_event's
 };
 
 // constructor and destructor

@@ -147,4 +147,35 @@ int stid_check_replay(struct stid_replay *rep)
    return 0;
 }
 
+// constructor and destructor
+struct stid_po * stid_new_po ()
+{
+   struct stid_po *po;
+   po = (struct stid_po *) malloc (sizeof (struct stid_po));
+   if (po == 0) return 0;
+
+   da_init (&po->max_proc, struct stid_event);
+   da_init (&po->max_lock, struct stid_event);
+
+   return po;
+}
+
+int stid_free_p (struct stid_po *s)
+{
+   free (s);
+   return 0;
+}
+
+int stid_add_max_proc_po (struct stid_po *po, struct stid_event *e)
+{
+  if (po == 0) return 1;
+  da_push (&po->max_proc, po->max_proc.len, *e, struct stid_event);
+  return 0; 
+}
+
+int stid_add_max_lock_po (struct stid_po *po, struct stid_event *e)
+{
+  return 0;
+}
+
 } // extern "C"

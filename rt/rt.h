@@ -10,7 +10,7 @@ extern "C" {
 
 // these two are in start.s; host should invoke _rt_start
 void _rt_start (int argc, const char * const *argv, const char * const *env);
-void _rt_end (void);
+void _rt_end (uint32_t exitcode);
 
 // called from _rt_start, will call main()
 int _rt_main (int argc, const char * const *argv, const char * const *env);
@@ -39,8 +39,8 @@ void _rt_allo (uint8_t *addr, uint32_t size);
 void _rt_mllo (uint8_t *addr, uint64_t size); // malloc & calloc
 void _rt_rllo (uint8_t *old, uint8_t *neww, uint64_t size);
 void _rt_fre  (uint8_t *addr);
-void _rt_call (uint32_t id);
-void _rt_ret  (uint32_t id);
+void _rt_call (uint16_t id);
+void _rt_ret  (uint16_t id);
 
 // others
 void _rt_sig  (uint32_t signal);
@@ -82,6 +82,7 @@ enum eventtype
    // threads
    THCREAT,
    THJOIN,
+   THEXIT,
    THSW,
    // locks
    MTXINIT,
@@ -127,3 +128,4 @@ struct rt
 #endif
 
 #endif // _RT_RT_H_
+

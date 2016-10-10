@@ -27,18 +27,6 @@ r run: compile input.ll
 input.ll : tests/hello.ll rt/rt.ll
 	llvm-link-$(LLVMVERS) -S $^ -o $@
 
-$(RT_TARGETS) : $(RT_OBJS) $(RT_MOBJS)
-	@echo "LD  $@"
-	llvm-link-$(LLVMVERS) -S -o $@ $^
-
-rt/start.c : rt/start.s
-	./utils/as2c.py < $< > $@
-
-#rt/rt.ll : $(RT_xx)
-#	./utils/as2c.py < rt/start.s > /tmp/start.c
-#	make /tmp/start.bc
-#	llvm-link-$(LLVMVERS) -S rt/aha.bc /tmp/start.bc -o $@
-
 src/libsteroids.a : $(LIB_OBJS) $(LIB_MOBJS)
 	@echo "AR  $@"
 	@$(AR) r $@ $^
@@ -51,8 +39,12 @@ $(TOOLS_TEST_TARGETS) : $(TOOLS_TEST_OBJS) $(TOOLS_TEST_MOBJS) src/libsteroids.a
 	@echo "LD  $@"
 	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS) src/libsteroids.a
 
-#$(MINISAT)/build/release/lib/libminisat.a :
-#	cd $(MINISAT); make lr
+$(RT_TARGETS) : $(RT_OBJS) $(RT_MOBJS)
+	@echo "LD  $@"
+	@llvm-link-$(LLVMVERS) -S -o $@ $^
+
+rt/start.c : rt/start.s
+	./utils/as2c.py < $< > $@
 
 prof : $(TARGETS)
 	rm gmon.out.*
@@ -88,9 +80,17 @@ vars :
 	@echo "OBJS     $(TOOLS_TEST_OBJS)"
 	@echo "MOBJS    $(TOOLS_TEST_MOBJS)"
 	@echo "TARGETS  $(TOOLS_TEST_TARGETS)"
+	@echo ""
+	@echo "rt:"
+	@echo "SRCS     $(RT_SRCS)"
+	@echo "MSRCS    $(RT_MSRCS)"
+	@echo "OBJS     $(RT_OBJS)"
+	@echo "MOBJS    $(RT_MOBJS)"
+	@echo "TARGETS  $(RT_TARGETS)"
 
 clean :
 	@rm -f $(TARGETS) $(MOBJS) $(OBJS)
+	@rm -f rt/*.ll rt/start.c
 	@echo Cleaning done.
 
 distclean : clean
