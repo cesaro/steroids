@@ -120,10 +120,102 @@ void test7 ()
    printf ("ret code %d\n", r);
 }
 
+void test8 ()
+{
+#if 0
+
+
+#endif
+
+   struct stid_po po;
+   struct da *p0;
+   struct da *p1;
+
+   da_init (&po.procs, struct da);
+   da_trunc (&po.procs, 2, struct da); // 2 processes
+
+   // process 1, 4 events
+   p0 = &da_i(&po.procs, 0, struct da);
+   da_init (p0, struct stid_event);
+   da_trunc (p0, 4, struct stid_event);
+
+   // p0, event 0, entry (this is bottom!!)
+   da_i (p0, 0, struct stid_event).act.type = STID_ENTRY;
+   da_i (p0, 0, struct stid_event).act.addr = 0; // irrelevant
+   da_i (p0, 0, struct stid_event).act.val = 0; // irrelevant
+   da_i (p0, 0, struct stid_event).mempre.tid = -1; // no mempredecessor other than in the thread (this is main!)
+   da_i (p0, 0, struct stid_event).sidx = 0;
+
+   // p0, event 1, create
+   da_i (p0, 1, struct stid_event).act.type = STID_CREATE;
+   da_i (p0, 1, struct stid_event).act.addr = 0; // irrelevant
+   da_i (p0, 1, struct stid_event).act.val = 1; // we create thread 1
+   da_i (p0, 1, struct stid_event).mempre.tid = -1;
+   da_i (p0, 1, struct stid_event).sidx = 1;
+
+   // p0, event 2, lock
+   da_i (p0, 2, struct stid_event).act.type = STID_LOCK;
+   da_i (p0, 2, struct stid_event).act.addr = 0xfffff000;
+   da_i (p0, 2, struct stid_event).act.val = 0; // irrelevant
+   da_i (p0, 2, struct stid_event).mempre.tid = 1; // mempre = thread 1, event 2 (the unlock)
+   da_i (p0, 2, struct stid_event).mempre.idx = 2;
+   da_i (p0, 2, struct stid_event).sidx = 5;
+
+   // p0, event 3, unlock
+   da_i (p0, 3, struct stid_event).act.type = STID_UNLOCK;
+   da_i (p0, 3, struct stid_event).act.addr = 0xfffff000;
+   da_i (p0, 3, struct stid_event).act.val = 0; // irrelevant
+   da_i (p0, 3, struct stid_event).mempre.tid = 0; // mempre (last lock in this process)
+   da_i (p0, 3, struct stid_event).mempre.idx = 2;
+   da_i (p0, 3, struct stid_event).sidx = 6;
+
+   // p0, event 4, exit
+   da_i (p0, 4, struct stid_event).act.type = STID_JOIN;
+   da_i (p0, 4, struct stid_event).act.val = 1; // join of thread 1
+   da_i (p0, 4, struct stid_event).mempre.tid = 1; // mempre = thread one's exit event
+   da_i (p0, 4, struct stid_event).mempre.idx = 3;
+   da_i (p0, 4, struct stid_event).sidx = 8;
+
+   // p0, event 5, exit
+   da_i (p0, 5, struct stid_event).act.type = STID_EXIT;
+   da_i (p0, 5, struct stid_event).sidx = 9;
+
+   
+
+   // process 2, 2 events
+   p1 = &da_i(&po.procs, 1, struct da);
+   da_init (p1, struct stid_event);
+   da_trunc (p1, 2, struct stid_event);
+
+   // p1, event 0, entry
+   da_i (p1, 0, struct stid_event).act.type = STID_ENTRY;
+   da_i (p1, 0, struct stid_event).mempre.tid = 0; // mempre = thread 0, event 1 (the create)
+   da_i (p1, 0, struct stid_event).mempre.idx = 1;
+   da_i (p1, 0, struct stid_event).sidx = 2;
+
+   // p1, event 1, lock
+   da_i (p1, 1, struct stid_event).act.type = STID_LOCK;
+   da_i (p1, 1, struct stid_event).act.addr = 0xffffff00;
+   da_i (p1, 1, struct stid_event).act.val = 0; // irrelevant
+   da_i (p1, 1, struct stid_event).mempre.tid = -1; // beginning of this address total order
+   da_i (p1, 1, struct stid_event).sidx = 3;
+
+   // p1, event 2, unlock
+   da_i (p1, 2, struct stid_event).act.type = STID_UNLOCK;
+   da_i (p1, 2, struct stid_event).act.addr = 0xffffff00;
+   da_i (p1, 2, struct stid_event).mempre.tid = 1; // mempre (last lock in this process)
+   da_i (p1, 2, struct stid_event).mempre.idx = 1;
+   da_i (p1, 2, struct stid_event).sidx = 4;
+
+   // p0, event 4, exit
+   da_i (p1, 3, struct stid_event).act.type = STID_EXIT;
+   da_i (p1, 3, struct stid_event).sidx = 7;
+}
+
 int main (int argc, char **argv)
 {
    test4 ();
    //stid_test ();
    return 0;
 }
-
+b

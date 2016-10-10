@@ -20,13 +20,14 @@ extern "C" {
 #define STID_JOIN       5
 #define STID_CTSW       6
 #define STID_EXIT       7
+#define STID_ENTRY      8
 
 // memory management
-#define STID_MALLOC     8
-#define STID_FREE       9
-#define STID_ALLOCA     10
-#define STID_CALL       11
-#define STID_RET        12
+#define STID_MALLOC     9
+#define STID_FREE       10
+#define STID_ALLOCA     11
+#define STID_CALL       12
+#define STID_RET        13
 
 /* error codes
  * - 0 return code : ok
@@ -66,7 +67,7 @@ struct stid_event
    {
       unsigned int tid;
       unsigned int idx;
-   } pre;
+   } mempre;
    unsigned int sidx; // the index in the stream
 };
 
