@@ -67,7 +67,7 @@ struct stid_event
    {
       unsigned int tid;
       unsigned int idx;
-   } mempre;
+   } pre_mem;
    unsigned int sidx; // the index in the stream
 };
 

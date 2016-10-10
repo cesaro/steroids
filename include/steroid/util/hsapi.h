@@ -18,7 +18,7 @@ struct stid_ctsw * stid_new_ctsw (unsigned int, unsigned int);
 int stid_print_ctsw (struct stid_ctsw *);
 
 // testing steroid events
-struct stid_event * stid_new_event (struct stid_action *, unsigned int, unsigned int);
+struct stid_event * stid_new_event (struct stid_action *, unsigned int, unsigned int, unsigned int);
 int stid_set_pre_proc (struct stid_event *, struct stid_event *);
 int stid_set_pre_mem  (struct stid_event *, struct stid_event *);
 int stid_print_event (struct stid_event *); 

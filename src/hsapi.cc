@@ -49,71 +49,56 @@ int stid_print_ctsw (struct stid_ctsw *ctx)
 }
 
 // Testing steroid events
-struct stid_event * stid_new_event (struct stid_action * act, unsigned int th, unsigned int pos)
+struct stid_event * stid_new_event (struct stid_action * act, unsigned int tid, unsigned int idx, unsigned int sidx)
 {
    struct stid_event *e;
    e = (struct stid_event*) malloc (sizeof(struct stid_event));
    if (e == 0) return 0;
    e->act = *act;
-   e->idx.th = th;
-   e->idx.pos = pos;
-   e->pre_proc = 0;
-   e->pre_mem = 0;
+   e->pre_mem.tid = tid;
+   e->pre_mem.idx = idx;
+   e->sidx = sidx;
    return e; 
 } 
-
-int stid_set_pre_proc (struct stid_event *e, struct stid_event *pre_proc)
-{
-   if (e == 0) return 1;
-   e->pre_proc = pre_proc;
-   return 0;
-}
-
-int stid_set_pre_mem (struct stid_event *e, struct stid_event *pre_mem)
-{
-   if (e == 0) return 1;
-   e->pre_mem = pre_mem;
-   return 0;
-}
 
 int stid_print_event (struct stid_event *e)
 {
    if (e == 0) return 1;
    stid_print_action (&e->act);
-   printf ("idx: th %u pos %u\n", e->idx.th, e->idx.pos);
-   if (e->pre_proc) {
-     // stid_print_event (e->pre_proc);
-     printf ("pre_proc %p", e->pre_proc);
-   } else {
-     printf ("first event in th\n");
-   }
-   if (e->pre_mem) {
-     // stid_print_event (e->pre_mem);
-     printf ("pre_mem %p", e->pre_mem);
-   } else {
-     printf ("first event in mem\n");
-   }
+   printf ("idx: th %u pos %u\n", e->pre_mem.tid, e->pre_mem.idx);
+   //if (e->pre_proc) {
+   //  // stid_print_event (e->pre_proc);
+   //  printf ("pre_proc %p", e->pre_proc);
+   //} else {
+   //  printf ("first event in th\n");
+   //}
+   //if (e->pre_mem) {
+   //  // stid_print_event (e->pre_mem);
+   //  printf ("pre_mem %p", e->pre_mem);
+   //} else {
+   //  printf ("first event in mem\n");
+   //}
    return 0;
 }
 
 bool stid_has_pre_proc (struct stid_event *e)
 {
-  return e->pre_proc == 0; 
+  return e->act.type == STID_ENTRY; 
 }
 
 bool stid_has_pre_mem (struct stid_event *e)
 {
-  return e->pre_mem == 0; 
+  return e->pre_mem.tid == -1;
 }
 
 struct stid_event * stid_get_pre_proc (struct stid_event *e)
 {
-  return e->pre_proc; 
+  return e; // e->pre_proc; 
 }
 
 struct stid_event * stid_get_pre_mem (struct stid_event *e)
 {
-  return e->pre_mem; 
+  return e; // e->pre_mem; 
 }
 
 
@@ -154,8 +139,8 @@ struct stid_po * stid_new_po ()
    po = (struct stid_po *) malloc (sizeof (struct stid_po));
    if (po == 0) return 0;
 
-   da_init (&po->max_proc, struct stid_event);
-   da_init (&po->max_lock, struct stid_event);
+   //da_init (&po->max_proc, struct stid_event);
+   //da_init (&po->max_lock, struct stid_event);
 
    return po;
 }
@@ -168,8 +153,8 @@ int stid_free_p (struct stid_po *s)
 
 int stid_add_max_proc_po (struct stid_po *po, struct stid_event *e)
 {
-  if (po == 0) return 1;
-  da_push (&po->max_proc, po->max_proc.len, *e, struct stid_event);
+  //if (po == 0) return 1;
+  //da_push (&po->max_proc, po->max_proc.len, *e, struct stid_event);
   return 0; 
 }
 
