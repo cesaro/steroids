@@ -60,8 +60,17 @@ void test3 ()
    printf ("ret code %d\n", r);
 }
 
-// Create and iterate a dummy execution
+// Create and print an event 
 void test4 () 
+{
+   struct stid_action *a = stid_new_action (STID_WR, 0xFF, 5);
+   struct stid_event *c = stid_new_event (a, 1, 3);
+   int r = stid_print_event (c);
+   printf ("ret code %d\n", r);
+}
+
+// Create and iterate a dummy execution
+void test5 () 
 {
    struct stid_exec run;
    struct stid_action *a;
@@ -84,7 +93,7 @@ void test4 ()
    printf ("\n");
 }
 
-void test5 ()
+void test6 ()
 {
    struct stid_replay * rep;
    rep = stid_get_replay();
@@ -92,7 +101,7 @@ void test5 ()
    printf ("ret code %d\n", r);
 }
 
-void test6 ()
+void test7 ()
 {
    struct stid_replay rep;
    int l = 0;
@@ -111,7 +120,7 @@ void test6 ()
 
 int main (int argc, char **argv)
 {
-   test3();
+   test4 ();
    return 0;
 }
 

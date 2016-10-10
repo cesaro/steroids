@@ -61,11 +61,11 @@ struct stid_exec
 
 struct stid_event
 {
-   struct stid_action a;
+   struct stid_action act;
    struct
    {
       unsigned int th;
-      unsigned int other; // ideally the stream position
+      unsigned int pos; // ideally the stream position
    } idx;
    struct stid_event *pre_proc;
    struct stid_event *pre_mem;

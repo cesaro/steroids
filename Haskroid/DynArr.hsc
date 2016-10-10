@@ -25,7 +25,8 @@ data DynArr a = DynArr CInt [a]
  
 -- | struct da
 data DynArrStruct a = DynArrStruct 
-  { len :: CInt
+  { 
+    len :: CInt
   , tab :: Ptr a
   }
   deriving (Typeable)
