@@ -15,7 +15,7 @@ import Foreign.Marshal.Array
 import Haskroid.Haskroid
 import Haskroid.DynArr
 
-main = testPrintCTSW 
+main = testPrintEvent
 
 test1 :: IO ()
 test1 = do
@@ -75,6 +75,16 @@ testPrintCTSW = do
     pa <- poke ptr act
     stidPrintCTSW ptr)
   print ret2
+
+-- | Test if we can get an event
+testPrintEvent :: IO ()
+testPrintEvent = do
+  aptr <- stidNewAction 0 255 5
+--  ret' <- stidPrintAction aptr
+--  print ret'
+  evt  <- stidNewEvent aptr 1 3
+  ret  <- stidPrintEvent evt
+  print ret
 
 -- | Test if we can get and send a replay
 testGetSendReplay :: IO ()

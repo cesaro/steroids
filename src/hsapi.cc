@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include <steroid/util/hsapi.h>
 
@@ -33,7 +34,7 @@ int stid_print_action (struct stid_action *act)
 struct stid_ctsw * stid_new_ctsw (unsigned int thid, unsigned int nrev)
 {
    struct stid_ctsw *ctx;
-   ctx  = (struct stid_ctsw*) malloc (sizeof(struct stid_ctsw));
+   ctx = (struct stid_ctsw*) malloc (sizeof(struct stid_ctsw));
    if (ctx == 0) return 0;
    ctx->thid = thid;
    ctx->nrev = nrev;
@@ -46,6 +47,75 @@ int stid_print_ctsw (struct stid_ctsw *ctx)
    printf ("%p thid %u nrev %u \n", ctx, ctx->thid, ctx->nrev);
    return 0;
 }
+
+// Testing steroid events
+struct stid_event * stid_new_event (struct stid_action * act, unsigned int th, unsigned int pos)
+{
+   struct stid_event *e;
+   e = (struct stid_event*) malloc (sizeof(struct stid_event));
+   if (e == 0) return 0;
+   e->act = *act;
+   e->idx.th = th;
+   e->idx.pos = pos;
+   e->pre_proc = 0;
+   e->pre_mem = 0;
+   return e; 
+} 
+
+int stid_set_pre_proc (struct stid_event *e, struct stid_event *pre_proc)
+{
+   if (e == 0) return 1;
+   e->pre_proc = pre_proc;
+   return 0;
+}
+
+int stid_set_pre_mem (struct stid_event *e, struct stid_event *pre_mem)
+{
+   if (e == 0) return 1;
+   e->pre_mem = pre_mem;
+   return 0;
+}
+
+int stid_print_event (struct stid_event *e)
+{
+   if (e == 0) return 1;
+   stid_print_action (&e->act);
+   printf ("idx: th %u pos %u\n", e->idx.th, e->idx.pos);
+   if (e->pre_proc) {
+     // stid_print_event (e->pre_proc);
+     printf ("pre_proc %p", e->pre_proc);
+   } else {
+     printf ("first event in th\n");
+   }
+   if (e->pre_mem) {
+     // stid_print_event (e->pre_mem);
+     printf ("pre_mem %p", e->pre_mem);
+   } else {
+     printf ("first event in mem\n");
+   }
+   return 0;
+}
+
+bool stid_has_pre_proc (struct stid_event *e)
+{
+  return e->pre_proc == 0; 
+}
+
+bool stid_has_pre_mem (struct stid_event *e)
+{
+  return e->pre_mem == 0; 
+}
+
+struct stid_event * stid_get_pre_proc (struct stid_event *e)
+{
+  return e->pre_proc; 
+}
+
+struct stid_event * stid_get_pre_mem (struct stid_event *e)
+{
+  return e->pre_mem; 
+}
+
 
 struct stid_replay * stid_get_replay()
 {
