@@ -29,7 +29,7 @@ data DynArrStruct a = DynArrStruct
     len :: CInt
   , tab :: Ptr a
   }
-  deriving (Typeable)
+  deriving (Typeable, Show)
 type DynArrRef a = Ptr (DynArr a)
   
 instance Storable a => Storable (DynArrStruct a) where

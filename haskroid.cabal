@@ -24,6 +24,7 @@ library
 
   exposed-modules:
     Haskroid.Haskroid
+    Haskroid.Hapiroid
     Haskroid.DynArr
 
   include-dirs: include

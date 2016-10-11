@@ -83,7 +83,6 @@ toSteroidReplay (SteroidReplayStruct tab_) = do
  - Dynamic Array of Actions 
 -}
 -- | struct stid_action
--- @TODO: Modify the types
 data SteroidAction = SteroidAction 
   { 
     ty   :: CInt  -- int
@@ -118,65 +117,65 @@ type SteroidExecRef = Ptr SteroidExec
 -- | struct stid_event
 data SteroidEvent = SteroidEvent
   { 
-    act :: SteroidAction
-  , th  :: CUInt
-  , pos :: CUInt
-  , pre_proc :: Maybe CUInt 
-  , pre_mem  :: Maybe CUInt  
-  }
-  deriving Show
- 
-data SteroidEventStruct = SteroidEventStruct
-  { 
     act_ :: SteroidAction
-  , th_  :: CUInt
-  , pos_ :: CUInt
---  , pre_proc_ :: SteroidEventRef
---  , pos_proc_ :: SteroidEventRef
+  , pre_mem_tid_  :: CUInt
+  , pre_mem_idx_ :: CUInt
+  , sidx_ :: CUInt
   }
-  deriving (Typeable)
-type SteroidEventRef = Ptr SteroidEventStruct
+  deriving (Typeable, Show)
+type SteroidEventRef = Ptr SteroidEvent
 
-instance Storable SteroidEventStruct where
+instance Storable SteroidEvent where
   alignment _ = #{alignment struct stid_event} 
   sizeOf   _ = #{size struct stid_event}
   peek   ptr = do
     act_   <- #{peek struct stid_event, act} ptr
-    idxptr <- #{peek struct stid_event, idx} ptr
-    th_    <- #{peek struct stid_event, idx.th} idxptr
-    pos_   <- #{peek struct stid_event, idx.pos} idxptr
---    pre_proc_ <- #{peek struct stid_event, pre_proc} ptr
---    pre_mem_ <- #{peek struct stid_event, pre_mem} ptr
---    return $ SteroidEvent act_ th_ pos_ pre_proc_ pre_mem_
-    return $ SteroidEventStruct act_ th_ pos_ 
-  poke   ptr (SteroidEventStruct act_ th_ pos_) = do
+    tid_    <- #{peek struct stid_event, pre_mem.tid} ptr 
+    idx_   <- #{peek struct stid_event, pre_mem.idx} ptr 
+    sidx_   <- #{peek struct stid_event, sidx} ptr 
+    return $ SteroidEvent act_ tid_ idx_ sidx_ 
+  poke   ptr (SteroidEvent act_ tid_ idx_ sidx_) = do
     #{poke struct stid_event, act} ptr act_ 
-
-toSteroidEvent :: SteroidEventRef -> IO SteroidEvent 
-toSteroidEvent ptr = do
-  st <- peek ptr
-  has_pre_proc <- stidHasPreProc ptr
-  has_pre_mem  <- stidHasPreMem ptr
-  pre_proc_ <-
-   if has_pre_proc 
-   then do 
-     pre_proc_ref_ <- stidGetPreProc ptr
-     pre_proc_ref <- peek pre_proc_ref_
-     return $ Just $ pos_ pre_proc_ref
-   else return Nothing
-  pre_mem_ <-
-   if has_pre_mem 
-   then do 
-     pre_mem_ref_ <- stidGetPreMem ptr
-     pre_mem_ref <- peek pre_mem_ref_
-     return $ Just $ pos_ pre_mem_ref
-   else return Nothing
-  return $ SteroidEvent (act_ st) (th_ st) (pos_ st) pre_proc_ pre_mem_
+    #{poke struct stid_event, pre_mem.tid} ptr tid_ 
+    #{poke struct stid_event, pre_mem.idx} ptr idx_ 
+    #{poke struct stid_event, sidx} ptr sidx_ 
 
 -- | struct stid_po
-data SteroidPo
-  deriving (Typeable)
-type SteroidPoRef = Ptr SteroidPo
+data SteroidPo = SteroidPo
+  { 
+    ev_procs :: DynArr (DynArr SteroidEvent)
+  , ev_max_lock :: DynArr SteroidEvent
+  }
+  deriving Show
+
+data SteroidPoStruct = SteroidPoStruct
+  {
+    procs :: DynArrStruct (DynArrStruct SteroidEvent)
+  , max_lock :: DynArrStruct (SteroidEvent) 
+  } 
+  deriving (Typeable,Show)
+type SteroidPoRef = Ptr SteroidPoStruct
+
+instance Storable SteroidPoStruct where
+  alignment _ = #{alignment struct stid_po} 
+  sizeOf   _ = #{size struct stid_po}
+  peek   ptr = do
+    procs_ <- #{peek struct stid_po, procs} ptr
+    max_lock_ <- #{peek struct stid_po, max_lock} ptr
+    return $ SteroidPoStruct procs_ max_lock_
+  poke   ptr (SteroidPoStruct procs_ max_lock_) = do
+    #{poke struct stid_po, procs} ptr procs_ 
+    #{poke struct stid_po, max_lock} ptr max_lock_
+
+toSteroidPo :: SteroidPoStruct -> IO SteroidPo
+toSteroidPo (SteroidPoStruct procs max_lock) = do
+  _procs <- toDynArr procs
+  ev_procs <- case _procs of
+    DynArr l x -> do
+      y <- mapM toDynArr x
+      return $ DynArr l y 
+  ev_max_lock <- toDynArr max_lock
+  return $ SteroidPo ev_procs ev_max_lock
 
 -- Core API
 -- | Should all these calls be unsafe? 
@@ -223,16 +222,10 @@ foreign import ccall unsafe "stid_print_ctsw"
 
 -- Events
 foreign import ccall unsafe "stid_new_event"
-  stidNewEvent :: SteroidActionRef -> CUInt -> CUInt -> IO SteroidEventRef
-
-foreign import ccall unsafe "stid_set_pre_proc"
-  stidSetPreProc :: SteroidEventRef -> SteroidEventRef -> IO CInt
-
-foreign import ccall unsafe "stid_set_pre_mem"
-  stidSetPreMem :: SteroidEventRef -> SteroidEventRef -> IO CInt
+  stidNewEvent :: SteroidActionRef -> CUInt -> CUInt -> CUInt -> IO SteroidEventRef
 
 foreign import ccall unsafe "stid_print_event"
-  stidPrintEvent :: SteroidEventRef -> IO CInt
+  stidPrintEvent :: SteroidEventRef -> CUInt -> CUInt -> IO CInt
 
 foreign import ccall unsafe "stid_has_pre_proc"
   stidHasPreProc_ :: SteroidEventRef -> IO CInt
@@ -250,11 +243,12 @@ stidHasPreMem ref = do
   r <- stidHasPreMem_ ref
   return $ cInt2Bool r
 
-foreign import ccall unsafe "stid_get_pre_proc"
-  stidGetPreProc :: SteroidEventRef -> IO SteroidEventRef
- 
-foreign import ccall unsafe "stid_get_pre_mem"
-  stidGetPreMem :: SteroidEventRef -> IO SteroidEventRef
+-- Partial order
+foreign import ccall unsafe "stid_example_po"
+  stidExamplePo :: IO SteroidPoRef
+
+foreign import ccall unsafe "stid_print_seq_po"
+  stidPrintSeqPo :: SteroidPoRef -> IO ()
 
 -- Replay
 foreign import ccall unsafe "stid_get_replay"

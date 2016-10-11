@@ -19,13 +19,9 @@ int stid_print_ctsw (struct stid_ctsw *);
 
 // testing steroid events
 struct stid_event * stid_new_event (struct stid_action *, unsigned int, unsigned int, unsigned int);
-int stid_set_pre_proc (struct stid_event *, struct stid_event *);
-int stid_set_pre_mem  (struct stid_event *, struct stid_event *);
-int stid_print_event (struct stid_event *); 
+int stid_print_event (struct stid_event *, unsigned int, unsigned int); 
 bool stid_has_pre_proc (struct stid_event *);
 bool stid_has_pre_mem (struct stid_event *);
-struct stid_event * stid_get_pre_proc(struct stid_event *);
-struct stid_event * stid_get_pre_mem(struct stid_event *);
 
 // testing steroid execution
 
@@ -36,8 +32,10 @@ int stid_check_replay (struct stid_replay *);
 // testing steroid po
 struct stid_po * stid_new_po ();
 int stid_free_po (struct stid_po *);
-int stid_add_max_proc_po (struct stid_po *, struct stid_event *);
-int stid_add_max_lock_po (struct stid_po *, struct stid_event *);
+int stid_print_po (struct stid_po); 
+int stid_print_seq_po (struct stid_po *); 
+
+struct stid_po * stid_example_po ();
 
 #ifdef __cplusplus
 } // extern "C"
