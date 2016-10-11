@@ -15,7 +15,7 @@ import Foreign.Marshal.Array
 import Haskroid.Haskroid
 import Haskroid.DynArr
 
-main = testPrintEvent
+main = testGetPartialOrder
 
 test1 :: IO ()
 test1 = do
@@ -82,9 +82,13 @@ testPrintEvent = do
   aptr <- stidNewAction 0 255 5
 --  ret' <- stidPrintAction aptr
 --  print ret'
-  evt  <- stidNewEvent aptr 1 3
-  ret  <- stidPrintEvent evt
+  evt  <- stidNewEvent aptr 1 3 1
+  print "testPrintEvent"
+  ret  <- stidPrintEvent evt 1 1
   print ret
+  ev <- peek evt
+  print ev
+  print "done"
 
 -- | Test if we can get and send a replay
 testGetSendReplay :: IO ()
@@ -118,3 +122,16 @@ ctx2 = SteroidCTSW 7 76
 rep :: [SteroidCTSW]
 rep = [ctx1,ctx2]
 
+-- | Test if we can get a partial order
+testGetPartialOrder :: IO ()
+testGetPartialOrder = do
+  ptr <- stidExamplePo
+  hs_po_struct <- peek ptr
+  hs_po <- toSteroidPo hs_po_struct
+  print hs_po
+
+-- | Test if we can get and print partial order
+testGetPrintPartialOrder :: IO ()
+testGetPrintPartialOrder = do
+  ptr <- stidExamplePo
+  stidPrintSeqPo ptr 

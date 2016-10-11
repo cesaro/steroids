@@ -65,7 +65,7 @@ void test4 ()
 {
    struct stid_action *a = stid_new_action (STID_WR, 0xFF, 5);
    struct stid_event *c = stid_new_event (a, 1, 3, 1);
-   int r = stid_print_event (c);
+   int r = stid_print_event (c, 1, 1);
    printf ("ret code %d\n", r);
 }
 
@@ -122,89 +122,9 @@ void test7 ()
 
 void test8 ()
 {
-   struct stid_po po;
-   struct da *p0;
-   struct da *p1;
+   struct stid_po *po = stid_example_po ();
 
-   printf ("test8...\n");
-
-   da_init (&po.procs, struct da);
-   da_trunc (&po.procs, 2, struct da); // 2 processes
-
-   // process 1, 4 events
-   p0 = &da_i(&po.procs, 0, struct da);
-   da_init (p0, struct stid_event);
-   da_trunc (p0, 6, struct stid_event);
-
-   // p0, event 0, entry (this is bottom!!)
-   da_i (p0, 0, struct stid_event).act.type = STID_ENTRY;
-   da_i (p0, 0, struct stid_event).act.addr = 0; // irrelevant
-   da_i (p0, 0, struct stid_event).act.val = 0; // irrelevant
-   da_i (p0, 0, struct stid_event).pre_mem.tid = -1; // no pre_memdecessor other than in the thread (this is main!)
-   da_i (p0, 0, struct stid_event).sidx = 0;
-
-   // p0, event 1, create
-   da_i (p0, 1, struct stid_event).act.type = STID_CREATE;
-   da_i (p0, 1, struct stid_event).act.addr = 0; // irrelevant
-   da_i (p0, 1, struct stid_event).act.val = 1; // we create thread 1
-   da_i (p0, 1, struct stid_event).pre_mem.tid = -1;
-   da_i (p0, 1, struct stid_event).sidx = 1;
-
-   // p0, event 2, lock
-   da_i (p0, 2, struct stid_event).act.type = STID_LOCK;
-   da_i (p0, 2, struct stid_event).act.addr = 0xfffff000;
-   da_i (p0, 2, struct stid_event).act.val = 0; // irrelevant
-   da_i (p0, 2, struct stid_event).pre_mem.tid = 1; // pre_mem = thread 1, event 2 (the unlock)
-   da_i (p0, 2, struct stid_event).pre_mem.idx = 2;
-   da_i (p0, 2, struct stid_event).sidx = 5;
-
-   // p0, event 3, unlock
-   da_i (p0, 3, struct stid_event).act.type = STID_UNLOCK;
-   da_i (p0, 3, struct stid_event).act.addr = 0xfffff000;
-   da_i (p0, 3, struct stid_event).act.val = 0; // irrelevant
-   da_i (p0, 3, struct stid_event).pre_mem.tid = 0; // pre_mem (last lock in this process)
-   da_i (p0, 3, struct stid_event).pre_mem.idx = 2;
-   da_i (p0, 3, struct stid_event).sidx = 6;
-
-   // p0, event 4, exit
-   da_i (p0, 4, struct stid_event).act.type = STID_JOIN;
-   da_i (p0, 4, struct stid_event).act.val = 1; // join of thread 1
-   da_i (p0, 4, struct stid_event).pre_mem.tid = 1; // pre_mem = thread one's exit event
-   da_i (p0, 4, struct stid_event).pre_mem.idx = 3;
-   da_i (p0, 4, struct stid_event).sidx = 8;
-
-   // p0, event 5, exit
-   da_i (p0, 5, struct stid_event).act.type = STID_EXIT;
-   da_i (p0, 5, struct stid_event).sidx = 9;
-
-   // process 2, 2 events
-   p1 = &da_i(&po.procs, 1, struct da);
-   da_init (p1, struct stid_event);
-   da_trunc (p1, 4, struct stid_event);
-
-   // p1, event 0, entry
-   da_i (p1, 0, struct stid_event).act.type = STID_ENTRY;
-   da_i (p1, 0, struct stid_event).pre_mem.tid = 0; // pre_mem = thread 0, event 1 (the create)
-   da_i (p1, 0, struct stid_event).pre_mem.idx = 1;
-   da_i (p1, 0, struct stid_event).sidx = 2;
-
-   // p1, event 1, lock
-   da_i (p1, 1, struct stid_event).act.type = STID_LOCK;
-   da_i (p1, 1, struct stid_event).act.addr = 0xffffff00;
-   da_i (p1, 1, struct stid_event).act.val = 0; // irrelevant
-   da_i (p1, 1, struct stid_event).pre_mem.tid = -1; // beginning of this address total order
-   da_i (p1, 1, struct stid_event).sidx = 3;
-
-   // p1, event 2, unlock
-   da_i (p1, 2, struct stid_event).act.type = STID_UNLOCK;
-   da_i (p1, 2, struct stid_event).act.addr = 0xffffff00;
-   da_i (p1, 2, struct stid_event).pre_mem.tid = 1; // pre_mem (last lock in this process)
-   da_i (p1, 2, struct stid_event).pre_mem.idx = 1;
-   da_i (p1, 2, struct stid_event).sidx = 4;
-
-   // p0, event 4, exit
-   da_i (p1, 3, struct stid_event).act.type = STID_EXIT;
-   da_i (p1, 3, struct stid_event).sidx = 7;
+   stid_print_seq_po (po);
 }
 
 int main (int argc, char **argv)
