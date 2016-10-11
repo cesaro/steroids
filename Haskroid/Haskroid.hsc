@@ -83,7 +83,6 @@ toSteroidReplay (SteroidReplayStruct tab_) = do
  - Dynamic Array of Actions 
 -}
 -- | struct stid_action
--- @TODO: Modify the types
 data SteroidAction = SteroidAction 
   { 
     ty   :: CInt  -- int

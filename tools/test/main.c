@@ -124,7 +124,7 @@ void test8 ()
 {
    struct stid_po *po = stid_example_po ();
 
-   stid_print_seq_po (po);
+   stid_print_po (*po);
 }
 
 int main (int argc, char **argv)

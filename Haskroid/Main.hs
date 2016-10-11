@@ -12,10 +12,11 @@ import Foreign.Storable
 import Foreign.Marshal.Alloc
 import Foreign.Marshal.Array
 
+import Haskroid.Hapiroid
 import Haskroid.Haskroid
 import Haskroid.DynArr
 
-main = testGetPartialOrder
+main = testPoset 
 
 test1 :: IO ()
 test1 = do
@@ -134,4 +135,12 @@ testGetPartialOrder = do
 testGetPrintPartialOrder :: IO ()
 testGetPrintPartialOrder = do
   ptr <- stidExamplePo
-  stidPrintSeqPo ptr 
+  stidPrintSeqPo ptr
+
+testPoset :: IO ()
+testPoset = do 
+  ptr <- stidExamplePo
+  hs_po_struct <- peek ptr
+  hs_po <- toSteroidPo hs_po_struct
+  let po = toPoset hs_po 
+  putStrLn $ show_poset_simple po
