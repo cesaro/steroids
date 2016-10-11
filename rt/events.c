@@ -62,7 +62,7 @@ static void _rt_debug_header ()
 
 static void _rt_debug_trace0 (enum eventtype e)
 {
-   printf ("stid: rt: %s", _rt_ev_to_str (e));
+   printf ("stid: rt: %s\n", _rt_ev_to_str (e));
 }
 
 static void _rt_debug_trace1 (enum eventtype e, const void *addr)
@@ -338,6 +338,9 @@ int _rt_main (int argc, const char * const *argv, const char * const *env)
 
    fflush (stdout);
    fflush (stderr);
+
+   // EXIT event for the main thread - should this be called from _rt_end?
+   TRACE0 (THEXIT);
 
 	// exit
    printf ("stid: rt: main: returned %d\n", ret);

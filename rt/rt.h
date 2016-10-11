@@ -42,11 +42,11 @@ void _rt_storeld (long double *addr, long double v);
 
 // memory management
 void _rt_allo (uint8_t *addr, uint32_t size);
-void _rt_mllo (uint8_t *addr, uint64_t size); // malloc & calloc
-void _rt_rllo (uint8_t *old, uint8_t *neww, uint64_t size);
-void _rt_fre  (uint8_t *addr);
 void _rt_call (uint16_t id);
 void _rt_ret  (uint16_t id);
+void _rt_rllo (uint8_t *old, uint8_t *neww, uint64_t size);
+void _rt_mllo (uint8_t *addr, uint64_t size); // malloc & calloc
+void _rt_fre  (uint8_t *addr);
 
 // others
 void _rt_sig  (uint32_t signal);

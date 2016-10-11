@@ -160,6 +160,37 @@ void test_float ()
    printf ("ld %.40Le\n", ld);
 }
 
+void test_mm ()
+{
+   unsigned char *b1;
+   
+   printf ("malloc 128\n");
+   b1 = (unsigned char*) malloc (128);
+   printf ("ret %p\n", b1);
+
+   printf ("free %p\n", b1);
+   free (b1);
+
+   printf ("realloc (0, 256) = malloc\n");
+   b1 = (unsigned char*) realloc (0, 256);
+   printf ("ret %p\n", b1);
+
+   printf ("realloc (%p, 0) = free\n", b1);
+   b1 = (unsigned char*) realloc (b1, 0);
+   printf ("ret %p\n", b1);
+
+   printf ("malloc 4M\n");
+   b1 = (unsigned char*) malloc (4 * 1024 * 1024);
+   printf ("ret %p\n", b1);
+
+   printf ("realloc 256M\n");
+   b1 = (unsigned char*) realloc (b1, 256 * 1024 * 1024);
+   printf ("ret %p\n", b1);
+
+   printf ("free %p\n", b1);
+   free (b1);
+}
+
 int main3 (int argc, char ** argv)
 {
    //char buff[128];
@@ -191,6 +222,7 @@ int main3 (int argc, char ** argv)
    printf ("d2 %le\n", d2);
 
    test_float ();
+   test_mm ();
 
    //f += 2;
    return 333;
