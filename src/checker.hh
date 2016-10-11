@@ -3,8 +3,90 @@
 #define __CHECKER_HH_
 
 #include <memory>
+#include <stdint> // uintxx
 
-class Conf {
+#include "../rt/rt.h"
+
+typedef uint64_t addrt;
+
+class action_streamt;
+class vclockt;
+
+struct actiont
+{
+   int      type;
+   uint64_t addr;
+   uint64_t val;
+};
+
+class action_stream_itt
+{
+public:
+   action_stream_itt (action_streamt &s);
+   bool operator== (const action_stream_itt &other) const;
+   bool operator!= (const action_stream_itt &other) const;
+   action_stream_itt &operator++ ();
+   actiont &operator* ();
+   
+private:
+   action_streamt &s;
+   // pointers
+};
+
+class action_streamt
+{
+public:
+   action_streamt (struct rt *rt);
+
+   action_stream_itt begin ()
+   action_stream_itt end ()
+
+private:
+   struct rt *rt;
+   friend action_stream_itt;
+};
+
+class eventt
+{
+   actiont act;
+   struct
+   {
+      unsigned int tid;
+      unsigned int idx;
+   } pre_mem;
+   unsigned int sidx; // the index in the stream
+   std::vector<actiont> redbox;
+   vclockt clock;
+};
+
+class conft {
+public:
+   conft (action_streamt &s);
+
+   void build (...);
+
+   int num_ths;
+   int num_mutex;
+   
+private:
+
+   bool add_blue_event (); // continue here designing the algorithm for PO construction !!!
+
+   std::vector<std::vector<eventt>> events;
+   std::unordered_map<addrt,eventt*> mutexmax;
+   action_streamt &s;
+};
+
+class vclockt
+{
+public:
+   vclockt (conft &c);
+   vclockt (conft &c, eventt &e);
+   int * tab;
+
+   bool operator== (const vclockt &other) const;
+   bool operator<= (const vclockt &other) const;
+   bool operator>= (const vclockt &other) const;
 };
 
 /* @TODO: Add a CheckerConfig

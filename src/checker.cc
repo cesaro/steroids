@@ -6,9 +6,10 @@
 
 #include "verbosity.h"
 #include "misc.hh"
-#include "checker.hh"
+//#include "checker.hh"
 
 
+#if 0
 void Checker::run ()
 {
    /*
@@ -76,3 +77,4 @@ void Checker::run ()
    DEBUG ("checker: starting checker");
 }
 
+#endif
