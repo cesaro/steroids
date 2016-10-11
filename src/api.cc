@@ -66,4 +66,10 @@ int stid_test ()
    return 0;
 }
 
+int stid_test_checker ()
+{
+   int res = test_checker ();
+   return res;
+}
+
 } // extern "C"

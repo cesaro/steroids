@@ -10,4 +10,6 @@ void test5 ();
 void test6 ();
 void test7 ();
 
+int test_checker ();
+
 #endif

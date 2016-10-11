@@ -95,6 +95,8 @@ int stid_get_poexec (struct stid *s, struct stid_po *po);
 
 int stid_test ();
 
+int stid_test_checker ();
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

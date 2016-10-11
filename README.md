@@ -7,10 +7,10 @@ https://github.com/unsw-corg/PTABen
 
 ## Marcelo's TODO list
 
-- enviar um partial order para haskell
-- manipular os partial orders em haskell
-- ler executions 
+x enviar um partial order para haskell
+x manipular os partial orders em haskell
 - transformar execucoes em partial orders de eventos
+- ler executions 
 
 ## Cesar's TODO list
 

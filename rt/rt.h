@@ -118,7 +118,7 @@ struct rt
 
 	   uint8_t  *evptr;
 	   uint64_t *addrptr;
-      uint16_t *idptr;
+   	   uint16_t *idptr;
 	   uint64_t *valptr;
    } trace;
 

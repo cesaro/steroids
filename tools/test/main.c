@@ -129,7 +129,7 @@ void test8 ()
 
 int main (int argc, char **argv)
 {
-   test8 ();
-   //stid_test ();
+   //test8 ();
+   stid_test_checker ();
    return 0;
 }

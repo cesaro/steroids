@@ -240,3 +240,8 @@ void test4 ()
    }
 }
 
+int test_checker()
+{
+  printf ("test_checker\n");
+  return 0;
+}
