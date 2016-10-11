@@ -158,7 +158,7 @@ int main3 (int argc, char ** argv)
    }
    printf ("xxxxxxxxxxxxxxxxxxxx\n");
 
-   f += 2;
+   //f += 2;
    return 333;
 }
 

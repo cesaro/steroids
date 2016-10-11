@@ -26,7 +26,7 @@ struct stid_action * stid_new_action (int type, uint64_t addr, uint64_t val)
 int stid_print_action (struct stid_action *act)
 {
    if (act == 0) return 1;
-   printf ("action: %p type %d addr %lu val %lu\n", act, act->type, act->addr, act->val);
+   printf ("action: %p type %d addr %#lx val %#lx\n", act, act->type, act->addr, act->val);
    return 0;
 }
 
