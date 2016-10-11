@@ -13,6 +13,7 @@
 long long l = 123; // 8 bytes
 float f = 3.1415;
 double g = 3.14151627;
+long double gg = 333331321.213123;
 char buff[200000];
 
 struct cesar
@@ -143,10 +144,61 @@ int main2 ()
    return 123;
 }
 
+void test_float ()
+{
+   float f; // overrides symbol with same name in global scope
+   double d;
+   long double ld;
+   printf ("test float xxxxxxxxxxxxxxxxxx\n");
+
+   f = 3.14;
+   d = 3.141526;
+   ld = 2.55555555555555555555555555555555l;
+
+   printf ("f %e\n", f);
+   printf ("d %e\n", d);
+   printf ("ld %.40Le\n", ld);
+}
+
+void test_mm ()
+{
+   unsigned char *b1;
+   
+   printf ("malloc 128\n");
+   b1 = (unsigned char*) malloc (128);
+   printf ("ret %p\n", b1);
+
+   printf ("free %p\n", b1);
+   free (b1);
+
+   printf ("realloc (0, 256) = malloc\n");
+   b1 = (unsigned char*) realloc (0, 256);
+   printf ("ret %p\n", b1);
+
+   printf ("realloc (%p, 0) = free\n", b1);
+   b1 = (unsigned char*) realloc (b1, 0);
+   printf ("ret %p\n", b1);
+
+   printf ("malloc 4M\n");
+   b1 = (unsigned char*) malloc (4 * 1024 * 1024);
+   printf ("ret %p\n", b1);
+
+   printf ("realloc 256M\n");
+   b1 = (unsigned char*) realloc (b1, 256 * 1024 * 1024);
+   printf ("ret %p\n", b1);
+
+   printf ("free %p\n", b1);
+   free (b1);
+}
+
 int main3 (int argc, char ** argv)
 {
    //char buff[128];
    int i;
+   uint64_t dest;
+   double d1 = 3.141516;
+   double d2 = 1.3333;
+
 
    printf ("buff %p\n", buff);
    mystrcpy (buff, "cesar");
@@ -157,6 +209,20 @@ int main3 (int argc, char ** argv)
       printf ("argv[%d] %p '%s'\n", i, argv[i], argv[i]);
    }
    printf ("xxxxxxxxxxxxxxxxxxxx\n");
+   printf ("float %zd\n", sizeof (float));
+   printf ("double %zd\n", sizeof (double));
+   printf ("long double %zd\n", sizeof (long double));
+
+   dest = * ((uint64_t*) (void*) &d1);
+   //dest = (uint64_t) d1;
+   d2 = * ((double*) (void*) &dest);
+
+   printf ("d1 %.8f\n", d1);
+   printf ("dest %lu\n", dest);
+   printf ("d2 %le\n", d2);
+
+   test_float ();
+   test_mm ();
 
    //f += 2;
    return 333;
@@ -172,7 +238,7 @@ int main4 ()
    //k = * (int *) i;
 
    // oom for WR operation
-   * (int *) i = 0x8888;
+   * (int *) (size_t) i = 0x8888;
 
    return k;
 }
@@ -182,3 +248,4 @@ int main (int argc, char **argv)
    return main3 (argc, argv);
    //return main4 ();
 }
+
