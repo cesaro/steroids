@@ -41,6 +41,17 @@
       *rt->trace.evptr++   = e; \
       *rt->trace.idptr++   = id;
 
+#define UNITS_UNIT(s) \
+      (s) < 2048 ? "B" : \
+         (s) / 1024 < 1024 ? "K" : \
+            (s) / (1024 * 1024) < 1024 ? "M" : "G"
+
+#define UNITS_SIZE(s) \
+      (s) < 2048 ? (s) : \
+         (s) / 1024 < 1024 ? (s) / 1024 : \
+            (s) / (1024 * 1024) < 1024 ? (s) / (1024 * 1024) : \
+               (s) / (size_t) (1024 * 1024 * 1024)
+
 // this data will be filled by the host when instrumenting the code
 static struct rt * const rt; // stored in the Executor object, in the host
 static const uint64_t memstart;

@@ -23,10 +23,10 @@ uint64_t _rt_get_host_rsp ();
 int main (int argc, char **argv, char **env);
 
 // instrumentation for loads
-void _rt_load8  (uint8_t  *addr, uint8_t  v);
-void _rt_load16 (uint16_t *addr, uint16_t v);
-void _rt_load32 (uint32_t *addr, uint32_t v);
-void _rt_load64 (uint64_t *addr, uint64_t v);
+uint8_t  _rt_load8  (uint8_t  *addr);
+uint16_t _rt_load16 (uint16_t *addr);
+uint32_t _rt_load32 (uint32_t *addr);
+uint64_t _rt_load64 (uint64_t *addr);
 
 // stores
 void _rt_store8  (uint8_t  *addr, uint8_t  v);
@@ -92,25 +92,33 @@ enum eventtype
    _EV_LAST,
 };
 
+struct memreg
+{
+   uint8_t *begin;
+   uint8_t *end;
+   size_t size;
+};
+
 struct rt
 {
-	uint64_t memstart;
-	uint64_t memend;
-	uint64_t memsize;
+   // contains the entire memory region allocated for the guest
+	struct memreg mem;
 
-	uint64_t stackstart;
-	uint64_t stackend;
-	uint64_t stacksize;
+   // subregions inside of "mem"
+	struct memreg data;
+	struct memreg heap;
+	struct memreg stacks;
 
+   // event trace
    struct {
-	   uint8_t  *evstart;
-	   uint8_t  *evend;
+	   struct memreg ev;
+	   struct memreg addr;
+	   struct memreg id;
+	   struct memreg val;
+
 	   uint8_t  *evptr;
-      uint64_t *addrstart;
 	   uint64_t *addrptr;
-      uint16_t *idstart;
       uint16_t *idptr;
-      uint64_t *valstart; // optional
 	   uint64_t *valptr;
    } trace;
 

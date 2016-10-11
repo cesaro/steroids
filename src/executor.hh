@@ -9,6 +9,8 @@
 
 #include "../rt/rt.h"
 
+#define ALIGN16(i) (((uint64_t) (i)) & 0xf ? (((uint64_t) (i)) + 16) & -16ul : (uint64_t) (i))
+
 struct ExecutorConfig
 {
    uint64_t memsize;
@@ -24,14 +26,11 @@ public :
    int exitcode;
 
    Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c);
-
    ~Executor ();
 
-   void initialize ();
    void run ();
 
 private :
-   bool                          initialized;
    struct rt                     rt;
    ExecutorConfig                conf;
    llvm::LLVMContext             &ctx;
@@ -41,6 +40,20 @@ private :
    llvm::Constant *ptr_to_llvm (void *ptr, llvm::Type *t);
    void initialize_and_instrument_rt ();
    void instrument_events ();
+   void malloc_memreg (struct memreg *m, size_t size);
+};
+
+class MyMemoryManager : public llvm::SectionMemoryManager
+{
+public:
+   MyMemoryManager (struct rt &rt) : rt (rt) {}
+
+   uint8_t *allocateDataSection(uintptr_t Size, unsigned Alignment,
+         unsigned SectionID, llvm::StringRef SectionName, bool isReadOnly)
+         override;
+
+private:
+   struct rt &rt;
 };
 
 #endif

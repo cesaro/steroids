@@ -2,21 +2,19 @@
 
 // this file will be #include'd in the main.c file
 
-static const char *_rt_quote (char c)
+static const char *_rt_quote (uint64_t v)
 {
    static char str[5];
 
-   if (c == '\n') return "\\n";
-   if (c == '\0') return "\\0";
-   if (c == '\r') return "\\r";
-   if (c == '\t') return "\\t";
-   if (isprint (c))
-   {
-      str[0] = c;
-      str[1] = 0;
-      return str;
-   }
-   sprintf (str, "\\x%02x", c);
+   if (v >= 256) return "";
+   if (v == '\n') return "\\n";
+   if (v == '\0') return "\\0";
+   if (v == '\r') return "\\r";
+   if (v == '\t') return "\\t";
+   if (! isprint (v)) return "";
+
+   str[0] = v;
+   str[1] = 0;
    return str;
 }
 
@@ -65,21 +63,21 @@ static void _rt_debug_trace0 (enum eventtype e)
    printf ("stid: rt: %s", _rt_ev_to_str (e));
 }
 
-static void _rt_debug_trace1 (enum eventtype e, void *addr)
+static void _rt_debug_trace1 (enum eventtype e, const void *addr)
 {
    printf ("stid: rt: %s %16p\n",
          _rt_ev_to_str (e), addr);
 }
 
-static void _rt_debug_trace2 (enum eventtype e, void *addr, uint64_t v)
+static void _rt_debug_trace2 (enum eventtype e, const void *addr, uint64_t v)
 {
-   printf ("stid: rt: %s %16p %16lx %s\n",
+   printf ("stid: rt: %s %16p %#16lx %s\n",
          _rt_ev_to_str (e), addr, v, _rt_quote (v));
 }
 
 static void _rt_debug_trace3 (enum eventtype e, uint16_t v)
 {
-   printf ("stid: rt: %s                  %16x %s\n",
+   printf ("stid: rt: %s                  %#16x %s\n",
          _rt_ev_to_str (e), v, _rt_quote (v));
 }
 
@@ -88,6 +86,7 @@ static inline void _rt_check_limits_addr (const void *ptr, enum eventtype e)
    // if the memory access is offlimits, we finish execution
    if ((uint64_t) ptr < memstart || (uint64_t) ptr >= memend)
    {
+      TRACE1 (e, ptr); // temporary solution to se RD OOMs
       printf ("stid: rt: out-of-memory access: event %d addr %p\n", e, ptr);
       _rt_end (255);
    }
@@ -100,31 +99,43 @@ static inline void _rt_check_trace_capacity ()
    if ((uint64_t) rt->trace.evptr == evend) _rt_end (255);
 }
 
-// memory loads
+// memory loads - FIXME, later on we should make RD into TRACE1
 //
-void _rt_load8 (uint8_t *addr, uint8_t v)
+uint8_t  _rt_load8  (uint8_t  *addr)
 {
-   TRACE2 (RD8, addr, v);
+   uint8_t v;
    _rt_check_limits_addr ((void*) addr, RD8);
+   v = *addr;
+   TRACE2 (RD8, addr, v);
    _rt_check_trace_capacity ();
+   return v;
 }
-void _rt_load16 (uint16_t *addr, uint16_t v)
+uint16_t _rt_load16 (uint16_t *addr)
 {
-   TRACE2 (RD16, addr, v);
+   uint16_t v;
    _rt_check_limits_addr ((void*) addr, RD16);
+   v = *addr;
+   TRACE2 (RD16, addr, v);
    _rt_check_trace_capacity ();
+   return v;
 }
-void _rt_load32 (uint32_t *addr, uint32_t v)
+uint32_t _rt_load32 (uint32_t *addr)
 {
-   TRACE2 (RD32, addr, v);
+   uint32_t v;
    _rt_check_limits_addr ((void*) addr, RD32);
+   v = *addr;
+   TRACE2 (RD32, addr, v);
    _rt_check_trace_capacity ();
+   return v;
 }
-void _rt_load64 (uint64_t *addr, uint64_t v)
+uint64_t _rt_load64 (uint64_t *addr)
 {
-   TRACE2 (RD64, addr, v);
+   uint64_t v;
    _rt_check_limits_addr ((void*) addr, RD64);
+   v = *addr;
+   TRACE2 (RD64, addr, v);
    _rt_check_trace_capacity ();
+   return v;
 }
 
 // memory stores
@@ -187,31 +198,46 @@ void _rt_exit ()
    TRACE0 (THEXIT);
 }
 
+void _rt_memreg_print (struct memreg *m, const char *prefix, const char *suffix)
+{
+   printf ("%s%p - %p, %4zu%s%s",
+      prefix,
+      m->begin,
+      m->end,
+      UNITS_SIZE (m->size),
+      UNITS_UNIT (m->size),
+      suffix);
+}
+
 int _rt_main (int argc, const char * const *argv, const char * const *env)
 {
    int ret;
 	int i, n;
 	const char * const *v;
-   uint64_t s;
 
    // assert that global const variables equal corresponding ones in the rt
    // structure
-   ASSERT (rt->memstart == memstart);
-   ASSERT (rt->memend == memend);
-   ASSERT (rt->memsize == (memend - memstart));
-   ASSERT ((uint64_t) rt->trace.evend == evend); // xxxxxxxxxxxxxx
-   ASSERT (rt->trace.evptr == rt->trace.evstart);
+   ASSERT ((uint64_t) rt->mem.begin == memstart);
+   ASSERT ((uint64_t) rt->mem.end == memend);
+   ASSERT (rt->mem.size == (memend - memstart));
+   ASSERT ((uint64_t) rt->trace.ev.end == evend); // xxxxxxxxxxxxxx
+   ASSERT ((void *) rt->trace.evptr == rt->trace.ev.begin);
+   ASSERT ((void *) rt->trace.addrptr == rt->trace.addr.begin);
+   ASSERT ((void *) rt->trace.idptr == rt->trace.id.begin);
+   ASSERT ((void *) rt->trace.valptr == rt->trace.val.begin);
 
    printf ("stid: rt: main: I feel fantastic... I feel the PUMP!\n");
-   printf ("stid: rt: main: memstart %p\n", (void*) memstart);
-   printf ("stid: rt: main: memend   %p\n", (void*) memend);
-   s = memend - memstart;
-   printf ("stid: rt: main: %luB (%luM)\n", s, s / (1024 * 1024));
-   printf ("stid: rt: main: rt->trace.evstart %p\n", (void*) rt->trace.evstart);
-   printf ("stid: rt: main: rt->trace.evptr   %p\n", (void*) rt->trace.evptr);
-   printf ("stid: rt: main: rt->trace.evend   %p\n", (void*) rt->trace.evend);
-   s = rt->trace.evend - rt->trace.evstart;
-   printf ("stid: rt: main: %lu ev (%lu Mev)\n", s, s / (1024 * 1024));
+   printf ("stid: rt: main: guest's address space:\n");
+   _rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
+   _rt_memreg_print (&rt->data, "stid: rt: main:  ", ", data (.data, .bss, .rodata, and others)\n");
+   _rt_memreg_print (&rt->heap, "stid: rt: main:  ", ", heap\n");
+   _rt_memreg_print (&rt->stacks, "stid: rt: main:  ", ", stacks\n");
+   printf ("stid: rt: main: event trace buffer:\n");
+   _rt_memreg_print (&rt->trace.ev, "stid: rt: main:  ", ", event trace (8bit event ids)\n");
+   _rt_memreg_print (&rt->trace.addr, "stid: rt: main:  ", ", event trace (64bit addr)\n");
+   _rt_memreg_print (&rt->trace.val, "stid: rt: main:  ", ", event trace (64bit val)\n");
+   _rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
+   printf ("stid: rt: main: ======================\n");
 
    // initialize the heap
    _rt_mm_init ();

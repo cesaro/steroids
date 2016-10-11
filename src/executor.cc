@@ -8,9 +8,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/InstIterator.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Support/SourceMgr.h"
@@ -24,220 +22,27 @@
 #include "verbosity.h"
 #include "misc.hh"
 #include "../rt/rt.h"
+#include "instrumenter.hh"
 #include "executor.hh"
 
-class Instrumenter : public llvm::InstVisitor<Instrumenter>
+uint8_t *MyMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment,
+         unsigned SectionID, llvm::StringRef SectionName, bool isReadOnly)
 {
-   llvm::LLVMContext *ctx;
-   llvm::Module   *m;
-   llvm::Function *ld8;
-   llvm::Function *ld16;
-   llvm::Function *ld32;
-   llvm::Function *ld64;
-   llvm::Function *st8;
-   llvm::Function *st16;
-   llvm::Function *st32;
-   llvm::Function *st64;
-   llvm::Function *allo;
-   llvm::Function *mllo;
-   llvm::Function *rllo;
-   llvm::Function *free;
-   llvm::Function *call;
-   llvm::Function *ret;
-   size_t count;
+   uint8_t *ptr;
 
-public:
+   ptr = (uint8_t *) ALIGN16 ((uint64_t) rt.data.end);
+   rt.data.end = ptr + Size;
+   rt.data.size = rt.data.end - rt.data.begin;
 
-   bool find_rt ()
-   {
-      ld8  = m->getFunction ("_rt_load8");
-      ld16 = m->getFunction ("_rt_load16");
-      ld32 = m->getFunction ("_rt_load32");
-      ld64 = m->getFunction ("_rt_load64");
+   //ptr = llvm::SectionMemoryManager::allocateDataSection (Size, Alignment, SectionID, SectionName, isReadOnly);
 
-      st8  = m->getFunction ("_rt_store8");
-      st16 = m->getFunction ("_rt_store16");
-      st32 = m->getFunction ("_rt_store32");
-      st64 = m->getFunction ("_rt_store64");
-
-      allo = m->getFunction ("_rt_allo");
-      mllo = m->getFunction ("_rt_mllo");
-      rllo = m->getFunction ("_rt_rllo");
-      free = m->getFunction ("_rt_fre");
-      call = m->getFunction ("_rt_call");
-      ret  = m->getFunction ("_rt_ret");
-
-      return ld32 != nullptr and st32 != nullptr; // for instance
-   }
-
-   bool is_rt_fun (llvm::Function *f)
-   {
-      return
-            f->getName().startswith ("_rt_") or
-            f->getName().equals ("free") or
-            f->getName().equals ("malloc") or
-            f->getName().equals ("realloc") or
-            f->getName().equals ("calloc");
-   }
-
-   bool instrument (llvm::Module &m)
-   {
-      this->m = &m;
-      ctx = &m.getContext ();
-      if (not find_rt ()) return false;
-
-      // improve this, the Instrument class will receive the list of functions
-      // that it needs to instrument
-
-      for (auto &f : m)
-      {
-         if (is_rt_fun (&f) or f.isDeclaration ()) continue;
-
-         llvm::outs() << "stid: instrumenting function '" << f.getName() << "'\n";
-         count = 0;
-         visit (f);
-         llvm::outs() << "stid: done, " << count << " instructions instrumented.\n";
-
-         for (auto i : f.users())
-         {
-            llvm::outs() << "stid:  used: " << *i << "\n";
-         }
-      }
-
-      // check that we didn't do anything stupid
-      llvm::verifyModule (m, &llvm::outs());
-
-      return true;
-   }
-
-   void visitLoadInst (llvm::LoadInst &i)
-   {
-      llvm::IRBuilder<> b (i.getNextNode ()); // we instrument AFTER the load instruction
-      llvm::Value *addr;
-      llvm::Value *v;
-      llvm::Type *t;
-      llvm::Function *f;
-
-      //static int count = 0;
-      //count++;
-      //if (count >= 3) return;
-      //llvm::outs() << "stid: " << i << "\n";
-
-      // if we are tring to load a pointer, make a bitcast to uint64_t
-      addr = i.getPointerOperand ();
-      v = &i;
-      if (i.getType()->isPointerTy())
-      {
-         // t = i64*, address is bitcasted to type t
-         t = llvm::Type::getInt64PtrTy (*ctx, addr->getType()->getPointerAddressSpace());
-         addr = b.CreateBitCast (addr, t, "imnt");
-         // lodaded value is converted to i64
-         v = b.CreatePtrToInt (&i, b.getInt64Ty(), "imnt");
-      }
-
-      // check if we support the bitwith
-      // use isSized() + queries to the DataLayaout system to generalize this
-      if (not v->getType()->isIntegerTy())
-         throw std::runtime_error ("Instrumentation: load: non-integer type");
-      switch (v->getType()->getIntegerBitWidth ())
-      {
-      case 8 : f = ld8; break;
-      case 16 : f = ld16; break;
-      case 32 : f = ld32; break;
-      case 64 : f = ld64; break;
-      default :
-         throw std::runtime_error ("Instrumentation: load: cannot handle bitwith");
-      }
-
-      // instruction to call to the runtime
-      b.CreateCall (f, {addr, v});
-      count++;
-   }
-
-   void visitStoreInst (llvm::StoreInst &i)
-   {
-      llvm::IRBuilder<> b (&i); // we instrument BEFORE the store instruction
-      llvm::Value *addr;
-      llvm::Value *v;
-      llvm::Type *t;
-      llvm::Function *f;
-
-      //static int count = 0;
-      //count++;
-      //if (count >= 3) return;
-      llvm::outs() << "stid: " << i << "\n";
-
-      // if we are tring to store a pointer, make a bitcast to uint64_t
-      v = i.getValueOperand ();
-      addr = i.getPointerOperand ();
-      if (v->getType()->isPointerTy())
-      {
-         // t = i64*, address is bitcasted to type t
-         t = llvm::Type::getInt64PtrTy (*ctx, addr->getType()->getPointerAddressSpace());
-         addr = b.CreateBitCast (addr, t, "imnt");
-         // lodaded value is converted to i64
-         v = b.CreatePtrToInt (v, b.getInt64Ty(), "imnt");
-      }
-
-      // check if we support the bitwith
-      if (not v->getType()->isIntegerTy())
-         throw std::runtime_error ("Instrumentation: store: non-integer type");
-      switch (v->getType()->getIntegerBitWidth ())
-      {
-      case 8 : f = st8; break;
-      case 16 : f = st16; break;
-      case 32 : f = st32; break;
-      case 64 : f = st64; break;
-      default :
-         throw std::runtime_error ("Instrumentation: store: cannot handle bitwith");
-      }
-
-      // instruction to call to the runtime
-      b.CreateCall (f, {addr, v});
-      count++;
-   }
-
-   void visitAllocaInst (llvm::AllocaInst &i)
-   {
-      llvm::IRBuilder<> b (i.getNextNode ());
-      llvm::Value *addr;
-      llvm::Value *size;
-      uint32_t ts;
-
-      //static int count = 0;
-      //count++;
-      //if (count >= 3) return;
-      //llvm::outs() << "stid: " << i << "\n";
-
-      // get the target size of the allocated type (truncate to 32 bits)
-      ts = m->getDataLayout().getTypeStoreSize (i.getAllocatedType());
-      // s = m->getDataLayout().getTypeAllocSize (i.getAllocatedType()); // exclude pad space
-      
-      // multiply type size times number of elements in the array, in 32bits
-      size = b.CreateMul (b.getInt32 (ts),
-            b.CreateZExtOrTrunc (i.getArraySize(), b.getInt32Ty(), "imnt"), "imnt");
-      addr = b.CreateBitCast (&i, b.getInt8PtrTy(), "imnt"); // address space ?
-      b.CreateCall (allo, {addr, size});
-      count++;
-   }
-
-   void visitReturnInst (llvm::ReturnInst &i)
-   {
-      static uint32_t retid = 0;
-      llvm::IRBuilder<> b (&i);
-
-      llvm::outs() << "stid: " << i << "\n";
-
-      b.CreateCall (ret, b.getInt16 (retid++));
-      count++;
-   }
-
-   // visit(M) in parent class should never be called ;)
-   void visitModule (llvm::Module &m) { ASSERT (0); }
-};
+   DEBUG ("stid: allocate object section: ptr %16p size %6zd align %d secid %d ro %d secname '%s'",
+         ptr,
+         Size, Alignment, SectionID, isReadOnly, SectionName.str().c_str());
+   return ptr;
+}
 
 Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
-   initialized (false),
    conf (c),
    ctx (mod->getContext ()),
    m (mod.get()),
@@ -247,16 +52,21 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    llvm::EngineBuilder eb (std::move(mod));
 
    // make sure we can safely destroy the object
-   rt.memstart = 0;
-   rt.trace.evstart = 0;
-   rt.trace.addrstart = 0;
-   rt.trace.idstart = 0;
-   rt.trace.valstart = 0;
+   rt.mem.begin = 0;
+   rt.trace.ev.begin = 0;
+   rt.trace.addr.begin = 0;
+   rt.trace.id.begin = 0;
+   rt.trace.val.begin = 0;
 
-   // create a JIT execution engine
+   // create a memory manager for the JIT engine (the builder owns the object)
+   std::unique_ptr<llvm::RTDyldMemoryManager> mm (new MyMemoryManager (rt));
+
+   // create a JIT execution engine, using the (new) MCJIT engine
    eb.setErrorStr (&errors);
    eb.setOptLevel (llvm::CodeGenOpt::Level::Aggressive);
-   eb.setMCJITMemoryManager(llvm::make_unique<llvm::SectionMemoryManager>());
+   eb.setVerifyModules (true);
+   //eb.setMCJITMemoryManager(llvm::make_unique<llvm::SectionMemoryManager>());
+   eb.setMCJITMemoryManager(std::move (mm));
    ee = eb.create();
    if (! ee)
    {
@@ -266,68 +76,78 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
 
    // tell the module the way the target lays out data structures
    m->setDataLayout (*ee->getDataLayout());
+
+   // initialize guest memory area and instrument the llvm module
+   initialize_and_instrument_rt ();
+   instrument_events ();
 }
 
 Executor::~Executor ()
 {
-   free ((void*) rt.memstart);
-   free ((void*) rt.trace.evstart);
-   free ((void*) rt.trace.addrstart);
-   free ((void*) rt.trace.idstart);
-   free ((void*) rt.trace.valstart);
+   // delete first the execution engine, which will still do things in the JITed
+   // code held in guest memory
    delete ee;
+   free (rt.mem.begin);
+   free (rt.trace.ev.begin);
+   free (rt.trace.addr.begin);
+   free (rt.trace.id.begin);
+   free (rt.trace.val.begin);
 }
 
-void Executor::initialize ()
+void Executor::malloc_memreg (struct memreg *m, size_t size)
 {
-   if (initialized) return;
-   initialize_and_instrument_rt ();
-   instrument_events ();
-   initialized = true;
+   m->size = size;
+   m->begin = (uint8_t *) malloc (size);
+   m->end = m->begin + m->size;
 }
 
 void Executor::initialize_and_instrument_rt ()
 {
    // allocate the memory space for the guest code (heap + stacks)
-   rt.memsize = conf.memsize;
-   rt.memstart = (uint64_t) malloc (conf.memsize);
-   if (rt.memstart == 0)
+   malloc_memreg (&rt.mem, conf.memsize);
+   if (rt.mem.begin == 0)
       throw std::runtime_error ("malloc: cannot prepare memory for code execution");
-   rt.memend = rt.memstart + rt.memsize;
 
    // the stacks should fit into the main memory
    ASSERT (conf.stacksize < conf.memsize);
    // stacks are located at the end of the memory
-   rt.stacksize = conf.stacksize;
-   rt.stackend = rt.memend;
-   rt.stackstart = rt.stackend - rt.stacksize;
+   rt.stacks.size = conf.stacksize;
+   rt.stacks.end = rt.mem.end;
+   rt.stacks.begin = rt.stacks.end - rt.stacks.size;
 
-   // allocate memory for the event trace
+   // the data segment will be initialized when the JIT engine calls our
+   // MyMemoryManager, which in turn grows this section to place the .data,
+   // .bss, .rodata, etc. sections here
+   rt.data.begin = rt.mem.begin;
+   rt.data.end = rt.mem.begin;
+   rt.data.size = 0;
+
+   // allocate memory for the event stream, ids (uint8_t)
    ASSERT (_EV_LAST < 256);
-   rt.trace.evstart = (uint8_t *) malloc (conf.tracesize);
-   if (rt.trace.evstart == 0)
+   malloc_memreg (&rt.trace.ev, conf.tracesize);
+   rt.trace.evptr = rt.trace.ev.begin;
+   if (rt.trace.ev.begin == 0)
       throw std::runtime_error ("malloc: cannot allocate memory for log trace");
-   rt.trace.evend = rt.trace.evstart + conf.tracesize;
-   rt.trace.evptr = rt.trace.evstart;
 
    // addr operands
-   rt.trace.addrstart = (uint64_t *) malloc (conf.tracesize * sizeof (uint64_t));
-   if (rt.trace.addrstart == 0)
+   malloc_memreg (&rt.trace.addr, conf.tracesize * sizeof (uint64_t));
+   rt.trace.addrptr = (uint64_t *) rt.trace.addr.begin;
+   if (rt.trace.addr.begin == 0)
       throw std::runtime_error ("malloc: cannot allocate memory for log trace");
-   rt.trace.addrptr = rt.trace.addrstart;
 
    // id operands
-   rt.trace.idstart = (uint16_t *) malloc (conf.tracesize * sizeof (uint16_t));
-   if (rt.trace.idstart == 0)
+   malloc_memreg (&rt.trace.id, conf.tracesize * sizeof (uint16_t));
+   rt.trace.idptr = (uint16_t *) rt.trace.id.begin;
+   if (rt.trace.id.begin == 0)
       throw std::runtime_error ("malloc: cannot allocate memory for log trace");
-   rt.trace.idptr = rt.trace.idstart;
 
    // val operands
-   rt.trace.valstart = (uint64_t *) malloc (conf.tracesize * sizeof (uint64_t));
-   if (rt.trace.valstart == 0)
+   malloc_memreg (&rt.trace.val, conf.tracesize * sizeof (uint64_t));
+   rt.trace.valptr = (uint64_t *) rt.trace.val.begin;
+   if (rt.trace.val.begin == 0)
       throw std::runtime_error ("malloc: cannot allocate memory for log trace");
-   rt.trace.valptr = rt.trace.valstart;
 
+   // function _rt_start will save here the hosts's stack pointer
    rt.host_rsp = 0;
 
    // instrument the module to use this->rt as state
@@ -342,9 +162,9 @@ void Executor::initialize_and_instrument_rt ()
 
    // similarly for the other const global variables
    std::vector<std::pair<const char*, uint64_t>> pairs =
-      { std::make_pair ("memstart", rt.memstart),
-        std::make_pair ("memend", rt.memend),
-        std::make_pair ("evend", (uint64_t) rt.trace.evend) };
+      { std::make_pair ("memstart", (uint64_t) rt.mem.begin),
+        std::make_pair ("memend", (uint64_t) rt.mem.end),
+        std::make_pair ("evend", (uint64_t) rt.trace.ev.end) };
    for (auto &p : pairs)
    {
       g = m->getGlobalVariable (p.first, true);
@@ -353,12 +173,6 @@ void Executor::initialize_and_instrument_rt ()
             (llvm::Type::getInt64Ty (ctx), p.second));
       llvm::outs() << "- " << *g << "\n";
    }
-
-   // print debug info
-   DEBUG ("stid: rt       %16p", &rt);
-   DEBUG ("stid: memstart %16p", rt.memstart);
-   DEBUG ("stid: memend   %16p", rt.memend);
-   DEBUG ("stid: evmend   %16p", rt.trace.evend);
 }
 
 void Executor::instrument_events ()
@@ -387,6 +201,17 @@ void Executor::run ()
    entry = (int (*) (int, const char* const*, const char* const*)) ptr;
    ASSERT (ptr);
 
+   // allocation of the data segments takes place in finalizeObject(), so we
+   // need to now correct (define) the heap memory region in rt
+   rt.heap.begin = (uint8_t *) ALIGN16 (rt.data.end);
+   rt.heap.end = rt.stacks.begin;
+   rt.heap.size = rt.heap.end - rt.heap.begin;
+
+   //DEBUG ("stid: rt       %16p", &rt);
+   //DEBUG ("stid: memstart %16p", rt.mem.begin);
+   //DEBUG ("stid: memend   %16p", rt.mem.end);
+   //DEBUG ("stid: evmend   %16p", rt.trace.ev.end);
+
    // run the user program!!
    DEBUG ("stid: starting guest execution");
    DEBUG ("stid: ==========================================================");
@@ -406,3 +231,4 @@ llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)
    c = llvm::ConstantExpr::getIntToPtr (c, t->getPointerTo (0));
    return c;
 }
+

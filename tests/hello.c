@@ -8,9 +8,12 @@
 #include <inttypes.h>
 #include <ctype.h>
 
-uint16_t g = 123;
-long long l = 123;
-char buff[128];
+#if 0
+#endif
+long long l = 123; // 8 bytes
+float f = 3.1415;
+double g = 3.14151627;
+char buff[200000];
 
 struct cesar
 {
@@ -41,7 +44,7 @@ void test1 (int argc, char ** argv)
 {
    int x, i, j;
    unsigned char * ptr;
-   printf ("test1: argc %d\n", argc);
+   printf ("test1: argc %d argv %p\n", argc, argv);
 
    x = argc;
    j = 0;
@@ -68,7 +71,8 @@ void test2 ()
 
 int main1 (int argc, char **argv)
 {
-   int x;
+   char buff[128];
+   int x = 12;
    //x -= x; // undefined behaviour !
    printf ("xxxxxxxx %d xxxxxxxxx %p xxxxxxxx\n", x, &x);
    //return 123;
@@ -98,9 +102,9 @@ int main1 (int argc, char **argv)
    printf ("argv %p\n", argv);
    printf ("buff %p\n", buff);
    printf ("i %d &i %p\n", i, &i);
-   for (i = 0; i < argc; ++i)
+   for (x = 0; x < argc; ++x)
    {
-      printf ("argv[%d] %p '%s'\n", i, argv[i], argv[i]);
+      printf ("argv[%d] %p '%s'\n", x, argv[x], argv[x]);
    }
 
    printf ("malloc(4) %p\n", malloc (4));
@@ -120,21 +124,61 @@ int main1 (int argc, char **argv)
    return argc + mystrlen (ptr);
 }
 
-int main2 (int argc, char **argv)
+int main2 ()
 {
    int i;
-   strcpy (buff, "hello world, this is a test!!");
+   //int i = (int) l;
+   char buff[256];
+
+   printf ("before strcpy\n");
+   mystrcpy (buff, "hello world, this is a test!!");
+   printf ("after strcpy\n");
    printf ("buff %p\n", buff);
+   return 111;
    for (i = 0; i < 128; i++)
    {
       printf ("i %d buff[i] %0x %c\n",
             i, buff[i], isalpha (buff[i]) ? buff[i] : '.');
    }
-   
    return 123;
+}
+
+int main3 (int argc, char ** argv)
+{
+   //char buff[128];
+   int i;
+
+   printf ("buff %p\n", buff);
+   mystrcpy (buff, "cesar");
+   printf ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx '%s'\n", buff);
+
+   for (i = 0; i < argc; ++i)
+   {
+      printf ("argv[%d] %p '%s'\n", i, argv[i], argv[i]);
+   }
+   printf ("xxxxxxxxxxxxxxxxxxxx\n");
+
+   f += 2;
+   return 333;
+}
+
+int main4 ()
+{
+   int i = 0x20;
+   int j = 0x33;
+   int k = i + j;
+
+   // oom for RD operation
+   //k = * (int *) i;
+
+   // oom for WR operation
+   * (int *) i = 0x8888;
+
+   return k;
 }
 
 int main (int argc, char **argv)
 {
-   return main2 (argc, argv);
+   return main3 (argc, argv);
+   //return main4 ();
 }
