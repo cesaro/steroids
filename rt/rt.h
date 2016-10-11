@@ -27,12 +27,18 @@ uint8_t  _rt_load8  (uint8_t  *addr);
 uint16_t _rt_load16 (uint16_t *addr);
 uint32_t _rt_load32 (uint32_t *addr);
 uint64_t _rt_load64 (uint64_t *addr);
+float    _rt_loadf  (float *addr);
+double   _rt_loadd  (double *addr);
+long double _rt_loadld (long double *addr);
 
 // stores
 void _rt_store8  (uint8_t  *addr, uint8_t  v);
 void _rt_store16 (uint16_t *addr, uint16_t v);
 void _rt_store32 (uint32_t *addr, uint32_t v);
 void _rt_store64 (uint64_t *addr, uint64_t v);
+void _rt_storef  (float *addr, float v);
+void _rt_stored  (double *addr, double v);
+void _rt_storeld (long double *addr, long double v);
 
 // memory management
 void _rt_allo (uint8_t *addr, uint32_t size);
@@ -68,11 +74,13 @@ enum eventtype
    RD16,
    RD32,
    RD64,
+   RD128,
    // stores
    WR8,
    WR16,
    WR32,
    WR64,
+   WR128,
    // memory management
    ALLO,
    MLLO,

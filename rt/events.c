@@ -27,11 +27,13 @@ static const char *_rt_ev_to_str (enum eventtype e)
    case RD16      : return "RD16   ";
    case RD32      : return "RD32   ";
    case RD64      : return "RD64   ";
+   case RD128     : return "RD128  ";
    // stores
    case WR8       : return "WR8    ";
    case WR16      : return "WR16   ";
    case WR32      : return "WR32   ";
    case WR64      : return "WR64   ";
+   case WR128     : return "WR128  ";
    // memory management
    case ALLO      : return "ALLO   ";
    case MLLO      : return "MLLO   ";
@@ -54,8 +56,8 @@ static const char *_rt_ev_to_str (enum eventtype e)
 
 static void _rt_debug_header ()
 {
-   printf ("stid: rt: what                addr            value comments\n");
-   printf ("stid: rt: ======= ================ ================ ======================\n");
+   printf ("stid: rt: what                  addr              value comments\n");
+   printf ("stid: rt: ======= ================== ================== ======================\n");
 }
 
 static void _rt_debug_trace0 (enum eventtype e)
@@ -65,20 +67,26 @@ static void _rt_debug_trace0 (enum eventtype e)
 
 static void _rt_debug_trace1 (enum eventtype e, const void *addr)
 {
-   printf ("stid: rt: %s %16p\n",
+   printf ("stid: rt: %s %18p\n",
          _rt_ev_to_str (e), addr);
 }
 
 static void _rt_debug_trace2 (enum eventtype e, const void *addr, uint64_t v)
 {
-   printf ("stid: rt: %s %16p %#16lx %s\n",
+   printf ("stid: rt: %s %18p %#18lx %s\n",
          _rt_ev_to_str (e), addr, v, _rt_quote (v));
 }
 
 static void _rt_debug_trace3 (enum eventtype e, uint16_t v)
 {
-   printf ("stid: rt: %s                  %#16x %s\n",
+   printf ("stid: rt: %s                    %#18x %s\n",
          _rt_ev_to_str (e), v, _rt_quote (v));
+}
+static void _rt_debug_trace128 (enum eventtype e, const void *addr, long double v)
+{
+   
+   printf ("stid: rt: %s %18p       [2 x 64bits] %.20Le\n",
+         _rt_ev_to_str (e), addr, v);
 }
 
 static inline void _rt_check_limits_addr (const void *ptr, enum eventtype e)
@@ -137,6 +145,36 @@ uint64_t _rt_load64 (uint64_t *addr)
    _rt_check_trace_capacity ();
    return v;
 }
+float    _rt_loadf  (float *addr)
+{
+   float v;
+   ASSERT (sizeof (float) == 4)
+   _rt_check_limits_addr ((void*) addr, RD32);
+   v = *addr;
+   TRACE2 (RD32, addr, * (uint32_t*) (void*) &v);
+   _rt_check_trace_capacity ();
+   return v;
+}
+double   _rt_loadd  (double *addr)
+{
+   double v;
+   ASSERT (sizeof (double) == 8)
+   _rt_check_limits_addr ((void*) addr, RD64);
+   v = *addr;
+   TRACE2 (RD64, addr, * (uint64_t*) (void*) &v);
+   _rt_check_trace_capacity ();
+   return v;
+}
+long double _rt_loadld (long double *addr)
+{
+   long double v;
+   ASSERT (sizeof (long double) == 16)
+   _rt_check_limits_addr ((void*) addr, RD128);
+   v = *addr;
+   TRACE128 (RD128, addr, v); // event, address, 2 x val
+   _rt_check_trace_capacity ();
+   return v;
+}
 
 // memory stores
 //
@@ -162,6 +200,26 @@ void _rt_store64 (uint64_t *addr, uint64_t v)
 {
    TRACE2 (WR64, addr, v);
    _rt_check_limits_addr ((void*) addr, WR64);
+   _rt_check_trace_capacity ();
+}
+void _rt_storef  (float *addr, float v)
+{
+   uint32_t vv = * ((uint32_t*) (void*) &v);
+   TRACE2 (WR32, addr, vv);
+   _rt_check_limits_addr ((void*) addr, WR32);
+   _rt_check_trace_capacity ();
+}
+void _rt_stored  (double *addr, double v)
+{
+   uint64_t vv = * ((uint64_t*) (void*) &v);
+   TRACE2 (WR64, addr, vv);
+   _rt_check_limits_addr ((void*) addr, WR64);
+   _rt_check_trace_capacity ();
+}
+void _rt_storeld (long double *addr, long double v)
+{
+   TRACE128 (WR128, addr, v); // event, address, 2 x val
+   _rt_check_limits_addr ((void*) addr, WR128);
    _rt_check_trace_capacity ();
 }
 
@@ -225,6 +283,11 @@ int _rt_main (int argc, const char * const *argv, const char * const *env)
    ASSERT ((void *) rt->trace.addrptr == rt->trace.addr.begin);
    ASSERT ((void *) rt->trace.idptr == rt->trace.id.begin);
    ASSERT ((void *) rt->trace.valptr == rt->trace.val.begin);
+
+   // assert here that we did correct assumptions in _rt_{load,store}{f,d,ld}
+   ASSERT (sizeof (float) == 4)
+   ASSERT (sizeof (double) == 8)
+   ASSERT (sizeof (long double) == 16)
 
    printf ("stid: rt: main: I feel fantastic... I feel the PUMP!\n");
    printf ("stid: rt: main: guest's address space:\n");

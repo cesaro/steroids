@@ -40,6 +40,12 @@
       _rt_debug_trace3 (e, id); \
       *rt->trace.evptr++   = e; \
       *rt->trace.idptr++   = id;
+#define TRACE128(e,addr,val) \
+      _rt_debug_trace128 (e, addr, val); \
+      *rt->trace.evptr++   = e; \
+      *rt->trace.addrptr++ = (uint64_t) addr; \
+      memcpy (rt->trace.valptr, &(val), 16); \
+      rt->trace.valptr += 2;
 
 #define UNITS_UNIT(s) \
       (s) < 2048 ? "B" : \

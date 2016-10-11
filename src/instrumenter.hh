@@ -24,14 +24,23 @@ public:
 private:
    llvm::LLVMContext *ctx;
    llvm::Module   *m;
+
    llvm::Function *ld8;
    llvm::Function *ld16;
    llvm::Function *ld32;
    llvm::Function *ld64;
+   llvm::Function *ldf;
+   llvm::Function *ldd;
+   llvm::Function *ldld;
+
    llvm::Function *st8;
    llvm::Function *st16;
    llvm::Function *st32;
    llvm::Function *st64;
+   llvm::Function *stf;
+   llvm::Function *std;
+   llvm::Function *stld;
+
    llvm::Function *allo;
    llvm::Function *mllo;
    llvm::Function *rllo;
