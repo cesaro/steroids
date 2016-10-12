@@ -135,9 +135,9 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
       trace.valptr += 2;
       break;
 
-   // free: 1 argument: a value
+   // free: 1 argument: an address
    case _FREE:
-      trace.valptr++;
+      trace.addrptr++;
       break;
 
    // call, ret, context switch: 1 argument, an id

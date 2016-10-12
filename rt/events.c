@@ -192,7 +192,7 @@ void _rt_storeld (long double *addr, long double v)
 // for heap allocation (malloc/free) this is done directly in mm.c
 void _rt_allo (uint8_t *addr, uint32_t size)
 {
-   _rt_debug_trace2 (_ALLO, addr, size);
+   TRACE2 (_ALLO, addr, size);
 }
 void _rt_call (uint16_t id)
 {
