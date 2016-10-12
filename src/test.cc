@@ -29,6 +29,7 @@
 #include "verbosity.h"
 
 #include "executor.hh"
+#include "checker.hh"
 #include "../rt/rt.h"
 
 void ir_write_ll (const llvm::Module *m, const char *filename)
@@ -240,8 +241,90 @@ void test4 ()
    }
 }
 
-int test_checker()
+void test5 ()
 {
-  printf ("test_checker\n");
-  return 0;
+   // related to the JIT engine, can we move it to some static class constructor
+   // of the Executor??
+   llvm::InitializeNativeTarget();
+   llvm::InitializeNativeTargetAsmPrinter();
+   llvm::InitializeNativeTargetAsmParser();
+
+   // get a context
+   llvm::LLVMContext &context = llvm::getGlobalContext();
+   llvm::SMDiagnostic err;
+   std::string errors;
+
+   // file to load and execute
+   std::string path = "input.ll";
+   //std::string path = "cunf.ll";
+   //std::string path = "invalid.ll";
+
+   // parse the .ll file and get a Module out of it
+   std::unique_ptr<llvm::Module> mod (llvm::parseIRFile (path, err, context));
+   llvm::Module * m = mod.get();
+
+   // if errors found, report and terminate
+   if (! mod.get ()) {
+      llvm::raw_string_ostream os (errors);
+      err.print (path.c_str(), os);
+      os.flush ();
+      printf ("Error: %s\n", errors.c_str());
+      return;
+   }
+
+   printf ("functions in the module:\n");
+   for (auto & f : *m)
+      DEBUG ("- m %p fun %p decl %d name %s", m, &f, f.isDeclaration(), f.getName().str().c_str());
+   fflush (stdout);
+   printf ("globals in the module:\n");
+   for (auto & g : m->globals()) llvm::errs() << "- g " << &g << " dump " << g << "\n";
+   fflush (stdout);
+
+   // prepare an Executor, the constructor instruments and allocates guest
+   // memory
+   ExecutorConfig conf;
+   conf.memsize = 512 << 20; // 512M
+   conf.stacksize = 16 << 20; // 16M
+   conf.tracesize = 8 << 20; // 8M events (x 11 bytes per event)
+   Executor e (std::move (mod), conf);
+
+   // write instrumented code to file, for debugging purposes
+   ir_write_ll (m, "out.ll");
+   DEBUG ("stid: module saved to 'out.ll'");
+
+   // prepare arguments for the program
+   e.argv.push_back ("prog");
+   e.argv.push_back ("a");
+   e.argv.push_back ("b");
+   e.argv.push_back ("c");
+   e.envp.push_back ("HOME=/home/cesar");
+   e.envp.push_back ("PWD=/usr/bin");
+   e.envp.push_back (nullptr);
+
+   // run the guest
+   e.run ();
+   DEBUG ("stid: exitcode %d", e.exitcode);
+
+   // prepare a stream object
+   action_streamt actions (e.get_trace ());
+
+   // iterate throught the actions
+   int i = 0;
+   for (auto ac : actions)
+   {
+      // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
+
+      printf ("idx %5d type %2d '%s' addr %#18lx val %#18lx id %#10x\n",
+         i,
+         ac.type (),
+         _rt_ev_to_str ((enum eventtype) ac.type ()),
+         ac.addr (),
+         ac.val (),
+         ac.id ());
+      i++;
+      if (i >= 200) break;
+   }
+
+   fflush (stdout);
+   fflush (stderr);
 }

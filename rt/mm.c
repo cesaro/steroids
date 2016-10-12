@@ -21,14 +21,14 @@ void *malloc  (size_t size)
    ptr = (void*) __malloc_ptr;
    __malloc_ptr = ALIGN16 (__malloc_ptr + size);
    //printf ("stid: rt: malloc: ret %p size %zu\n", ptr, size);
-   TRACE2 (MLLO, ptr, size);
+   TRACE2 (_MLLO, ptr, size);
    memset (ptr, 0, size); // necessary for repeatable execution!!!!
    return ptr;
 }
 
 void free (void *ptr)
 {
-   TRACE1 (FREE, ptr);
+   TRACE1 (_FREE, ptr);
    //printf ("stid: rt: free: ptr %p", ptr);
    (void) ptr; 
 }

@@ -70,34 +70,34 @@ void _rt_panic ();
 enum eventtype
 {
    // loads
-   RD8,
-   RD16,
-   RD32,
-   RD64,
-   RD128,
+   _RD8,
+   _RD16,
+   _RD32,
+   _RD64,
+   _RD128,
    // stores
-   WR8,
-   WR16,
-   WR32,
-   WR64,
-   WR128,
+   _WR8,
+   _WR16,
+   _WR32,
+   _WR64,
+   _WR128,
    // memory management
-   ALLO,
-   MLLO,
-   FREE,
-   CALL,
-   RET,
+   _ALLO,
+   _MLLO,
+   _FREE,
+   _CALL,
+   _RET,
    // threads
-   THCREAT,
-   THJOIN,
-   THEXIT,
-   THSW,
+   _THCREAT,
+   _THJOIN,
+   _THEXIT,
+   _THSW,
    // locks
-   MTXINIT,
-   MTXLOCK,
-   MTXUNLK,
+   _MTXINIT,
+   _MTXLOCK,
+   _MTXUNLK,
    // misc
-   _EV_LAST,
+   _NONE, // this should be the last in the list
 };
 
 struct memreg
@@ -107,30 +107,35 @@ struct memreg
    size_t size;
 };
 
+struct eventrace {
+   struct memreg ev;
+   struct memreg addr;
+   struct memreg val;
+   struct memreg id;
+
+   uint8_t  *evptr;
+   uint64_t *addrptr;
+   uint64_t *valptr;
+   uint16_t *idptr;
+   
+   uint64_t size;
+};
+
 struct rt
 {
    // contains the entire memory region allocated for the guest
-	struct memreg mem;
+   struct memreg mem;
 
    // subregions inside of "mem"
-	struct memreg data;
-	struct memreg heap;
-	struct memreg stacks;
+   struct memreg data;
+   struct memreg heap;
+   struct memreg stacks;
 
    // event trace
-   struct {
-	   struct memreg ev;
-	   struct memreg addr;
-	   struct memreg id;
-	   struct memreg val;
+   struct eventrace trace;
 
-	   uint8_t  *evptr;
-	   uint64_t *addrptr;
-   	   uint16_t *idptr;
-	   uint64_t *valptr;
-   } trace;
-
-	uint64_t host_rsp;
+   // stack pointer of the host upon entry on guest code
+   uint64_t host_rsp;
 };
 
 // const for fast address checking without memory access, defined in rt.c
@@ -138,6 +143,43 @@ struct rt
 // static const uint64_t memend;
 // static const uint64_t evend;
 // static struct rt * const rt;
+
+static inline const char *_rt_ev_to_str (enum eventtype e)
+{
+   switch (e)
+   {
+   // loads
+   case _RD8       : return "RD8    ";
+   case _RD16      : return "RD16   ";
+   case _RD32      : return "RD32   ";
+   case _RD64      : return "RD64   ";
+   case _RD128     : return "RD128  ";
+   // stores
+   case _WR8       : return "WR8    ";
+   case _WR16      : return "WR16   ";
+   case _WR32      : return "WR32   ";
+   case _WR64      : return "WR64   ";
+   case _WR128     : return "WR128  ";
+   // memory management
+   case _ALLO      : return "ALLO   ";
+   case _MLLO      : return "MLLO   ";
+   case _FREE      : return "FREE   ";
+   case _CALL      : return "CALL   ";
+   case _RET       : return "RET    ";
+   // threads
+   case _THCREAT   : return "THCREAT";
+   case _THJOIN    : return "THJOIN ";
+   case _THEXIT    : return "THEXIT ";
+   case _THSW      : return "THSW   ";
+   // locks
+   case _MTXINIT   : return "MTXINIT";
+   case _MTXLOCK   : return "MTXLOCK";
+   case _MTXUNLK   : return "MTXUNLK";
+   // misc
+   case _NONE      : return "NONE";
+   }
+}
+
 
 #ifdef __cplusplus
 } // extern "C"

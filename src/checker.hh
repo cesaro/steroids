@@ -3,92 +3,174 @@
 #define __CHECKER_HH_
 
 #include <memory>
-#include <stdint> // uintxx
+#include <unordered_map>
+#include <vector>
+#include <cstdint> // uintxx
 
+#include "verbosity.h"
 #include "../rt/rt.h"
 
 typedef uint64_t addrt;
 
 class action_streamt;
-class vclockt;
+class eventt;
+class conft;
+
+enum class action_typet
+{
+   // loads
+   RD8,
+   RD16,
+   RD32,
+   RD64,
+   // stores
+   WR8,
+   WR16,
+   WR32,
+   WR64,
+   // memory management (alloca -> malloc, ret -> free)
+   MALLOC,
+   FREE,
+   // threads
+   THCREAT,
+   THSTART,
+   THEXIT,
+   THJOIN,
+   // locks
+   MTXINIT,
+   MTXLOCK,
+   MTXUNLK,
+};
 
 struct actiont
 {
-   int      type;
-   uint64_t addr;
+   action_typet type;
+   addrt addr;
    uint64_t val;
+
+   void pretty_print ();
+   const char *type_str ();
 };
 
 class action_stream_itt
 {
 public:
-   action_stream_itt (action_streamt &s);
-   bool operator== (const action_stream_itt &other) const;
-   bool operator!= (const action_stream_itt &other) const;
+   inline bool operator== (const action_stream_itt &other) const
+      { breakme (); return trace.evptr == other.trace.evptr; }
+   inline bool operator!= (const action_stream_itt &other) const
+      { breakme (); return trace.evptr != other.trace.evptr; }
    action_stream_itt &operator++ ();
-   actiont &operator* ();
+
+   inline action_stream_itt &operator* ()
+      { return *this; }
+
+   inline int type ()
+      { return *trace.evptr; }
+   inline uint64_t addr ()
+      { return *trace.addrptr; }
+   inline uint64_t val ()
+      { return *trace.valptr; }
+   inline uint64_t val2 ()
+      { return trace.valptr[1]; }
+   inline uint16_t id ()
+      { return *trace.idptr; }
    
 private:
-   action_streamt &s;
-   // pointers
+   action_stream_itt (const action_streamt &s, bool begin);
+   struct eventrace trace; // copy of that in the stream
+   friend class action_streamt;
 };
 
 class action_streamt
 {
 public:
-   action_streamt (struct rt *rt);
-
-   action_stream_itt begin ()
-   action_stream_itt end ()
+   action_streamt (struct rt *rt) :
+      rt (rt) {}
+   action_stream_itt begin () const
+      { return action_stream_itt (*this, true); }
+   action_stream_itt end () const
+      { breakme (); return action_stream_itt (*this, false); }
 
 private:
    struct rt *rt;
-   friend action_stream_itt;
+   friend class action_stream_itt;
+};
+
+class vclockt
+{
+public:
+   inline vclockt (unsigned size); // zero
+   inline vclockt (const vclockt &v); // copy constructor
+   inline vclockt (const vclockt &v1, const vclockt &v2); // this = max (v1, v2)
+
+   bool operator== (const vclockt &other) const;
+   bool operator<= (const vclockt &other) const;
+   bool operator>= (const vclockt &other) const;
+   inline int &operator[] (unsigned idx)
+      { ASSERT (idx < size); return tab[idx]; }
+private:
+   unsigned size;
+   int * tab;
 };
 
 class eventt
 {
+private:
+   unsigned _tid;
+   unsigned _sidx;
+   eventt *_pre_other; // needs to be initialized before vclock
+
+public:
+   eventt (conft &c, unsigned sidx); // bottom (THSTART for process 0)
+   eventt (unsigned sidx, eventt &creat, unsigned p); // THSTART for process p, creat is the THCREAT
+   eventt (unsigned sidx, eventt &p); // one predecessor (process)
+   eventt (unsigned sidx, eventt &p, eventt &m); // two predecessors (process, memory/exit)
+
    actiont act;
-   struct
-   {
-      unsigned int tid;
-      unsigned int idx;
-   } pre_mem;
-   unsigned int sidx; // the index in the stream
    std::vector<actiont> redbox;
-   vclockt clock;
+   vclockt vclock;
+
+   // thread id
+   inline unsigned tid () { return _tid; }
+
+   // index in the stream
+   inline unsigned sidx () { return _sidx; }
+
+   // index in the process array
+   inline unsigned idx (const conft &c);
+
+   // predecessor in another thread, if any
+   inline eventt *pre_other () { return _pre_other; }
+
+   // predecessor in my thread, or null if THSTART
+   inline eventt *pre_proc ()
+      { return act.type != action_typet::THSTART ? this - 1 : 0; }
+
+   // the bottom even is always the first in the stream
+   inline bool is_bottom () { return _sidx == 0; }
 };
 
 class conft {
 public:
    conft (action_streamt &s);
 
-   void build (...);
+   void build ();
 
    int num_ths;
    int num_mutex;
    
 private:
 
-   bool add_blue_event (); // continue here designing the algorithm for PO construction !!!
+   bool add_blue_event ();
 
    std::vector<std::vector<eventt>> events;
    std::unordered_map<addrt,eventt*> mutexmax;
    action_streamt &s;
+
+   friend class eventt;
 };
 
-class vclockt
-{
-public:
-   vclockt (conft &c);
-   vclockt (conft &c, eventt &e);
-   int * tab;
-
-   bool operator== (const vclockt &other) const;
-   bool operator<= (const vclockt &other) const;
-   bool operator>= (const vclockt &other) const;
-};
-
+#if 0
 /* @TODO: Add a CheckerConfig
   that controls the checks
   when building the partial order
@@ -123,5 +205,6 @@ private :
    //std::unordered_map <addr, int> locks_idx;
  
 };
+#endif
 
 #endif

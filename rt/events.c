@@ -18,42 +18,6 @@ static const char *_rt_quote (uint64_t v)
    return str;
 }
 
-static const char *_rt_ev_to_str (enum eventtype e)
-{
-   switch (e)
-   {
-   // loads
-   case RD8       : return "RD8    ";
-   case RD16      : return "RD16   ";
-   case RD32      : return "RD32   ";
-   case RD64      : return "RD64   ";
-   case RD128     : return "RD128  ";
-   // stores
-   case WR8       : return "WR8    ";
-   case WR16      : return "WR16   ";
-   case WR32      : return "WR32   ";
-   case WR64      : return "WR64   ";
-   case WR128     : return "WR128  ";
-   // memory management
-   case ALLO      : return "ALLO   ";
-   case MLLO      : return "MLLO   ";
-   case FREE      : return "FREE   ";
-   case CALL      : return "CALL   ";
-   case RET       : return "RET    ";
-   // threads
-   case THCREAT   : return "THCREAT";
-   case THJOIN    : return "THJOIN ";
-   case THEXIT    : return "THEXIT ";
-   case THSW      : return "THSW   ";
-   // locks
-   case MTXINIT   : return "MTXINIT";
-   case MTXLOCK   : return "MTXLOCK";
-   case MTXUNLK   : return "MTXUNLK";
-   // misc
-   case _EV_LAST  : return "_EV_LAST";
-   }
-}
-
 static void _rt_debug_header ()
 {
    printf ("stid: rt: what                  addr              value comments\n");
@@ -94,7 +58,7 @@ static inline void _rt_check_limits_addr (const void *ptr, enum eventtype e)
    // if the memory access is offlimits, we finish execution
    if ((uint64_t) ptr < memstart || (uint64_t) ptr >= memend)
    {
-      TRACE1 (e, ptr); // temporary solution to se RD OOMs
+      TRACE1 (e, ptr); // temporary solution to see RD OOMs
       printf ("stid: rt: out-of-memory access: event %d addr %p\n", e, ptr);
       _rt_end (255);
    }
@@ -112,36 +76,36 @@ static inline void _rt_check_trace_capacity ()
 uint8_t  _rt_load8  (uint8_t  *addr)
 {
    uint8_t v;
-   _rt_check_limits_addr ((void*) addr, RD8);
+   _rt_check_limits_addr ((void*) addr, _RD8);
    v = *addr;
-   TRACE2 (RD8, addr, v);
+   TRACE2 (_RD8, addr, v);
    _rt_check_trace_capacity ();
    return v;
 }
 uint16_t _rt_load16 (uint16_t *addr)
 {
    uint16_t v;
-   _rt_check_limits_addr ((void*) addr, RD16);
+   _rt_check_limits_addr ((void*) addr, _RD16);
    v = *addr;
-   TRACE2 (RD16, addr, v);
+   TRACE2 (_RD16, addr, v);
    _rt_check_trace_capacity ();
    return v;
 }
 uint32_t _rt_load32 (uint32_t *addr)
 {
    uint32_t v;
-   _rt_check_limits_addr ((void*) addr, RD32);
+   _rt_check_limits_addr ((void*) addr, _RD32);
    v = *addr;
-   TRACE2 (RD32, addr, v);
+   TRACE2 (_RD32, addr, v);
    _rt_check_trace_capacity ();
    return v;
 }
 uint64_t _rt_load64 (uint64_t *addr)
 {
    uint64_t v;
-   _rt_check_limits_addr ((void*) addr, RD64);
+   _rt_check_limits_addr ((void*) addr, _RD64);
    v = *addr;
-   TRACE2 (RD64, addr, v);
+   TRACE2 (_RD64, addr, v);
    _rt_check_trace_capacity ();
    return v;
 }
@@ -149,9 +113,9 @@ float    _rt_loadf  (float *addr)
 {
    float v;
    ASSERT (sizeof (float) == 4)
-   _rt_check_limits_addr ((void*) addr, RD32);
+   _rt_check_limits_addr ((void*) addr, _RD32);
    v = *addr;
-   TRACE2 (RD32, addr, * (uint32_t*) (void*) &v);
+   TRACE2 (_RD32, addr, * (uint32_t*) (void*) &v);
    _rt_check_trace_capacity ();
    return v;
 }
@@ -159,9 +123,9 @@ double   _rt_loadd  (double *addr)
 {
    double v;
    ASSERT (sizeof (double) == 8)
-   _rt_check_limits_addr ((void*) addr, RD64);
+   _rt_check_limits_addr ((void*) addr, _RD64);
    v = *addr;
-   TRACE2 (RD64, addr, * (uint64_t*) (void*) &v);
+   TRACE2 (_RD64, addr, * (uint64_t*) (void*) &v);
    _rt_check_trace_capacity ();
    return v;
 }
@@ -169,9 +133,9 @@ long double _rt_loadld (long double *addr)
 {
    long double v;
    ASSERT (sizeof (long double) == 16)
-   _rt_check_limits_addr ((void*) addr, RD128);
+   _rt_check_limits_addr ((void*) addr, _RD128);
    v = *addr;
-   TRACE128 (RD128, addr, v); // event, address, 2 x val
+   TRACE128 (_RD128, addr, v); // event, address, 2 x val
    _rt_check_trace_capacity ();
    return v;
 }
@@ -180,80 +144,67 @@ long double _rt_loadld (long double *addr)
 //
 void _rt_store8 (uint8_t *addr, uint8_t v)
 {
-   TRACE2 (WR8, addr, v);
-   _rt_check_limits_addr ((void*) addr, WR8);
+   TRACE2 (_WR8, addr, v);
+   _rt_check_limits_addr ((void*) addr, _WR8);
    _rt_check_trace_capacity ();
 }
 void _rt_store16 (uint16_t *addr, uint16_t v)
 {
-   TRACE2 (WR16, addr, v);
-   _rt_check_limits_addr ((void*) addr, WR16);
+   TRACE2 (_WR16, addr, v);
+   _rt_check_limits_addr ((void*) addr, _WR16);
    _rt_check_trace_capacity ();
 }
 void _rt_store32 (uint32_t *addr, uint32_t v)
 {
-   TRACE2 (WR32, addr, v);
-   _rt_check_limits_addr ((void*) addr, WR32);
+   TRACE2 (_WR32, addr, v);
+   _rt_check_limits_addr ((void*) addr, _WR32);
    _rt_check_trace_capacity ();
 }
 void _rt_store64 (uint64_t *addr, uint64_t v)
 {
-   TRACE2 (WR64, addr, v);
-   _rt_check_limits_addr ((void*) addr, WR64);
+   TRACE2 (_WR64, addr, v);
+   _rt_check_limits_addr ((void*) addr, _WR64);
    _rt_check_trace_capacity ();
 }
 void _rt_storef  (float *addr, float v)
 {
    uint32_t vv = * ((uint32_t*) (void*) &v);
-   TRACE2 (WR32, addr, vv);
-   _rt_check_limits_addr ((void*) addr, WR32);
+   TRACE2 (_WR32, addr, vv);
+   _rt_check_limits_addr ((void*) addr, _WR32);
    _rt_check_trace_capacity ();
 }
 void _rt_stored  (double *addr, double v)
 {
    uint64_t vv = * ((uint64_t*) (void*) &v);
-   TRACE2 (WR64, addr, vv);
-   _rt_check_limits_addr ((void*) addr, WR64);
+   TRACE2 (_WR64, addr, vv);
+   _rt_check_limits_addr ((void*) addr, _WR64);
    _rt_check_trace_capacity ();
 }
 void _rt_storeld (long double *addr, long double v)
 {
-   TRACE128 (WR128, addr, v); // event, address, 2 x val
-   _rt_check_limits_addr ((void*) addr, WR128);
+   TRACE128 (_WR128, addr, v); // event, address, 2 x val
+   _rt_check_limits_addr ((void*) addr, _WR128);
    _rt_check_trace_capacity ();
 }
 
 // memory management
 //
+// for heap allocation (malloc/free) this is done directly in mm.c
 void _rt_allo (uint8_t *addr, uint32_t size)
 {
-   _rt_debug_trace2 (ALLO, addr, size);
-}
-void _rt_mllo (uint8_t *addr, uint64_t size)
-{
-   _rt_debug_trace2 (MLLO, addr, size);
-}
-void _rt_rllo (uint8_t *old, uint8_t *neww, uint64_t size)
-{
-   _rt_debug_trace1 (FREE, old);
-   _rt_debug_trace2 (MLLO, neww, size);
-}
-void _rt_fre (uint8_t *addr)
-{
-   TRACE1 (FREE, addr);
-   printf ("free %16p    (heap)\n", addr);
+   _rt_debug_trace2 (_ALLO, addr, size);
 }
 void _rt_call (uint16_t id)
 {
-   TRACE3 (CALL, id);
+   TRACE3 (_CALL, id);
 }
 void _rt_ret (uint16_t id)
 {
-   TRACE3 (RET, id);
+   TRACE3 (_RET, id);
 }
 void _rt_exit ()
 {
-   TRACE0 (THEXIT);
+   TRACE0 (_THEXIT);
 }
 
 void _rt_memreg_print (struct memreg *m, const char *prefix, const char *suffix)
@@ -340,7 +291,8 @@ int _rt_main (int argc, const char * const *argv, const char * const *env)
    fflush (stderr);
 
    // EXIT event for the main thread - should this be called from _rt_end?
-   TRACE0 (THEXIT);
+   TRACE0 (_THEXIT);
+   rt->trace.size = (uint64_t) (rt->trace.evptr - (uint8_t*) rt->trace.ev.begin);
 
 	// exit
    printf ("stid: rt: main: returned %d\n", ret);

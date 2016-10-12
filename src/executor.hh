@@ -29,6 +29,7 @@ public :
    ~Executor ();
 
    void run ();
+   struct rt *get_trace ();
 
 private :
    struct rt                     rt;

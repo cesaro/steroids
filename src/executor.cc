@@ -123,7 +123,7 @@ void Executor::initialize_and_instrument_rt ()
    rt.data.size = 0;
 
    // allocate memory for the event stream, ids (uint8_t)
-   ASSERT (_EV_LAST < 256);
+   ASSERT (_NONE < 256);
    malloc_memreg (&rt.trace.ev, conf.tracesize);
    rt.trace.evptr = rt.trace.ev.begin;
    if (rt.trace.ev.begin == 0)
@@ -219,6 +219,8 @@ void Executor::run ()
    exitcode = entry (argv.size(), argv.data(), envp.data());
    DEBUG ("stid: ==========================================================");
    DEBUG ("stid: guest execution terminated");
+   DEBUG ("stid: %zu events collected", rt.trace.size);
+   ASSERT (rt.trace.size == (size_t) (rt.trace.evptr - (uint8_t*) rt.trace.ev.begin));
 }
 
 llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)
@@ -232,3 +234,7 @@ llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)
    return c;
 }
 
+struct rt *Executor::get_trace ()
+{
+   return &rt;
+}
