@@ -222,8 +222,8 @@ void _rt_memreg_print (struct memreg *m, const char *prefix, const char *suffix)
 int _rt_mainn (int argc, const char * const *argv, const char * const *env)
 {
    int ret;
-	int i, n;
-	const char * const *v;
+   int i, n;
+   const char * const *v;
 
    // assert that global const variables equal corresponding ones in the rt
    // structure
@@ -257,9 +257,9 @@ int _rt_mainn (int argc, const char * const *argv, const char * const *env)
    // initialize the heap
    _rt_mm_init ();
 
-	// determine number of environment variables
-	for (n = 0, v = env; *v; ++n, ++v)
-	;
+   // determine number of environment variables
+   for (n = 0, v = env; *v; ++n, ++v)
+   ;
 
    // copy arguments into our stack and heap
    char *myargv[argc];

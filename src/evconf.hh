@@ -57,7 +57,6 @@ public:
    int num_mutex;
    
 private:
-
    bool add_blue_event ();
 
    std::vector<std::vector<eventt>> events;

@@ -51,3 +51,5 @@ inline unsigned eventt::idx (const conft &c)
 { 
    return this - &c.events[_tid][0];
 }
+
+

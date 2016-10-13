@@ -136,6 +136,9 @@ struct eventrace {
    uint16_t *idptr;
    
    uint64_t size;
+
+   int num_ths;
+   int num_mutex;
 };
 
 // this stores the entire state of the runtime
