@@ -13,11 +13,7 @@ void _rt_start (int argc, const char * const *argv, const char * const *env);
 void _rt_end (uint32_t exitcode);
 
 // called from _rt_start, will call main()
-int _rt_main (int argc, const char * const *argv, const char * const *env);
-
-// used in start.s to access the "struct rt" in aha.c
-void _rt_save_host_rsp (uint64_t rsp);
-uint64_t _rt_get_host_rsp ();
+int _rt_mainn (int argc, const char * const *argv, const char * const *env);
 
 // the user's main function, epic :)
 int main (int argc, char **argv, char **env);
@@ -52,7 +48,31 @@ void _rt_fre  (uint8_t *addr);
 void _rt_sig  (uint32_t signal);
 void _rt_ctsw (uint32_t id);
 
-// mutex lock and unlock - FIXME
+// used in start.s to access the "struct rt" in main.c
+void _rt_save_host_rsp (uint64_t rsp);
+uint64_t _rt_get_host_rsp ();
+
+// last function called before giving back the control to the host code
+void _rt_c_end ();
+
+// stop execution, print an error and enter an infinite loop
+void _rt_panic ();
+
+
+
+// stdlib.h
+void _rt_mm_init (); // internal
+void *_rt_malloc  (size_t size);
+void  _rt_free    (void *ptr);
+void *_rt_realloc (void *ptr, size_t size);
+
+// unistd.h
+void _rt_exit (int status);
+
+// errno.h
+int *_rt___errno_location ();
+
+// pthread.h
 void _rt_pthread_create(uint32_t id);
 void _rt_pthread_join (uint32_t id);
 void _rt_pthread_mutex_init (uint8_t *addr, uint32_t val); // mutex type
@@ -60,12 +80,7 @@ void _rt_pthread_mutex_lock (uint8_t *addr);
 void _rt_pthread_mutex_unlock (uint8_t *addr);
 void _rt_pthread_exit ();
 
-// heap management routines
-void *_rt_malloc  (size_t size);
-void  _rt_free    (void *ptr);
-void *_rt_realloc (void *ptr, size_t size);
 
-void _rt_panic ();
 
 enum eventtype
 {
@@ -100,6 +115,7 @@ enum eventtype
    _NONE, // this should be the last in the list
 };
 
+// memory region
 struct memreg
 {
    uint8_t *begin;
@@ -107,6 +123,7 @@ struct memreg
    size_t size;
 };
 
+// stores the stream of actions that our dynamic analysis is interested in
 struct eventrace {
    struct memreg ev;
    struct memreg addr;
@@ -121,9 +138,10 @@ struct eventrace {
    uint64_t size;
 };
 
+// this stores the entire state of the runtime
 struct rt
 {
-   // contains the entire memory region allocated for the guest
+   // describes the entire memory region allocated for the guest
    struct memreg mem;
 
    // subregions inside of "mem"

@@ -47,15 +47,20 @@ _rt_start :
    mov  %r13, %rdi # argc
    mov  %r14, %rsi # argv
    mov  %r15, %rdx # env
-	call _rt_main
+	call _rt_mainn
 
 	# save return value (exit code) and fall through the exit routine _rt_end
    mov  %rax, %rdi
 
 _rt_end :
-	# make sure we have a correctly aligned stack and restore the host stack
+	# make sure we have a correctly aligned stack; save exit code in rbx
    andq $-16, %rsp
    mov  %rdi, %rbx
+   
+   # call the _c_end function, last thing executed before going back
+   call _rt_c_end
+
+   # restore the host stack
    call _rt_get_host_rsp
    mov  %rax, %rsp
 

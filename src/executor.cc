@@ -36,7 +36,7 @@ uint8_t *MyMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment
 
    //ptr = llvm::SectionMemoryManager::allocateDataSection (Size, Alignment, SectionID, SectionName, isReadOnly);
 
-   DEBUG ("stid: allocate object section: ptr %16p size %6zd align %d secid %d ro %d secname '%s'",
+   DEBUG ("stid: executor: memory manager: allocation request: ptr %16p size %6zd align %d secid %d ro %d secname '%s'",
          ptr,
          Size, Alignment, SectionID, isReadOnly, SectionName.str().c_str());
    return ptr;
@@ -103,6 +103,7 @@ void Executor::malloc_memreg (struct memreg *m, size_t size)
 
 void Executor::initialize_and_instrument_rt ()
 {
+   DEBUG ("stid: executor: allocating guest memory");
    // allocate the memory space for the guest code (heap + stacks)
    malloc_memreg (&rt.mem, conf.memsize);
    if (rt.mem.begin == 0)
@@ -151,14 +152,16 @@ void Executor::initialize_and_instrument_rt ()
    rt.host_rsp = 0;
 
    // instrument the module to use this->rt as state
+   DEBUG ("stid: executor: instrumenting constant pointers:");
    llvm::GlobalVariable *g;
    llvm::Type *t;
+   std::string s;
    g = m->getGlobalVariable ("rt", true);
    t = m->getTypeByName ("struct.rt");
    if (!g or !t) throw std::runtime_error ("Executor: input missing runtime");
    g->setInitializer (ptr_to_llvm (&rt, t));
-   llvm::outs() << "instrumeted rt pointers:\n";
-   llvm::outs() << "- " << *g << "\n";
+   print_value (g, s);
+   DEBUG ("stid: executor: - %s", s.c_str());
 
    // similarly for the other const global variables
    std::vector<std::pair<const char*, uint64_t>> pairs =
@@ -171,7 +174,9 @@ void Executor::initialize_and_instrument_rt ()
       if (!g) throw std::runtime_error ("Executor: input missing runtime");
       g->setInitializer (llvm::ConstantInt::get
             (llvm::Type::getInt64Ty (ctx), p.second));
-      llvm::outs() << "- " << *g << "\n";
+      s.clear();
+      print_value (g, s);
+      DEBUG ("stid: executor: - %s", s.c_str());
    }
 }
 
@@ -213,13 +218,13 @@ void Executor::run ()
    //DEBUG ("stid: evmend   %16p", rt.trace.ev.end);
 
    // run the user program!!
-   DEBUG ("stid: starting guest execution");
-   DEBUG ("stid: ==========================================================");
+   DEBUG ("stid: executor: starting guest execution");
+   DEBUG ("stid: executor: ==========================================================");
    breakme ();
    exitcode = entry (argv.size(), argv.data(), envp.data());
-   DEBUG ("stid: ==========================================================");
-   DEBUG ("stid: guest execution terminated");
-   DEBUG ("stid: %zu events collected", rt.trace.size);
+   DEBUG ("stid: executor: ==========================================================");
+   DEBUG ("stid: executor: guest execution terminated");
+   DEBUG ("stid: executor: %zu events collected", rt.trace.size);
    ASSERT (rt.trace.size == (size_t) (rt.trace.evptr - (uint8_t*) rt.trace.ev.begin));
 }
 

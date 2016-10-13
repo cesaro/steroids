@@ -5,6 +5,10 @@
 #include <cstring>
 #include <string>
 
+#include <llvm/IR/Type.h>
+#include <llvm/IR/Value.h>
+#include "llvm/Support/raw_ostream.h"
+
 #include "misc.hh"
 
 std::string fmt (const std::string fmt_str, ...)
@@ -69,3 +73,23 @@ std::string quoted_str (const char * str)
 	return s;
 }
 
+void print_type (llvm::Type *t, std::string &s)
+{
+   llvm::raw_string_ostream buff (s);
+   t->print (buff);
+   buff.flush ();
+}
+
+void print_value (llvm::Value *v, std::string &s)
+{
+   llvm::raw_string_ostream buff (s);
+   v->print (buff);
+   buff.flush ();
+}
+
+void print_value_as_operand (llvm::Value *v, std::string &s)
+{
+   llvm::raw_string_ostream buff (s);
+   v->printAsOperand (buff);
+   buff.flush ();
+}

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <ctype.h>
+#include <errno.h>
 #include <assert.h>
 #include <string.h>
 
@@ -66,13 +67,5 @@ static const uint64_t evend;
 
 void _rt_breakme () {}
 
-void _rt_mm_init ();
-void _rt_mm_free (void *ptr);
-void *_rt_mm_malloc (size_t size);
-void *_rt_mm_realloc (void *ptr, size_t size);
-void *_rt_mm_calloc (size_t nelem, size_t size);
-
 #include "events.c"
 #include "mm.c"
-
-

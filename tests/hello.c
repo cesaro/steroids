@@ -2,11 +2,16 @@
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <ctype.h>
+#include <pthread.h>
+#include <sched.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #if 0
 #endif
@@ -243,9 +248,85 @@ int main4 ()
    return k;
 }
 
+void *main5_thread (void *arg)
+{
+   int i = * (int *) arg;
+   printf ("t%d: running, pid %d\n", i, getpid ());
+   usleep (1000000);
+   printf ("t%d: after!\n", i);
+   return 0;
+}
+
+void my_pthread_create (pthread_t *tid, void *(*start) (void *), void *arg)
+{
+   void *ptr;
+   pthread_attr_t attr;
+   int ret;
+
+#define S (2 << 20)
+
+   // allocate a 2M stack
+   ptr = malloc (S); // 2M
+   printf ("ptr %p\n", ptr);
+
+   // define thread attributes
+   ret = pthread_attr_init (&attr);
+   printf ("attr_init %d\n", ret);
+   ret = pthread_attr_setstack (&attr, ptr, S);
+   printf ("attr_setstack %d\n", ret);
+
+#undef S
+
+   ret = pthread_create (tid, &attr, start, arg);
+   printf ("pthread_create: ret %d\n", ret);
+}
+
+int main5 ()
+{
+   pthread_t tid1;
+   pthread_t tid2;
+   int id1 = 1;
+   int id2 = 2;
+   int ret;
+   struct timespec ts;
+   struct sched_param param;
+
+   // print round robin time interval
+   ret = sched_rr_get_interval (getpid (), &ts);
+   printf ("sched_rr_get_interval: ret %d\n", ret);
+   printf ("sec %lu\n", ts.tv_sec);
+   printf ("nsec %lu\n", ts.tv_nsec);
+
+   // set scheduling to SCHED_FIFO !
+   int prio;
+   prio = getpriority (PRIO_PROCESS, getpid ());
+   printf ("getpriority %d\n", prio);
+   printf ("sched_get_priority_min %d\n", sched_get_priority_min (SCHED_FIFO));
+   printf ("sched_get_priority_max %d\n", sched_get_priority_max (SCHED_FIFO));
+   ret = sched_getparam (0, &param);
+   printf ("sched_getparam: ret %d; prio %d\n", ret, param.sched_priority);
+
+   param.sched_priority = 1;
+   ret = sched_setscheduler (0, SCHED_FIFO, &param);
+   printf ("sched_setscheduler: ret %d '%s'\n", ret, strerror (errno));
+   printf ("sched_setscheduler: ret %d\n", ret);
+
+   // create 2 threads
+   my_pthread_create (&tid1, main5_thread, &id1);
+   my_pthread_create (&tid2, main5_thread, &id2);
+
+   ret = pthread_join (tid1, 0);
+   printf ("pthread_join: ret %d\n", ret);
+
+   ret = pthread_join (tid2, 0);
+   printf ("pthread_join: ret %d\n", ret);
+
+   return 0;
+}
+
 int main (int argc, char **argv)
 {
-   return main3 (argc, argv);
-   //return main4 ();
+   //return main3 (argc, argv);
+   return main5 ();
 }
 

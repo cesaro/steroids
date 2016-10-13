@@ -23,6 +23,44 @@
 #include "../rt/rt.h"
 #include "instrumenter.hh"
 
+bool Instrumenter::instrument (llvm::Module &m)
+{
+   // cleanup
+   reset (m);
+   if (not find_rt ()) return false;
+
+   // compute a map describing how we are supposed to substitute calls to
+   // certain functions, as well as a numeric id for every function
+   DEBUG ("stid: instrumenter: initializing substmap and funids mappings");
+   init_maps ();
+
+   // instrument every function
+   DEBUG ("stid: instrumenter: starting the instrumentation of every function");
+   for (auto &f : m)
+   {
+      if (is_rt_fun (&f) or f.isDeclaration ()) continue;
+
+      DEBUG ("stid: instrumenter: === at fun %s",
+            f.getName().str().c_str());
+
+      // instrument the CALL event at the beginning of the entry block
+      llvm::IRBuilder<> b (&f.getEntryBlock ().front());
+      b.CreateCall (call, b.getInt16 (funids[&f]));
+
+      // visit all instructions and instrument appropriately
+      count = 0;
+      visit (f);
+      DEBUG ("stid: instrumenter: done, %d instructions instrumented", count);
+   }
+
+   // check that we didn't do anything stupid
+   DEBUG ("stid: instrumenter: verifying module after instrumentation ...");
+   llvm::verifyModule (m, &llvm::outs());
+   DEBUG ("stid: instrumenter: done");
+
+   return true;
+}
+
 bool Instrumenter::find_rt ()
 {
    ld8  = m->getFunction ("_rt_load8");
@@ -53,12 +91,14 @@ bool Instrumenter::find_rt ()
 
 bool Instrumenter::is_rt_fun (llvm::Function *f)
 {
-   return
-         f->getName().startswith ("_rt_") or
+   return f->getName().startswith ("_rt_");
+   #if 0
+         or
          f->getName().equals ("free") or
          f->getName().equals ("malloc") or
          f->getName().equals ("realloc") or
          f->getName().equals ("calloc");
+         #endif
 }
 
 void Instrumenter::reset (llvm::Module &m)
@@ -69,48 +109,53 @@ void Instrumenter::reset (llvm::Module &m)
    // clean the funids map
    next_call_id = 0;
    funids.clear ();
+
+   // clear the function substitution map
+   substmap.clear ();
 }
 
-bool Instrumenter::instrument (llvm::Module &m)
+void Instrumenter::init_maps ()
 {
-   // cleanup
-   reset (m);
-   if (not find_rt ()) return false;
+   std::string s;
+   int i = 0;
 
-   // instrument every function
-   for (auto &f : m)
+   // here
+   for (auto &f : *m)
    {
-      if (is_rt_fun (&f) or f.isDeclaration ()) continue;
+      // associate a unique numeric identifier to every function declaration or
+      // definition
+      funids[&f] = i++;
 
-      llvm::outs() << "stid: instrumenting function '" << f.getName() << "'\n";
-
-      // instrument the CALL event at the beginning of the entry block
-      llvm::IRBuilder<> b (&f.getEntryBlock ().front());
-      b.CreateCall (call, b.getInt16 (get_fun_id (&f)));
-
-      // visit all instructions and instrument appropriately
-      count = 0;
-      visit (f);
-      llvm::outs() << "stid: done, " << count << " instructions instrumented.\n";
-
-      for (auto i : f.users()) llvm::outs() << "stid:  used: " << *i << "\n";
-
+      // for every function named _rt_*, we get a substitution table
+      if (not is_rt_fun (&f)) continue;
+      s = f.getName ().substr(4);;
+      llvm::Function *ff = m->getFunction (s); // stripping the "_rt_" prefix
+      if (not ff) continue;
+      DEBUG ("stid: instrumenter: init maps: substmap: %s %-20s -> %s",
+               ff->isDeclaration() ? "decl" : "fun ",
+               ff->getName().str().c_str(),
+               f.getName().str().c_str());
+      substmap[ff] = &f;
+      if (f.getType () != ff->getType ())
+      {
+         DEBUG ("stid: instrumenter: init maps: substmap: WARNING: type mismatch between fun and rtfun:");
+         s.clear ();
+         print_type (ff->getFunctionType(), s);
+         DEBUG ("stid: instrumenter: init maps: substmap:  fun  : %s", s.c_str());
+         s.clear ();
+         print_type (f.getFunctionType(), s);
+         DEBUG ("stid: instrumenter: init maps: substmap:  rtfun: %s", s.c_str());
+      }
    }
 
    // print function ids
-   DEBUG ("stid: instrumentation: function map:");
    for (auto &p : funids)
    {
-      DEBUG ("stid: instrumentation:   id %4d fun %s",
-            p.second, p.first->getName().str().c_str());
+      DEBUG ("stid: instrumenter: init maps: funids: id %4d %s %s",
+            p.second,
+            p.first->isDeclaration() ? "decl" : "fun ",
+            p.first->getName().str().c_str());
    }
-
-   // check that we didn't do anything stupid
-   DEBUG ("stid: verifying module after instrumentation ...");
-   llvm::verifyModule (m, &llvm::outs());
-   DEBUG ("stid: done");
-
-   return true;
 }
 
 void Instrumenter::visitLoadInst (llvm::LoadInst &i)
@@ -275,19 +320,28 @@ void Instrumenter::visitAllocaInst (llvm::AllocaInst &i)
    count++;
 }
 
-//void Instrumenter::visitCallInst (llvm::CallInst &i) { }
+void Instrumenter::visitCallInst (llvm::CallInst &i)
+{
+   llvm::outs() << "stid: instrumenter: " << i << "\n";
+   auto it = substmap.find (i.getCalledFunction ());
+   if (it == substmap.end ()) return;
+   DEBUG ("stid: instrumenter: applying substitution");
+   i.setCalledFunction (it->second);
+}
 
 void Instrumenter::visitReturnInst (llvm::ReturnInst &i)
 {
    llvm::IRBuilder<> b (&i);
-   llvm::outs() << "stid: " << i << "\n";
-   b.CreateCall (ret, b.getInt16 (get_fun_id (i.getParent()->getParent())));
+   //llvm::outs() << "stid: instrumenter: " << i << "\n";
+   b.CreateCall (ret, b.getInt16 (funids[i.getParent()->getParent()]));
    count++;
 }
 
+#if 0
 int Instrumenter::get_fun_id (llvm::Function *f)
 {
    auto it = funids.find (f);
    if (it != funids.end()) return it->second;
    return funids[f] = next_call_id++;
 }
+#endif

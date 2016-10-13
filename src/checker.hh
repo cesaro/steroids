@@ -56,9 +56,9 @@ class action_stream_itt
 {
 public:
    inline bool operator== (const action_stream_itt &other) const
-      { breakme (); return trace.evptr == other.trace.evptr; }
+      { return trace.evptr == other.trace.evptr; }
    inline bool operator!= (const action_stream_itt &other) const
-      { breakme (); return trace.evptr != other.trace.evptr; }
+      { return trace.evptr != other.trace.evptr; }
    action_stream_itt &operator++ ();
 
    inline action_stream_itt &operator* ()
@@ -89,7 +89,7 @@ public:
    action_stream_itt begin () const
       { return action_stream_itt (*this, true); }
    action_stream_itt end () const
-      { breakme (); return action_stream_itt (*this, false); }
+      { return action_stream_itt (*this, false); }
 
 private:
    struct rt *rt;

@@ -128,7 +128,7 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
       trace.valptr++;
       break;
 
-   // 128 bit loads and stores have 2 64 bit words in val, and 1 address
+   // 128 bit loads and stores have two 64bit words in val, and 1 address
    case _RD128:
    case _WR128:
       trace.addrptr++;

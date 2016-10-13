@@ -272,6 +272,7 @@ void test5 ()
       return;
    }
 
+#if 0
    printf ("functions in the module:\n");
    for (auto & f : *m)
       DEBUG ("- m %p fun %p decl %d name %s", m, &f, f.isDeclaration(), f.getName().str().c_str());
@@ -279,6 +280,7 @@ void test5 ()
    printf ("globals in the module:\n");
    for (auto & g : m->globals()) llvm::errs() << "- g " << &g << " dump " << g << "\n";
    fflush (stdout);
+#endif
 
    // prepare an Executor, the constructor instruments and allocates guest
    // memory

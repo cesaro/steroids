@@ -16,7 +16,7 @@ public:
    void visitStoreInst (llvm::StoreInst &i);
    void visitAllocaInst (llvm::AllocaInst &i);
    void visitReturnInst (llvm::ReturnInst &i);
-   //void visitCallInst (llvm::CallInst &i);
+   void visitCallInst (llvm::CallInst &i);
 
    // visit(M) in parent class should never be called ;)
    void visitModule (llvm::Module &m) { ASSERT (0); }
@@ -50,12 +50,13 @@ private:
 
    int next_call_id;
    std::map<llvm::Function*,int> funids;
+   std::map<llvm::Function*,llvm::Function*> substmap;
    size_t count;
 
    bool find_rt ();
    bool is_rt_fun (llvm::Function *f);
-   int  get_fun_id (llvm::Function *f);
    void reset (llvm::Module &m);
+   void init_maps ();
 };
 
 #endif

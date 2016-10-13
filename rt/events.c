@@ -27,30 +27,35 @@ static void _rt_debug_header ()
 static void _rt_debug_trace0 (enum eventtype e)
 {
    printf ("stid: rt: %s\n", _rt_ev_to_str (e));
+   //fflush (stdout);
 }
 
 static void _rt_debug_trace1 (enum eventtype e, const void *addr)
 {
    printf ("stid: rt: %s %18p\n",
          _rt_ev_to_str (e), addr);
+   //fflush (stdout);
 }
 
 static void _rt_debug_trace2 (enum eventtype e, const void *addr, uint64_t v)
 {
    printf ("stid: rt: %s %18p %#18lx %s\n",
          _rt_ev_to_str (e), addr, v, _rt_quote (v));
+   //fflush (stdout);
 }
 
 static void _rt_debug_trace3 (enum eventtype e, uint16_t v)
 {
    printf ("stid: rt: %s                    %#18x %s\n",
          _rt_ev_to_str (e), v, _rt_quote (v));
+   //fflush (stdout);
 }
 static void _rt_debug_trace128 (enum eventtype e, const void *addr, long double v)
 {
    
    printf ("stid: rt: %s %18p       [2 x 64bits] %.20Le\n",
          _rt_ev_to_str (e), addr, v);
+   //fflush (stdout);
 }
 
 static inline void _rt_check_limits_addr (const void *ptr, enum eventtype e)
@@ -202,10 +207,6 @@ void _rt_ret (uint16_t id)
 {
    TRACE3 (_RET, id);
 }
-void _rt_exit ()
-{
-   TRACE0 (_THEXIT);
-}
 
 void _rt_memreg_print (struct memreg *m, const char *prefix, const char *suffix)
 {
@@ -218,7 +219,7 @@ void _rt_memreg_print (struct memreg *m, const char *prefix, const char *suffix)
       suffix);
 }
 
-int _rt_main (int argc, const char * const *argv, const char * const *env)
+int _rt_mainn (int argc, const char * const *argv, const char * const *env)
 {
    int ret;
 	int i, n;
@@ -265,12 +266,12 @@ int _rt_main (int argc, const char * const *argv, const char * const *env)
    char *myenv[n+1];
    for (i = 0; i < argc; i++)
    {
-      myargv[i] = malloc (strlen (argv[i]) + 1);
+      myargv[i] = _rt_malloc (strlen (argv[i]) + 1);
       strcpy (myargv[i], argv[i]);
    }
    for (i = 0; i < n; i++)
    {
-      myenv[i] = malloc (strlen (env[i]) + 1);
+      myenv[i] = _rt_malloc (strlen (env[i]) + 1);
       strcpy (myenv[i], env[i]);
    }
    myenv[n] = 0;
@@ -286,17 +287,25 @@ int _rt_main (int argc, const char * const *argv, const char * const *env)
    printf ("stid: rt: main: calling user's main...\n");
    _rt_debug_header ();
    ret = main (argc, myargv, myenv);
+   printf ("stid: rt: main: returned %d\n", ret);
+
+   // do the instrumented verison of exit(3)
+   _rt_exit (ret);
+
+   // unreachable code
+   return ret;
+}
+
+void _rt_c_end (int status)
+{
+   (void) status;
+
+   // this function will be called from the exit prologue routine (_rt_end) and
+   // will be the last thing executed before giving back control to the host
+   rt->trace.size = (uint64_t) (rt->trace.evptr - (uint8_t*) rt->trace.ev.begin);
 
    fflush (stdout);
    fflush (stderr);
-
-   // EXIT event for the main thread - should this be called from _rt_end?
-   TRACE0 (_THEXIT);
-   rt->trace.size = (uint64_t) (rt->trace.evptr - (uint8_t*) rt->trace.ev.begin);
-
-	// exit
-   printf ("stid: rt: main: returned %d\n", ret);
-   return ret;
 }
 
 void _rt_save_host_rsp (uint64_t rsp)
@@ -314,5 +323,4 @@ void _rt_panic ()
    printf ("stid: rt: panic!!\n");
    while (1);
 }
-
 
