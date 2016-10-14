@@ -72,16 +72,7 @@ void _rt_exit (int status);
 // errno.h
 int *_rt___errno_location ();
 
-// pthread.h
-void _rt_pthread_create(uint32_t id);
-void _rt_pthread_join (uint32_t id);
-void _rt_pthread_mutex_init (uint8_t *addr, uint32_t val); // mutex type
-void _rt_pthread_mutex_lock (uint8_t *addr);
-void _rt_pthread_mutex_unlock (uint8_t *addr);
-void _rt_pthread_exit ();
-
-
-
+// actions loged in the struct eventrace
 enum eventtype
 {
    // loads
@@ -106,7 +97,7 @@ enum eventtype
    _THCREAT,
    _THJOIN,
    _THEXIT,
-   _THSW,
+   _THCTXSW,
    // locks
    _MTXINIT,
    _MTXLOCK,
@@ -191,7 +182,7 @@ static inline const char *_rt_ev_to_str (enum eventtype e)
    case _THCREAT   : return "THCREAT";
    case _THJOIN    : return "THJOIN ";
    case _THEXIT    : return "THEXIT ";
-   case _THSW      : return "THSW   ";
+   case _THCTXSW   : return "THCTXSW";
    // locks
    case _MTXINIT   : return "MTXINIT";
    case _MTXLOCK   : return "MTXLOCK";

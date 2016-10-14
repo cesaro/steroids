@@ -11,7 +11,7 @@ SRCS:=$(wildcard *.c)
 BINS:=$(SRCS:.c=)
 LLS:=$(SRCS:.c=.ll)
 
-all: $(LLS)
+all: $(LLS) $(BINS)
 all-bins : $(BINS)
 
 clean :

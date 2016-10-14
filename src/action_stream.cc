@@ -56,7 +56,7 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
    case _RET:
    case _THCREAT:
    case _THJOIN:
-   case _THSW:
+   case _THCTXSW:
       trace.idptr++;
       break;
 

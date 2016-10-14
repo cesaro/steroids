@@ -21,6 +21,9 @@
 #define ASSERT(expr)
 #endif
 
+#define FLPRINT(fmt,args...) \
+      printf (__FILE__ ":%d: %s: " fmt "\n", __LINE__, __func__, ##args)
+
 // only the event
 #define TRACE0(e) \
       _rt_debug_trace0 (e); \
@@ -67,5 +70,13 @@ static const uint64_t evend;
 
 void _rt_breakme () {}
 
+// we need to redefine the errno macro for us, since instrumentation will not
+// happen inside of the _rt_* functions
+#ifdef errno
+#undef errno
+#endif
+#define errno (*_rt___errno_location ())
+
 #include "events.c"
 #include "mm.c"
+#include "pthread.c"

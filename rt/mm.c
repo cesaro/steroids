@@ -8,7 +8,7 @@ int _rt_errno = 0;
 
 int *_rt___errno_location ()
 {
-   _rt_errno = errno;
+   _rt_errno = *__errno_location (); // in glibc !!
    printf ("stid: rt: errno_location: called !!!!!!!!!!!!!!\n");
    return &_rt_errno;
 }
