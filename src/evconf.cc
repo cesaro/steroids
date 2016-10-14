@@ -85,63 +85,69 @@ void conft::print ()
 
 void conft::build ()
 {
-   int i = 0;
+   int sidx = 0;
+
+   // current thread identifier
+   int cur_tid = 0;
+
+   // create the bottom event
+   eventt ev = eventt(*this, sidx);
+
+   // safety check
+   bool next_is_global = false;
+
    auto st_it = _stream.begin ();
    while (st_it != _stream.end ())
    {
-     add_blue_event (st_it, i);  
+     next_is_global = add_red_events (st_it, sidx, ev);
+     // at this point, the red events are already in ev
+     // next_is_global ensures that the last event of the
+     // stream is a 'global' event
+     ASSERT (next_is_global);
    }
 }
 
-bool conft::add_blue_event (action_stream_itt &it, int &i)
+bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
 {
-   auto ac = *it++;
-   printf ("idx %5d type %2d '%s' addr %#18lx val %#18lx id %#10x\n",
-      i++,
-      ac.type (),
-      _rt_ev_to_str ((enum eventtype) ac.type ()),
-      ac.addr (),
-      ac.val (),
-      ac.id ());
-   return true;
-/*
+   auto act = *it++;
+
    int type;
-   for (auto ac : _stream)
+   for (auto act : _stream)
    {
-      type = ac.type ();
+      type = act.type ();
       switch (type)
       {
       // loads
-      case _RD8       : return ;
-      case _RD16      : return ;
-      case _RD32      : return ;
-      case _RD64      : return ;
-      case _RD128     : return ;
+      case _RD8       : return true;
+      case _RD16      : return true;
+      case _RD32      : return true;
+      case _RD64      : return true;
+      case _RD128     : return true;
       // stores
-      case _WR8       : return ;
-      case _WR16      : return ;
-      case _WR32      : return ;
-      case _WR64      : return ;
-      case _WR128     : return ;
+      case _WR8       : return true;
+      case _WR16      : return true;
+      case _WR32      : return true;
+      case _WR64      : return true;
+      case _WR128     : return true;
       // memory management
-      case _ALLO      : return ;
-      case _MLLO      : return ;
-      case _FREE      : return ;
-      case _CALL      : return ;
-      case _RET      : return ;
+      case _ALLO      : return true;
+      case _MLLO      : return true;
+      case _FREE      : return true;
+      case _CALL      : return true;
+      case _RET      : return true;
       // threads
-      case _THCREAT   : return ;
+      case _THCREAT   : return true;
       // case _THSTART   : return ;
-      case _THEXIT    : return ;
-      case _THJOIN    : return ;
-      case _THCTXSW   : return ;
+      case _THEXIT    : return true;
+      case _THJOIN    : return true;
+      case _THCTXSW   : return true;
       // locks
-      case _MTXINIT   : return ;
-      case _MTXLOCK   : return ;
-      case _MTXUNLK   : return ;
+      case _MTXINIT   : return true;
+      case _MTXLOCK   : return true;
+      case _MTXUNLK   : return true;
       // misc
-      case _NONE      : return ;
+      case _NONE      : return true;
       }
    }
-*/
+   return true;
 }
