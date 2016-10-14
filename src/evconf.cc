@@ -40,7 +40,7 @@ eventt::eventt (unsigned sidx, actiont ac, eventt &p, eventt &m) :
    _tid (p._tid),
    _sidx (sidx),
    _pre_other (&m),
-   act (ac}), 
+   act (ac), 
    redbox (),
    vclock (p.vclock, m.vclock) // must come after constructing _pre_other
 {
@@ -94,7 +94,10 @@ void conft::build ()
 
    // current thread identifier
    int cur_tid = 0;
-
+ 
+   // type of the actions
+   int type;
+ 
    // safety check
    bool is_next_global = false;
  
@@ -110,7 +113,6 @@ void conft::build ()
    eventt ev = eventt (*this, sidx);
  
    auto st_it = _stream.begin ();
-   auto act;
    actiont ac;
    while (st_it != _stream.end ())
    {
@@ -126,20 +128,20 @@ void conft::build ()
       events[cur_tid].push_back (ev);
 
       // the iterator now should be pointing to a new blue event
-      act = *++it;
+      auto act = *++st_it;
       type = act.type ();
       switch (type)
       { 
       // threads
       case _THCREAT :
-         ac.type = THCREAT;
+         ac.type = action_typet::THCREAT;
          ac.val  = act.id ();
          // verify this code
          ev = eventt (++sidx, ac, ev);
          createvs[ac.val] = ev;
          break;
       case _THEXIT : 
-         ac.type = THEXIT;
+         ac.type = action_typet::THEXIT;
          ev = eventt (++sidx, ac, ev);
          exitevs[cur_tid] = ev;
          break;
@@ -160,55 +162,61 @@ void conft::build ()
             // JOIN or a LOCK. Thus, we simply increment the iterator and 
             // do not break. Its crucial that JOIN and LOCK occur after
             // this case. 
-            act = *++it; 
+            act = *++st_it; 
          }
       case _THJOIN :
-        ac.type = THJOIN;
+        ac.type = action_typet::THJOIN;
         ac.val = act.id ();
         // assert that we have already seen the exit event
-        ASSERT (exitevs[ac.val] != 0);
+        ASSERT (exitevs[ac.val].act.type == action_typet::THEXIT);
         ev = eventt (++sidx, ac, ev, exitevs[ac.val]);
         break; 
       case _MTXINIT :
-        ac.type = MTXINIT;
+      {
+        ac.type = action_typet::MTXINIT;
         ac.addr = act.addr ();
         // create the event
         ev = eventt (++sidx, ac, ev);
         // assert that the mutexmax for this addr is empty
         auto mut = mutexmax.find (ac.addr);
         // @TODO: check this
-        ASSERT (mut == mut.end ());
+        ASSERT (mut == mutexmax.end ());
         // update the value of mutexmax
         mutexmax[ac.addr] = &ev;
         break; 
+      }
       case _MTXLOCK :
-        ac.type = MTXLOCK;
+      {
+        ac.type = action_typet::MTXLOCK;
         ac.addr = act.addr ();
         // create the event
         auto mut = mutexmax.find (ac.addr);
         // should we enforce that the init must happen?
         // ASSERT (mut != mut.end ()); 
-        if (mut == mut.end ())
+        if (mut == mutexmax.end ())
         {
             ev = eventt (++sidx, ac, ev);
         }
         else
         {
-            ev = eventt (++sidx, ac, ev, *mut);
+            ev = eventt (++sidx, ac, ev, *mut->second);
         }
         // update the value of mutexmax
         mutexmax[ac.addr] = &ev;
-        break; 
+        break;
+      } 
       case _MTXUNLK : 
-        ac.type = MTXUNLK;
+      {
+        ac.type = action_typet::MTXUNLK;
         ac.addr = act.addr ();
         // create the event
         auto mut = mutexmax.find (ac.addr);
-        ASSERT (mut != mut.end ()); 
-        ev = eventt (++sidx, ac, ev, *mut);
+        ASSERT (mut != mutexmax.end ()); 
+        ev = eventt (++sidx, ac, ev, *mut->second);
         // update the value of mutexmax
         mutexmax[ac.addr] = &ev;
-        break; 
+        break;
+      } 
       }
    }
 }
@@ -216,117 +224,117 @@ void conft::build ()
 bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
 {
    int type;
-   auto act;
    actiont ac;
-   do
+   auto act = *++it;
+   while (act != _stream.end ()) 
    {
-      act = *++it;
       type = act.type ();
       switch (type)
       {
       // loads
       case _RD8 : 
-         ac.type = RD8;
+         ac.type = action_typet::RD8;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break; 
       case _RD16 : 
-         ac.type = RD16;
+         ac.type = action_typet::RD16;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break; 
       case _RD32 : 
-         ac.type = RD32;
+         ac.type = action_typet::RD32;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       case _RD64 : 
-         ac.type = RD64;
+         ac.type = action_typet::RD64;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       case _RD128 : 
-         ac.type = RD64;
+         ac.type = action_typet::RD64;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          ac.val  = act.val2 ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       // stores
       case _WR8 : 
-         ac.type = WR8;
+         ac.type = action_typet::WR8;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       case _WR16 : 
-         ac.type = WR16;
+         ac.type = action_typet::WR16;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       case _WR32 : 
-         ac.type = WR32;
+         ac.type = action_typet::WR32;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       case _WR64 : 
-         ac.type = WR64;
+         ac.type = action_typet::WR64;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       case _WR128 : 
-         ac.type = WR128;
+         ac.type = action_typet::WR64;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          ac.val  = act.val2 ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       // memory management
       case _ALLO :
-         ac.type = MALLOC;
+         ac.type = action_typet::MALLOC;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       case _MLLO :
-         ac.type = MALLOC;
+         ac.type = action_typet::MALLOC;
          ac.addr = act.addr ();
          ac.val  = act.val ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       case _FREE :
-         ac.type = FREE;
+         ac.type = action_typet::FREE;
          ac.addr = act.addr ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       case _CALL :
          // @TODO: Check that CALL -> MALLOC 
-         ac.type = MALLOC
+         ac.type = action_typet::MALLOC;
          ac.addr = act.id ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       case _RET  :
-         ac.type = FREE;
+         ac.type = action_typet::FREE;
          // store the id in the addr field for consistency of
          // the FREE action
          ac.addr = act.id ();
-         b_ev->redbox.push_back (ac);
+         b_ev.redbox.push_back (ac);
          break;
       // misc
       case _NONE : return false;
       // the remainder are global actions
       default : return true;
       }
-   } while (act != _stream.end ()) 
+      act = *++it;
+   } 
 
    // This code should be unreachable
    ASSERT (0);
