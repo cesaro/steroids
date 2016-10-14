@@ -25,22 +25,22 @@ eventt::eventt (unsigned sidx, eventt &creat, unsigned p) :
    vclock[p] += 2; // the +1 is for the redbox events
 }
 
-eventt::eventt (unsigned sidx, eventt &p) :
+eventt::eventt (unsigned sidx, actiont ac, eventt &p) :
    _tid (p._tid),
    _sidx (sidx),
    _pre_other (nullptr),
-   act ({.type = action_typet::THSTART}), // redefined later
+   act (ac), 
    redbox (),
    vclock (p.vclock)
 {
    vclock[_tid] += 2; // the +1 is the redbox events
 }
 
-eventt::eventt (unsigned sidx, eventt &p, eventt &m) :
+eventt::eventt (unsigned sidx, actiont ac, eventt &p, eventt &m) :
    _tid (p._tid),
    _sidx (sidx),
    _pre_other (&m),
-   act ({.type = action_typet::THSTART}), // redefined later
+   act (ac}), 
    redbox (),
    vclock (p.vclock, m.vclock) // must come after constructing _pre_other
 {
@@ -61,6 +61,10 @@ conft::conft (action_streamt &s) :
 
    ASSERT (num_ths > 0);
    events.reserve (num_ths);
+   if (num_mutex > 0)
+   {
+     mutexmax.reserve (num_mutex);
+   }
 }
 
 // For debug purposes only (FOR NOW)
@@ -85,69 +89,246 @@ void conft::print ()
 
 void conft::build ()
 {
+   // position in the stream
    int sidx = 0;
 
    // current thread identifier
    int cur_tid = 0;
 
-   // create the bottom event
-   eventt ev = eventt(*this, sidx);
-
    // safety check
-   bool next_is_global = false;
+   bool is_next_global = false;
+ 
+   // store the create event per thread
+   std::vector<eventt> createvs;
+   createvs.reserve (num_ths);
 
+   // store the exit event per thread
+   std::vector<eventt> exitevs;
+   exitevs.reserve (num_ths);
+
+   // create the bottom event
+   eventt ev = eventt (*this, sidx);
+ 
    auto st_it = _stream.begin ();
+   auto act;
+   actiont ac;
    while (st_it != _stream.end ())
    {
-     next_is_global = add_red_events (st_it, sidx, ev);
-     // at this point, the red events are already in ev
-     // next_is_global ensures that the last event of the
-     // stream is a 'global' event
-     ASSERT (next_is_global);
+      is_next_global = add_red_events (st_it, sidx, ev);
+      // at this point, the red events are already in ev
+      // is_next_global ensures that the next event of the
+      // stream is a 'global' event
+      ASSERT (is_next_global);
+      // the iterator cannot be at the end of stream
+      ASSERT (st_it != _stream.end ());
+ 
+      // add the blue event to its thread
+      events[cur_tid].push_back (ev);
+
+      // the iterator now should be pointing to a new blue event
+      act = *++it;
+      type = act.type ();
+      switch (type)
+      { 
+      // threads
+      case _THCREAT :
+         ac.type = THCREAT;
+         ac.val  = act.id ();
+         // verify this code
+         ev = eventt (++sidx, ac, ev);
+         createvs[ac.val] = ev;
+         break;
+      case _THEXIT : 
+         ac.type = THEXIT;
+         ev = eventt (++sidx, ac, ev);
+         exitevs[cur_tid] = ev;
+         break;
+      case _THCTXSW :
+         // change the current tid
+         cur_tid = act.id ();
+         // if there are not events in the cur_tid generate THSTART 
+         if (events[cur_tid].size () == 0)
+         {
+           ev = eventt (++sidx, createvs[cur_tid], cur_tid);
+           break; 
+         }
+         else
+         {
+            // @TODO: check invariant.
+            // if it is not the case that the we are in the beginning of a
+            // new thread, we move to the next event which can only be a 
+            // JOIN or a LOCK. Thus, we simply increment the iterator and 
+            // do not break. Its crucial that JOIN and LOCK occur after
+            // this case. 
+            act = *++it; 
+         }
+      case _THJOIN :
+        ac.type = THJOIN;
+        ac.val = act.id ();
+        // assert that we have already seen the exit event
+        ASSERT (exitevs[ac.val] != 0);
+        ev = eventt (++sidx, ac, ev, exitevs[ac.val]);
+        break; 
+      case _MTXINIT :
+        ac.type = MTXINIT;
+        ac.addr = act.addr ();
+        // create the event
+        ev = eventt (++sidx, ac, ev);
+        // assert that the mutexmax for this addr is empty
+        auto mut = mutexmax.find (ac.addr);
+        // @TODO: check this
+        ASSERT (mut == mut.end ());
+        // update the value of mutexmax
+        mutexmax[ac.addr] = &ev;
+        break; 
+      case _MTXLOCK :
+        ac.type = MTXLOCK;
+        ac.addr = act.addr ();
+        // create the event
+        auto mut = mutexmax.find (ac.addr);
+        // should we enforce that the init must happen?
+        // ASSERT (mut != mut.end ()); 
+        if (mut == mut.end ())
+        {
+            ev = eventt (++sidx, ac, ev);
+        }
+        else
+        {
+            ev = eventt (++sidx, ac, ev, *mut);
+        }
+        // update the value of mutexmax
+        mutexmax[ac.addr] = &ev;
+        break; 
+      case _MTXUNLK : 
+        ac.type = MTXUNLK;
+        ac.addr = act.addr ();
+        // create the event
+        auto mut = mutexmax.find (ac.addr);
+        ASSERT (mut != mut.end ()); 
+        ev = eventt (++sidx, ac, ev, *mut);
+        // update the value of mutexmax
+        mutexmax[ac.addr] = &ev;
+        break; 
+      }
    }
 }
 
 bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
 {
-   auto act = *it++;
-
    int type;
-   for (auto act : _stream)
+   auto act;
+   actiont ac;
+   do
    {
+      act = *++it;
       type = act.type ();
       switch (type)
       {
       // loads
-      case _RD8       : return true;
-      case _RD16      : return true;
-      case _RD32      : return true;
-      case _RD64      : return true;
-      case _RD128     : return true;
+      case _RD8 : 
+         ac.type = RD8;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         break; 
+      case _RD16 : 
+         ac.type = RD16;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         break; 
+      case _RD32 : 
+         ac.type = RD32;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         break;
+      case _RD64 : 
+         ac.type = RD64;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         break;
+      case _RD128 : 
+         ac.type = RD64;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         ac.val  = act.val2 ();
+         b_ev->redbox.push_back (ac);
+         break;
       // stores
-      case _WR8       : return true;
-      case _WR16      : return true;
-      case _WR32      : return true;
-      case _WR64      : return true;
-      case _WR128     : return true;
+      case _WR8 : 
+         ac.type = WR8;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         break;
+      case _WR16 : 
+         ac.type = WR16;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         break;
+      case _WR32 : 
+         ac.type = WR32;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         break;
+      case _WR64 : 
+         ac.type = WR64;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         break;
+      case _WR128 : 
+         ac.type = WR128;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         ac.val  = act.val2 ();
+         b_ev->redbox.push_back (ac);
+         break;
       // memory management
-      case _ALLO      : return true;
-      case _MLLO      : return true;
-      case _FREE      : return true;
-      case _CALL      : return true;
-      case _RET      : return true;
-      // threads
-      case _THCREAT   : return true;
-      // case _THSTART   : return ;
-      case _THEXIT    : return true;
-      case _THJOIN    : return true;
-      case _THCTXSW   : return true;
-      // locks
-      case _MTXINIT   : return true;
-      case _MTXLOCK   : return true;
-      case _MTXUNLK   : return true;
+      case _ALLO :
+         ac.type = MALLOC;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         break;
+      case _MLLO :
+         ac.type = MALLOC;
+         ac.addr = act.addr ();
+         ac.val  = act.val ();
+         b_ev->redbox.push_back (ac);
+         break;
+      case _FREE :
+         ac.type = FREE;
+         ac.addr = act.addr ();
+         b_ev->redbox.push_back (ac);
+         break;
+      case _CALL :
+         // @TODO: Check that CALL -> MALLOC 
+         ac.type = MALLOC
+         ac.addr = act.id ();
+         b_ev->redbox.push_back (ac);
+         break;
+      case _RET  :
+         ac.type = FREE;
+         // store the id in the addr field for consistency of
+         // the FREE action
+         ac.addr = act.id ();
+         b_ev->redbox.push_back (ac);
+         break;
       // misc
-      case _NONE      : return true;
+      case _NONE : return false;
+      // the remainder are global actions
+      default : return true;
       }
-   }
-   return true;
+   } while (act != _stream.end ()) 
+
+   // This code should be unreachable
+   ASSERT (0);
+   return false;
 }
