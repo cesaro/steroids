@@ -122,6 +122,7 @@ int   _rt_pthread_create(pthread_t *tid,
 
    // success
    printf ("stid: rt: threading: created new thread t%d\n", TID(t));
+   // @TODO: missing increment eventrace num_ths
    TRACE3 (_THCREAT, t - __rt_thst.handles);
    return 0;
 

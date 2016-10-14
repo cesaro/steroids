@@ -49,19 +49,20 @@ public:
 
 class conft {
 public:
-   conft (action_streamt &s);
+   conft (action_streamt &s); // st should be const 
 
    void build ();
 
-   int num_ths;
-   int num_mutex;
-   
+   void print ();
+
 private:
    bool add_blue_event ();
 
    std::vector<std::vector<eventt>> events;
    std::unordered_map<addrt,eventt*> mutexmax;
-   action_streamt &s;
+   action_streamt &_stream;
+   int num_ths;
+   int num_mutex;
 
    friend class eventt;
 };

@@ -46,6 +46,10 @@ public:
    action_stream_itt end () const
       { return action_stream_itt (*this, false); }
 
+   // @TODO: rt should be const
+   inline struct rt * get_rt()
+      { return rt; }
+
 private:
    struct rt *rt;
    friend class action_stream_itt;

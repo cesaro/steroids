@@ -57,6 +57,8 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    rt.trace.addr.begin = 0;
    rt.trace.id.begin = 0;
    rt.trace.val.begin = 0;
+   rt.trace.num_ths = 1;
+   rt.trace.num_mutex = 0;
 
    // create a memory manager for the JIT engine (the builder owns the object)
    std::unique_ptr<llvm::RTDyldMemoryManager> mm (new MyMemoryManager (rt));

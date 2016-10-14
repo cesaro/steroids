@@ -52,4 +52,35 @@ inline unsigned eventt::idx (const conft &c)
    return this - &c.events[_tid][0];
 }
 
+conft::conft (action_streamt &s) :
+   _stream (s)
+{
+   rt *rt = s.get_rt ();
+   num_ths = rt->trace.num_ths;
+   num_mutex = rt->trace.num_mutex;
+
+   ASSERT (num_ths > 0);
+   events.reserve (num_ths);
+}
+
+// For debug purposes only (FOR NOW)
+void conft::print ()
+{
+   // iterate throught the actions
+   int i = 0;
+   for (auto ac : _stream)
+   {
+      // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
+      printf ("idx %5d type %2d '%s' addr %#18lx val %#18lx id %#10x\n",
+         i,
+         ac.type (),
+         _rt_ev_to_str ((enum eventtype) ac.type ()),
+         ac.addr (),
+         ac.val (),
+         ac.id ());
+      i++;
+      if (i >= 200) break;
+   }
+}
+
 

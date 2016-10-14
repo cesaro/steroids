@@ -310,22 +310,9 @@ void test5 ()
    // prepare a stream object
    action_streamt actions (e.get_trace ());
 
-   // iterate throught the actions
-   int i = 0;
-   for (auto ac : actions)
-   {
-      // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
+   conft po (actions);
 
-      printf ("idx %5d type %2d '%s' addr %#18lx val %#18lx id %#10x\n",
-         i,
-         ac.type (),
-         _rt_ev_to_str ((enum eventtype) ac.type ()),
-         ac.addr (),
-         ac.val (),
-         ac.id ());
-      i++;
-      if (i >= 200) break;
-   }
+   po.print ();
 
    fflush (stdout);
    fflush (stderr);
