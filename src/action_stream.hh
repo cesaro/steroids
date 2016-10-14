@@ -15,6 +15,7 @@ public:
    inline bool operator!= (const action_stream_itt &other) const
       { return trace.evptr != other.trace.evptr; }
    action_stream_itt &operator++ ();
+   action_stream_itt operator++ (int);
 
    inline action_stream_itt &operator* ()
       { return *this; }

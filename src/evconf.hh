@@ -56,7 +56,7 @@ public:
    void print ();
 
 private:
-   bool add_blue_event ();
+   bool add_blue_event (action_stream_itt&, int&);
 
    std::vector<std::vector<eventt>> events;
    std::unordered_map<addrt,eventt*> mutexmax;

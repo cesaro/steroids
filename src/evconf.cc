@@ -83,4 +83,65 @@ void conft::print ()
    }
 }
 
+void conft::build ()
+{
+   int i = 0;
+   auto st_it = _stream.begin ();
+   while (st_it != _stream.end ())
+   {
+     add_blue_event (st_it, i);  
+   }
+}
 
+bool conft::add_blue_event (action_stream_itt &it, int &i)
+{
+   auto ac = *it++;
+   printf ("idx %5d type %2d '%s' addr %#18lx val %#18lx id %#10x\n",
+      i++,
+      ac.type (),
+      _rt_ev_to_str ((enum eventtype) ac.type ()),
+      ac.addr (),
+      ac.val (),
+      ac.id ());
+   return true;
+/*
+   int type;
+   for (auto ac : _stream)
+   {
+      type = ac.type ();
+      switch (type)
+      {
+      // loads
+      case _RD8       : return ;
+      case _RD16      : return ;
+      case _RD32      : return ;
+      case _RD64      : return ;
+      case _RD128     : return ;
+      // stores
+      case _WR8       : return ;
+      case _WR16      : return ;
+      case _WR32      : return ;
+      case _WR64      : return ;
+      case _WR128     : return ;
+      // memory management
+      case _ALLO      : return ;
+      case _MLLO      : return ;
+      case _FREE      : return ;
+      case _CALL      : return ;
+      case _RET      : return ;
+      // threads
+      case _THCREAT   : return ;
+      // case _THSTART   : return ;
+      case _THEXIT    : return ;
+      case _THJOIN    : return ;
+      case _THCTXSW   : return ;
+      // locks
+      case _MTXINIT   : return ;
+      case _MTXLOCK   : return ;
+      case _MTXUNLK   : return ;
+      // misc
+      case _NONE      : return ;
+      }
+   }
+*/
+}

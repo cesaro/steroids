@@ -77,3 +77,9 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
    return *this;
 }
 
+action_stream_itt action_stream_itt::action_stream_itt::operator++ (int)
+{
+   action_stream_itt ret = *this;
+   this->operator++();
+   return ret;
+}
