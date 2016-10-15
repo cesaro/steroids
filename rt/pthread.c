@@ -165,7 +165,7 @@ int   _rt_pthread_join(pthread_t t, void **retval)
 
    // possibly return with error, log event, and write the retval if user interested
    if (ret) return ret;
-   TRACE3 (_THJOIN, TID (me));
+   TRACE3 (_THJOIN, TID (other));
    if (retval) *retval = other->retval;
    return 0;
 }

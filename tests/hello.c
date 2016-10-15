@@ -360,7 +360,8 @@ void *thread7 (void *arg)
    int ms;
 
    printf ("thread%d: starting! arg %p\n", i, arg);
-   ms = 100 + random () % 300;
+   //ms = 1000 + random () % 200;
+   ms = 200 + random () % 200;
    printf ("thread%d: sleeping %dms ...!\n", i, ms);
    usleep (ms * 1000);
    printf ("thread%d: exiting!\n", i);
@@ -368,6 +369,7 @@ void *thread7 (void *arg)
 }
 
 #define NR 2
+
 int main7 ()
 {
    pthread_t t[NR];
