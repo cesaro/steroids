@@ -108,9 +108,11 @@ void conft::print ()
       for (auto es : ths)
       {
       // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
-      printf ("idx %5d type %2d\n",
+      printf ("idx: %2d\t sidx: %2d\t type: %s\t size of red events: %5zu\n",
          i,
-         es.act.type);
+         es.sidx (),
+         es.act.type_str (),
+         es.redbox.size ());
       i++;
       }
    }
@@ -124,9 +126,6 @@ void conft::build ()
    // current thread identifier
    int cur_tid = 0;
  
-   // type of the actions
-   int type;
- 
    // safety check
    bool is_next_global = false;
  
@@ -136,6 +135,11 @@ void conft::build ()
    // store the exit event per thread
    std::vector<eventt> exitevs(num_ths);
 
+   // if the previous event was a context
+   // switch, we might just want to advance
+   // on the action stream without adding events
+   bool is_new_ev = true;
+
    // create the bottom event
    eventt ev = eventt (num_ths, sidx);
  
@@ -143,6 +147,8 @@ void conft::build ()
    actiont ac;
    while (st_it != _stream.end ())
    {
+      if (is_new_ev)
+      {
       is_next_global = add_red_events (st_it, sidx, ev);
       // at this point, the red events are already in ev
       // is_next_global ensures that the next event of the
@@ -153,11 +159,13 @@ void conft::build ()
  
       // add the blue event to its thread
       events[cur_tid].push_back (ev);
- 
+      }
+
+      is_new_ev = true;
+
       // the iterator now should be pointing to a new blue event
       auto act = *st_it++;
-      type = act.type ();
-      switch (type)
+      switch (act.type ())
       { 
       // threads
       case _THCREAT :
@@ -167,32 +175,34 @@ void conft::build ()
          ev = eventt (sidx++, ac, ev);
          createvs[ac.val] = ev;
          break;
-      case _THEXIT : 
+      case _THEXIT :
+         // @TODO: no other event from this thread can occur after
+         // so it not necessary to search from red events
+         // the current st_it is either the end of the stream
+         // or a context switch. 
          ac.type = action_typet::THEXIT;
          ev = eventt (sidx++, ac, ev);
          exitevs[cur_tid] = ev;
-         events[cur_tid].push_back (ev);
+         if (st_it == _stream.end ())
+            events[cur_tid].push_back (ev);
          break;
-         // act = *st_it++;
       case _THCTXSW :
          // change the current tid
          cur_tid = act.id ();
          // if there are not events in the cur_tid generate THSTART 
          if (events[cur_tid].size () == 0)
          {
-           ev = eventt (sidx++, createvs[cur_tid], cur_tid);
-           break; 
+            ev = eventt (sidx++, createvs[cur_tid], cur_tid);
          }
          else
          {
             // @TODO: check invariant.
             // if it is not the case that the we are in the beginning of a
             // new thread, we move to the next event which can only be a 
-            // JOIN or a LOCK. Thus, we simply increment the iterator and 
-            // do not break. Its crucial that JOIN and LOCK occur after
-            // this case. 
-            act = *st_it++; 
+            // JOIN or a LOCK. 
+            is_new_ev = false;
          }
+         break;
       case _THJOIN :
         ac.type = action_typet::THJOIN;
         ac.val = act.id ();
@@ -208,7 +218,6 @@ void conft::build ()
         ev = eventt (sidx++, ac, ev);
         // assert that the mutexmax for this addr is empty
         auto mut = mutexmax.find (ac.addr);
-        // @TODO: check this
         ASSERT (mut == mutexmax.end ());
         // update the value of mutexmax
         mutexmax[ac.addr] = &ev;
@@ -252,14 +261,12 @@ void conft::build ()
 
 bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
 {
-   int type;
    actiont ac;
    auto act = *it;
    while (act != _stream.end ()) 
    {
-      type = act.type ();
-      printf ("red event of type %d\n", type); 
-      switch (type)
+      i++;
+      switch (act.type ())
       {
       // loads
       case _RD8 : 

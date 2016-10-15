@@ -20,7 +20,7 @@ const char *actiont::type_str ()
    case action_typet::FREE      : return "FREE    ";
    // threads
    case action_typet::THCREAT   : return "THCREAT ";
-   case action_typet::THSTART   : return "THCREAT ";
+   case action_typet::THSTART   : return "THSTART ";
    case action_typet::THEXIT    : return "THEXIT  ";
    case action_typet::THJOIN    : return "THJOIN  ";
    // locks
