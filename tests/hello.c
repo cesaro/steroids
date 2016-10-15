@@ -12,9 +12,8 @@
 #include <sched.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/resource.h>
 
-#if 0
-#endif
 long long l = 123; // 8 bytes
 float f = 3.1415;
 double g = 3.14151627;
@@ -329,12 +328,12 @@ int main5 ()
 void *thread6 (void *arg)
 {
    (void) arg;
-   printf ("thread: sleeping 1s ...\n");
-   sleep (2);
+   printf ("thread: sleeping 400ms ...\n");
+   usleep (400000);
    printf ("thread: exiting!\n");
    //exit (123);
-   pthread_exit ((void*) (long) 0x11223344);
-   //return (void*) (long) 0x11223344;
+   //pthread_exit ((void*) (long) 0x11223344);
+   return (void*) (long) 0x11223344;
 }
 
 int main6 ()
@@ -346,6 +345,8 @@ int main6 ()
    ret = pthread_create (&t, 0, thread6, 0);
    printf ("main: pthread_create: ret %d\n", ret);
 
+   //pthread_exit ((void*) (long) 0x11223344);
+
    ret = pthread_join (t, &retval);
    printf ("main: pthread_join: ret %d retval %p\n", ret, retval);
 
@@ -353,8 +354,44 @@ int main6 ()
    pthread_exit (0);
 }
 
+void *thread7 (void *arg)
+{
+   int i = (unsigned) arg;
+   int ms;
+
+   printf ("thread%d: starting! arg %p\n", i, arg);
+   ms = 100 + random () % 300;
+   printf ("thread%d: sleeping %dms ...!\n", i, ms);
+   usleep (ms * 1000);
+   printf ("thread%d: exiting!\n", i);
+   return (void*) (long) 10 + i;
+}
+
+#define NR 2
+int main7 ()
+{
+   pthread_t t[NR];
+   int ret, i;
+   void *retval[NR];
+
+   for (i = 0; i < NR; i++)
+   {
+      ret = pthread_create (t + i, 0, thread7, (void *) (long) i);
+      printf ("main: pthread_create: ret %d\n", ret);
+   }
+
+   for (i = 0; i < NR; i++)
+   {
+      ret = pthread_join (t[i], retval + i);
+      printf ("main: pthread_join: ret %d retval %p\n", ret, retval[i]);
+   }
+
+   printf ("main: bye bye !\n");
+   return 5656;
+}
+
 int main (int argc, char **argv)
 {
-   return main6 ();
+   return main7 ();
 }
 

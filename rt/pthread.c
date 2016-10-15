@@ -329,9 +329,9 @@ void  _rt_thread_term (void)
    // and it should call it only when the main thread is the only one alive
    if  (__rt_thst.num_ths_alive > 1)
    {
-      FLPRINT ("error: main thread called exit() and %d threads are still alive;"
+      FLPRINT ("error: main thread called exit() but %d other threads are still alive;"
             " this is not currently supported by the runtime",
-            __rt_thst.num_ths_alive);
+            __rt_thst.num_ths_alive - 1);
       exit (1);
    }
 
@@ -354,7 +354,7 @@ void *_rt_thread_start (void *arg)
    _rt_thread_protocol_wait (t);
 
    // run the function provided, with the good argument
-   ret = t->start (arg);
+   ret = t->start (t->arg);
 
    // exit the thread through one unique place in the code
    _rt_pthread_exit (ret);
