@@ -15,7 +15,13 @@ int *_rt___errno_location ()
 
 void _rt_mm_init ()
 {
+   printf ("stid: rt: mm: initializing memory manager\n");
    __malloc_ptr = (uint64_t) rt->heap.begin;
+}
+
+void _rt_mm_term ()
+{
+   printf ("stid: rt: mm: terminating memory manager\n");
 }
 
 void *_rt_calloc  (size_t n, size_t size)
@@ -67,7 +73,11 @@ void _rt_exit (int status)
    fflush (stdout);
    fflush (stderr);
 
-   // EXIT event for the calling thread
+   // termination functions for different subsystems
+   _rt_thread_term ();
+   _rt_mm_term ();
+
+   // EXIT event for the calling thread (which will be main at this point)
    TRACE0 (_THEXIT);
 
    // return control to the host

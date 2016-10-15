@@ -272,8 +272,10 @@ void my_pthread_create (pthread_t *tid, void *(*start) (void *), void *arg)
    // define thread attributes
    ret = pthread_attr_init (&attr);
    printf ("attr_init %d\n", ret);
-   ret = pthread_attr_setstack (&attr, ptr, S);
-   printf ("attr_setstack %d\n", ret);
+   //ret = pthread_attr_setstack (&attr, ptr, S);
+   //printf ("attr_setstack %d\n", ret);
+   //ret = pthread_attr_setstacksize (&attr, 13 << 20);
+   //printf ("attr_setstacksize %d\n", ret);
 
 #undef S
 
@@ -324,9 +326,35 @@ int main5 ()
    return 0;
 }
 
+void *thread6 (void *arg)
+{
+   (void) arg;
+   printf ("thread: sleeping 1s ...\n");
+   sleep (2);
+   printf ("thread: exiting!\n");
+   //exit (123);
+   pthread_exit ((void*) (long) 0x11223344);
+   //return (void*) (long) 0x11223344;
+}
+
+int main6 ()
+{
+   pthread_t t;
+   int ret;
+   void *retval;
+
+   ret = pthread_create (&t, 0, thread6, 0);
+   printf ("main: pthread_create: ret %d\n", ret);
+
+   ret = pthread_join (t, &retval);
+   printf ("main: pthread_join: ret %d retval %p\n", ret, retval);
+
+   printf ("main: bye bye !\n");
+   pthread_exit (0);
+}
+
 int main (int argc, char **argv)
 {
-   //return main3 (argc, argv);
-   return main5 ();
+   return main6 ();
 }
 

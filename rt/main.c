@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "rt.h"
+#include "pthread.h"
 
 #if 1
 #define ASSERT(expr) \
@@ -23,6 +24,8 @@
 
 #define FLPRINT(fmt,args...) \
       printf (__FILE__ ":%d: %s: " fmt "\n", __LINE__, __func__, ##args)
+
+#define SHOW(expr,type)	FLPRINT (#expr "='%" type "'", expr)
 
 // only the event
 #define TRACE0(e) \

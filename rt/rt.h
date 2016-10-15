@@ -62,6 +62,7 @@ void _rt_panic ();
 
 // stdlib.h
 void _rt_mm_init (); // internal
+void _rt_mm_term (); // internal
 void *_rt_malloc  (size_t size);
 void  _rt_free    (void *ptr);
 void *_rt_realloc (void *ptr, size_t size);

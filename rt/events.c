@@ -254,8 +254,9 @@ int _rt_mainn (int argc, const char * const *argv, const char * const *env)
    _rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
    printf ("stid: rt: main: ======================\n");
 
-   // initialize the heap
+   // initialize subsystems
    _rt_mm_init ();
+   _rt_thread_init ();
 
    // determine number of environment variables
    for (n = 0, v = env; *v; ++n, ++v)
