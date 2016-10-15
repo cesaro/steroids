@@ -312,9 +312,9 @@ void test5 ()
 
    conft po (actions);
 
-   // po.build ();
+   po.build ();
 
-   po.print_original_stream ();
+   po.print (); //_original_stream ();
 
    fflush (stdout);
    fflush (stderr);

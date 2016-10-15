@@ -83,3 +83,4 @@ action_stream_itt action_stream_itt::action_stream_itt::operator++ (int)
    this->operator++();
    return ret;
 }
+

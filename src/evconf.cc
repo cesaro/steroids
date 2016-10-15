@@ -2,13 +2,22 @@
 #include "evconf.hh"
 #include "verbosity.h"
 
-eventt::eventt (conft &c, unsigned sidx) :
+eventt::eventt () :
+   _tid (0),
+   _sidx (0),
+   _pre_other (nullptr),
+   act ({.type = action_typet::THSTART}),
+   redbox (),
+   vclock (1)
+{}
+
+eventt::eventt (int num_ths, unsigned sidx) :
    _tid (0),
    _sidx (sidx),
    _pre_other (nullptr),
    act ({.type = action_typet::THSTART}),
    redbox (),
-   vclock (c.num_ths)
+   vclock (num_ths)
 {}
 
 eventt::eventt (unsigned sidx, eventt &creat, unsigned p) :
@@ -56,15 +65,15 @@ conft::conft (action_streamt &s) :
    _stream (s)
 {
    rt *rt = s.get_rt ();
+
    num_ths = rt->trace.num_ths;
+   ASSERT (num_ths > 0);
+   for (int i=0; i < num_ths; i++)
+     events.push_back (std::vector<eventt> ());
+
    num_mutex = rt->trace.num_mutex;
 
-   ASSERT (num_ths > 0);
-   events.reserve (num_ths);
-   if (num_mutex > 0)
-   {
-     mutexmax.reserve (num_mutex);
-   }
+   // std::vector<eventt> mutexmax (num_mutex);
 }
 
 // For debug purposes only (FOR NOW)
@@ -95,11 +104,11 @@ void conft::print ()
    int i = 0;
    for (auto ths : events)
    {
-      printf ("Printing events of thread %2d", ++tid);
+      printf ("Printing events of thread %2d\n", tid++);
       for (auto es : ths)
       {
       // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
-      printf ("idx %5d type %2d",
+      printf ("idx %5d type %2d\n",
          i,
          es.act.type);
       i++;
@@ -122,15 +131,13 @@ void conft::build ()
    bool is_next_global = false;
  
    // store the create event per thread
-   std::vector<eventt> createvs;
-   createvs.reserve (num_ths);
+   std::vector<eventt> createvs(num_ths);
 
    // store the exit event per thread
-   std::vector<eventt> exitevs;
-   exitevs.reserve (num_ths);
+   std::vector<eventt> exitevs(num_ths);
 
    // create the bottom event
-   eventt ev = eventt (*this, sidx);
+   eventt ev = eventt (num_ths, sidx);
  
    auto st_it = _stream.begin ();
    actiont ac;
@@ -146,9 +153,9 @@ void conft::build ()
  
       // add the blue event to its thread
       events[cur_tid].push_back (ev);
-
+ 
       // the iterator now should be pointing to a new blue event
-      auto act = *++st_it;
+      auto act = *st_it++;
       type = act.type ();
       switch (type)
       { 
@@ -157,21 +164,23 @@ void conft::build ()
          ac.type = action_typet::THCREAT;
          ac.val  = act.id ();
          // verify this code
-         ev = eventt (++sidx, ac, ev);
+         ev = eventt (sidx++, ac, ev);
          createvs[ac.val] = ev;
          break;
       case _THEXIT : 
          ac.type = action_typet::THEXIT;
-         ev = eventt (++sidx, ac, ev);
+         ev = eventt (sidx++, ac, ev);
          exitevs[cur_tid] = ev;
+         events[cur_tid].push_back (ev);
          break;
+         // act = *st_it++;
       case _THCTXSW :
          // change the current tid
          cur_tid = act.id ();
          // if there are not events in the cur_tid generate THSTART 
          if (events[cur_tid].size () == 0)
          {
-           ev = eventt (++sidx, createvs[cur_tid], cur_tid);
+           ev = eventt (sidx++, createvs[cur_tid], cur_tid);
            break; 
          }
          else
@@ -182,21 +191,21 @@ void conft::build ()
             // JOIN or a LOCK. Thus, we simply increment the iterator and 
             // do not break. Its crucial that JOIN and LOCK occur after
             // this case. 
-            act = *++st_it; 
+            act = *st_it++; 
          }
       case _THJOIN :
         ac.type = action_typet::THJOIN;
         ac.val = act.id ();
         // assert that we have already seen the exit event
         ASSERT (exitevs[ac.val].act.type == action_typet::THEXIT);
-        ev = eventt (++sidx, ac, ev, exitevs[ac.val]);
+        ev = eventt (sidx++, ac, ev, exitevs[ac.val]);
         break; 
       case _MTXINIT :
       {
         ac.type = action_typet::MTXINIT;
         ac.addr = act.addr ();
         // create the event
-        ev = eventt (++sidx, ac, ev);
+        ev = eventt (sidx++, ac, ev);
         // assert that the mutexmax for this addr is empty
         auto mut = mutexmax.find (ac.addr);
         // @TODO: check this
@@ -215,11 +224,11 @@ void conft::build ()
         // ASSERT (mut != mut.end ()); 
         if (mut == mutexmax.end ())
         {
-            ev = eventt (++sidx, ac, ev);
+            ev = eventt (sidx++, ac, ev);
         }
         else
         {
-            ev = eventt (++sidx, ac, ev, *mut->second);
+            ev = eventt (sidx++, ac, ev, *mut->second);
         }
         // update the value of mutexmax
         mutexmax[ac.addr] = &ev;
@@ -232,7 +241,7 @@ void conft::build ()
         // create the event
         auto mut = mutexmax.find (ac.addr);
         ASSERT (mut != mutexmax.end ()); 
-        ev = eventt (++sidx, ac, ev, *mut->second);
+        ev = eventt (sidx++, ac, ev, *mut->second);
         // update the value of mutexmax
         mutexmax[ac.addr] = &ev;
         break;
@@ -245,10 +254,11 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
 {
    int type;
    actiont ac;
-   auto act = *++it;
+   auto act = *it;
    while (act != _stream.end ()) 
    {
       type = act.type ();
+      printf ("red event of type %d\n", type); 
       switch (type)
       {
       // loads
@@ -351,7 +361,9 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
       // misc
       case _NONE : return false;
       // the remainder are global actions
-      default : return true;
+      default : 
+        printf ("going to exit the red event box\n");
+        return true;
       }
       act = *++it;
    } 

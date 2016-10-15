@@ -18,8 +18,9 @@ private:
    eventt *_pre_other; // needs to be initialized before vclock
 
 public:
+   eventt ();
    // bottom (THSTART for process 0)
-   eventt (conft &c, unsigned sidx);
+   eventt (int num_ths, unsigned sidx);
    // THSTART for process p, creat is the THCREAT
    eventt (unsigned sidx, eventt &creat, unsigned p); 
    // one predecessor (process)
