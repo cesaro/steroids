@@ -18,10 +18,15 @@ private:
    eventt *_pre_other; // needs to be initialized before vclock
 
 public:
-   eventt (conft &c, unsigned sidx); // bottom (THSTART for process 0)
-   eventt (unsigned sidx, eventt &creat, unsigned p); // THSTART for process p, creat is the THCREAT
-   eventt (unsigned sidx, eventt &p); // one predecessor (process)
-   eventt (unsigned sidx, eventt &p, eventt &m); // two predecessors (process, memory/exit)
+   eventt ();
+   // bottom (THSTART for process 0)
+   eventt (int num_ths, unsigned sidx);
+   // THSTART for process p, creat is the THCREAT
+   eventt (unsigned sidx, eventt &creat, unsigned p); 
+   // one predecessor (process)
+   eventt (unsigned sidx, actiont ac, eventt &p);
+   // two predecessors (process, memory/exit)
+   eventt (unsigned sidx, actiont ac, eventt &p, eventt &m); 
 
    actiont act;
    std::vector<actiont> redbox;
@@ -54,9 +59,12 @@ public:
    void build ();
 
    void print ();
+   
+   // just for debug purposes
+   void print_original_stream ();
 
 private:
-   bool add_blue_event ();
+   bool add_red_events (action_stream_itt&, int&, eventt&);
 
    std::vector<std::vector<eventt>> events;
    std::unordered_map<addrt,eventt*> mutexmax;

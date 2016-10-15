@@ -130,13 +130,13 @@ CXXFLAGS_:=-Wall -Wextra -std=c++11 -O3 -g
 
 %.ll : %.c
 	@echo "CC  $< (c -> ll)"
-	@$(CC) $(CFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
+	$(CC) $(CFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
 %.bc : %.c
 	@echo "CC  $< (c -> bc)"
 	@$(CC) $(CFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
 %.ll : %.cc
 	@echo "CXX $< (cc -> ll)"
-	@$(CXX) $(CXXFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
+	$(CXX) $(CXXFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
 %.bc : %.cc
 	@echo "CXX $< (cc -> bc)"
 	@$(CXX) $(CXXFLAGS_) $(CPPFLAGS) -c -flto $< -o $@

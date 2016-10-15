@@ -74,6 +74,7 @@ void _rt_exit (int status);
 int *_rt___errno_location ();
 
 // actions loged in the struct eventrace
+// @TODO: For consistency the enum should be renamed to event_typet
 enum eventtype
 {
    // loads
