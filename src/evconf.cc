@@ -68,7 +68,7 @@ conft::conft (action_streamt &s) :
 }
 
 // For debug purposes only (FOR NOW)
-void conft::print ()
+void conft::print_original_stream ()
 {
    // iterate throught the actions
    int i = 0;
@@ -84,6 +84,26 @@ void conft::print ()
          ac.id ());
       i++;
       if (i >= 200) break;
+   }
+}
+
+// For debug purposes only (FOR NOW)
+void conft::print ()
+{
+   // iterate throught the actions
+   int tid = 0;
+   int i = 0;
+   for (auto ths : events)
+   {
+      printf ("Printing events of thread %2d", ++tid);
+      for (auto es : ths)
+      {
+      // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
+      printf ("idx %5d type %2d",
+         i,
+         es.act.type);
+      i++;
+      }
    }
 }
 

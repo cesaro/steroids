@@ -58,6 +58,9 @@ public:
    void build ();
 
    void print ();
+   
+   // just for debug purposes
+   void print_original_stream ();
 
 private:
    bool add_red_events (action_stream_itt&, int&, eventt&);

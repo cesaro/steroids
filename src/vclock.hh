@@ -12,7 +12,7 @@ public:
       size (size),
       tab (new int[size])
    {
-      for (int i = 0; i < size; ++i) ASSERT (tab[i] == 0);
+      // for (int i = 0; i < size; ++i) ASSERT (tab[i] == 0);
       for (int i = 0; i < size; ++i) tab[i] = 0;
    }
   
