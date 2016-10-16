@@ -151,7 +151,7 @@ void Instrumenter::init_maps ()
    // print function ids
    for (auto &p : funids)
    {
-      DEBUG ("stid: instrumenter: init maps: funids: id %4d %s %s",
+      DEBUG ("stid: instrumenter: init maps: funids: id %#5x %s %s",
             p.second,
             p.first->isDeclaration() ? "decl" : "fun ",
             p.first->getName().str().c_str());

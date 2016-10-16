@@ -59,13 +59,12 @@ Questions:
   still alive?
 - Can we return to the host from a thread different than main?
 - How can we reclaim the stack from the same thread ??
-
-
+- with the current implementation, how to detect a deadlock in the runtime?
 
   
 continue here:
 x how to insert main as the first thread
-- how to prevent pthreads to call exit on the last thread
-- implement pthread_exit
-
+x how to prevent pthreads to call exit on the last thread
+- for those functions that we do not handle, issue a warning in the stream
+- improve support for arbitrary types on load/store
 

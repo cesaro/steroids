@@ -70,7 +70,7 @@ private:
    std::unordered_map<addrt,eventt*> mutexmax;
    action_streamt &_stream;
    int num_ths;
-   int num_mutex;
+   //int num_mutex;
 
    friend class eventt;
 };

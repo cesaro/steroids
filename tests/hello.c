@@ -368,21 +368,21 @@ void *thread7 (void *arg)
    return (void*) (long) 10 + i;
 }
 
-#define NR 2
+#define NR7 2
 
 int main7 ()
 {
-   pthread_t t[NR];
+   pthread_t t[NR7];
    int ret, i;
-   void *retval[NR];
+   void *retval[NR7];
 
-   for (i = 0; i < NR; i++)
+   for (i = 0; i < NR7; i++)
    {
       ret = pthread_create (t + i, 0, thread7, (void *) (long) i);
       printf ("main: pthread_create: ret %d\n", ret);
    }
 
-   for (i = 0; i < NR; i++)
+   for (i = 0; i < NR7; i++)
    {
       ret = pthread_join (t[i], retval + i);
       printf ("main: pthread_join: ret %d retval %p\n", ret, retval[i]);
@@ -392,8 +392,64 @@ int main7 ()
    return 5656;
 }
 
-int main (int argc, char **argv)
+pthread_mutex_t m8 = PTHREAD_MUTEX_INITIALIZER;
+
+void *thread8 (void *arg)
 {
-   return main7 ();
+   int i = (unsigned) arg;
+   int ms, ret;
+
+   // sleep
+   printf ("thread%d: starting! arg %p\n", i, arg);
+   ms = 100 + random () % 500;
+   printf ("thread%d: sleeping %dms ...!\n", i, ms);
+   usleep (ms * 1000);
+
+   // lock, unlock
+   ret = pthread_mutex_lock (&m8);
+   printf ("thread%d: mutex_lock %d!\n", i, ret);
+   ret = pthread_mutex_unlock (&m8);
+   printf ("thread%d: mutex_unlock %d!\n", i, ret);
+
+   printf ("thread%d: exiting!\n", i);
+   return (void*) (long) 10 + i;
+}
+
+#define NR8 2
+
+int main8 ()
+{
+   pthread_t t[NR8];
+   int ret, i;
+   void *retval[NR8];
+
+   // create
+   for (i = 0; i < NR8; i++)
+   {
+      ret = pthread_create (t + i, 0, thread8, (void *) (long) i);
+      printf ("main: pthread_create: ret %d\n", ret);
+   }
+
+   // lock, unlock
+   ret = pthread_mutex_lock (&m8);
+   printf ("main: mutex_lock %d!\n", ret);
+   ret = pthread_mutex_unlock (&m8);
+   printf ("main: mutex_unlock %d!\n", ret);
+
+   // join
+   for (i = 0; i < NR8; i++)
+   {
+      ret = pthread_join (t[i], retval + i);
+      printf ("main: pthread_join: ret %d retval %p\n", ret, retval[i]);
+   }
+
+   printf ("main: bye bye !\n");
+   return 5656;
+}
+
+//int main (int argc, char **argv)
+int main ()
+{
+   return main8 ();
 }
 

@@ -71,7 +71,7 @@ conft::conft (action_streamt &s) :
    for (int i=0; i < num_ths; i++)
      events.push_back (std::vector<eventt> ());
 
-   num_mutex = rt->trace.num_mutex;
+   //num_mutex = rt->trace.num_mutex;
 
    // std::vector<eventt> mutexmax (num_mutex);
 }

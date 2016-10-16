@@ -4,7 +4,7 @@
 
 unsigned int _rt_sleep (unsigned int sec)
 {
-   struct rt_tcb *me = __rt_thst.current;
+   //struct rt_tcb *me = __rt_thst.current;
    unsigned ret;
 
    //_rt_thread_protocol_yield (me);
@@ -15,7 +15,7 @@ unsigned int _rt_sleep (unsigned int sec)
 
 int _rt_usleep (useconds_t us)
 {
-   struct rt_tcb *me = __rt_thst.current;
+   //struct rt_tcb *me = __rt_thst.current;
    unsigned ret;
 
    //_rt_thread_protocol_yield (me);

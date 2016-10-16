@@ -10,23 +10,7 @@
 
 #include "rt.h"
 #include "pthread.h"
-
-#if 1
-#define ASSERT(expr) \
-	{if (! (expr)) { \
-		printf (__FILE__ ":%d: %s: Assertion `" #expr "' failed.\n", \
-				__LINE__, __func__); \
-		_rt_breakme (); \
-		exit (1); \
-	}}
-#else
-#define ASSERT(expr)
-#endif
-
-#define FLPRINT(fmt,args...) \
-      printf (__FILE__ ":%d: %s: " fmt "\n", __LINE__, __func__, ##args)
-
-#define SHOW(expr,type)	FLPRINT (#expr "='%" type "'", expr)
+#include "debug.h"
 
 // only the event
 #define TRACE0(e) \

@@ -32,6 +32,7 @@
 #include "executor.hh"
 #include "checker.hh"
 #include "../rt/rt.h"
+#include "../rt/lsd.h"
 
 void ir_write_ll (const llvm::Module *m, const char *filename)
 {
@@ -320,3 +321,4 @@ void test5 ()
    fflush (stdout);
    fflush (stderr);
 }
+

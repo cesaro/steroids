@@ -12,8 +12,6 @@ struct {
    int next;
    // only one thread executes at a time, pointer stored here
    struct rt_tcb *current;
-   // number of mutexes ever created
-   int num_mutex;
    // number of threads currently alive
    int num_ths_alive;
 } __rt_thst;
@@ -21,68 +19,55 @@ struct {
 #define TID(t) ((int) ((t) - __rt_thst.tcbs))
 
 
-// thread attributes
+// default implementation is good for us:
 //int   _rt_pthread_attr_init(pthread_attr_t *a) { return -1; }
 //int   _rt_pthread_attr_destroy(pthread_attr_t *a) { return -1; }
 //int   _rt_ pthread_attr_getdetachstate(const pthread_attr_t *a, int *d) { return -1; }
-int   _rt_pthread_attr_setdetachstate(pthread_attr_t *a, int s) { return -1; }
+
+int   _rt_pthread_attr_setdetachstate(pthread_attr_t *a, int s)
+{
+   // we only support creating threads in JOINABLE mode
+   (void) a;
+   if (s != PTHREAD_CREATE_JOINABLE) return EINVAL;
+   return 0;
+}
+
 int   _rt_pthread_attr_getguardsize(const pthread_attr_t *a, size_t *s)
 {
-   return -1;
+   // we do not support a guardarea at the end of the stack
+   (void) a;
+   (void) s;
+   return EINVAL;
 }
-int   _rt_pthread_attr_getinheritsched(const pthread_attr_t *a, int *i)
-{
-   return -1;
-}
-int   _rt_pthread_attr_getschedparam(const pthread_attr_t *a, struct sched_param *p)
-{
-   return -1;
-}
-int   _rt_pthread_attr_getschedpolicy(const pthread_attr_t *a, int *p)
-{
-   return -1;
-}
-int   _rt_pthread_attr_getscope(const pthread_attr_t *a, int *s)
-{
-   return -1;
-}
-//int   _rt_pthread_attr_getstack(const pthread_attr_t *restrict a, void **restrict addr, size_t *restrict size) { return -1; }
-int   _rt_pthread_attr_setstack(pthread_attr_t *a, void *addr, size_t size)
-{
-   return -1;
-}
-//int   _rt_pthread_attr_getstacksize(const pthread_attr_t *a, size_t *p) { return -1; }
-//int   _rt_pthread_attr_setstacksize(pthread_attr_t *a, size_t s) { return -1; }
 int   _rt_pthread_attr_setguardsize(pthread_attr_t *a, size_t s)
 {
-   return -1;
+   (void) a;
+   (void) s;
+   return EINVAL;
 }
-int   _rt_pthread_attr_setinheritsched(pthread_attr_t *a, int i)
-{
-   return -1;
-}
-int   _rt_pthread_attr_setschedparam(pthread_attr_t *a, const struct sched_param *p)
-{
-   return -1;
-}
-int   _rt_pthread_attr_setschedpolicy(pthread_attr_t *a, int p)
-{
-   return -1;
-}
-int   _rt_pthread_attr_setscope(pthread_attr_t *a, int s)
-{
-   return -1;
-}
+
+// default implementations good:
+//int   _rt_pthread_attr_getinheritsched(const pthread_attr_t *a, int *i) { return -1; }
+//int   _rt_pthread_attr_getschedparam(const pthread_attr_t *a, struct sched_param *p) { return -1; }
+//int   _rt_pthread_attr_getschedpolicy(const pthread_attr_t *a, int *p) { return -1; }
+//int   _rt_pthread_attr_getscope(const pthread_attr_t *a, int *s) { return -1; }
+//int   _rt_pthread_attr_getstack(const pthread_attr_t *restrict a, void **restrict addr, size_t *restrict size) { return -1; }
+//int   _rt_pthread_attr_setstack(pthread_attr_t *a, void *addr, size_t size) { return -1; }
+//int   _rt_pthread_attr_getstacksize(const pthread_attr_t *a, size_t *p) { return -1; }
+//int   _rt_pthread_attr_setstacksize(pthread_attr_t *a, size_t s) { return -1; }
+//int   _rt_pthread_attr_setinheritsched(pthread_attr_t *a, int i) { return -1; }
+//int   _rt_pthread_attr_setschedparam(pthread_attr_t *a, const struct sched_param *p) { return -1; }
+//int   _rt_pthread_attr_setschedpolicy(pthread_attr_t *a, int p) { return -1; }
+//int   _rt_pthread_attr_setscope(pthread_attr_t *a, int s) { return -1; }
 
 int   _rt_pthread_create(pthread_t *tid,
       const pthread_attr_t *attr, void *(*start)(void *), void *arg)
 {
-   int i, ret;
+   int ret;
    struct rt_tcb *t;
    pthread_attr_t attr2;
    int need_destroy = 0;
 
-   FLPRINT ("here");
    // get a TCB
    if (__rt_thst.next >= RT_MAX_THREADS) return ENOMEM;
    t = __rt_thst.tcbs + __rt_thst.next++;
@@ -92,6 +77,7 @@ int   _rt_pthread_create(pthread_t *tid,
    t->flags.detached = 0;
    t->start = start;
    t->arg = arg;
+   t->ownedmut_size = 0;
    ret = pthread_cond_init (&t->cond, 0);
    if (ret) goto err_cond; // we return the same error
 
@@ -142,7 +128,9 @@ err_cond:
 
 int   _rt_pthread_detach(pthread_t t)
 {
-   return -1;
+   // main needs to JOIN for them, we do not support this for the time begin
+   (void) t;
+   return EINVAL;
 }
 
 //int   _rt_pthread_equal(pthread_t t1, pthread_t t2) { return -1; }
@@ -152,15 +140,8 @@ int   _rt_pthread_join(pthread_t t, void **retval)
    struct rt_tcb *other = 0;
    struct rt_tcb *me = __rt_thst.current;
 
-   FLPRINT ("here");
-
-   // release the cs mutex
    _rt_thread_protocol_yield (me);
-
-   // join, receiving a pointer to the joined thread
-   ret = pthread_join (t, &other);
-
-   // acquire the mutex again
+   ret = pthread_join (t, (void *) &other);
    _rt_thread_protocol_wait (me);
 
    // possibly return with error, log event, and write the retval if user interested
@@ -172,27 +153,27 @@ int   _rt_pthread_join(pthread_t t, void **retval)
 
 void  _rt_pthread_exit(void *retval)
 {
-   struct rt_tcb *cur = __rt_thst.current;
-   printf ("stid: rt: threading: t%d: exiting!\n", TID (cur));
+   struct rt_tcb *me = __rt_thst.current;
+   printf ("stid: rt: threading: t%d: exiting!\n", TID (me));
 
    // if we are the main thread, we exit with status 0
    // FIXME - this is strictly a violation of what POSIX says, we should wait
    // for the others, but the current implementation does not support that
-   if (TID (cur) == 0) _rt_exit (0);
+   if (TID (me) == 0) _rt_exit (0);
 
    // otherwise, log the _THEXIT event and decrement number of threads alive
    TRACE0 (_THEXIT);
    __rt_thst.num_ths_alive--;
-   cur->retval = retval;
+   me->retval = retval;
+   me->flags.alive = 0;
 
    // FIXME - free the stack!!!
 
    // exit protocol: we release the cs mutex
-   _rt_thread_protocol_yield (cur);
+   _rt_thread_protocol_yield (me);
 
    // terminate this thread and return retval
-   FLPRINT ("calling NPTL pthread_exit");
-   pthread_exit (cur);
+   pthread_exit (me);
 }
 
 pthread_t _rt_pthread_self (void)
@@ -201,37 +182,123 @@ pthread_t _rt_pthread_self (void)
 }
 
 // thread cancellation
-int   _rt_pthread_cancel(pthread_t);
-int   _rt_pthread_setcancelstate(int, int *);
-int   _rt_pthread_setcanceltype(int, int *);
-void  _rt_pthread_testcancel(void);
-void  _rt_pthread_cleanup_push(void (*routine)(void *arg), void *arg);
-void  _rt_pthread_cleanup_pop(int);
+int   _rt_pthread_cancel(pthread_t t)
+{
+   (void) t;
+   PRINT ("pthread_cancel called and we do not have support for it");
+   return EINVAL;
+}
+int   _rt_pthread_setcancelstate(int state, int *oldstate)
+{
+   (void) state;
+   (void) oldstate;
+   // FIXME -- issue a warning in the stream
+   PRINT ("pthread_setcancelstate called and we do not have support for it");
+   return EINVAL;
+}
+int   _rt_pthread_setcanceltype(int type, int *oldtype)
+{
+   (void) type;
+   (void) oldtype;
+   // FIXME -- issue a warning in the stream
+   PRINT ("pthread_setcanceltype called and we do not have support for it");
+   return EINVAL;
+}
+void  _rt_pthread_testcancel(void)
+{
+   // FIXME -- issue a warning in the stream
+   PRINT ("pthread_test_cancel called and we do not have support for it");
+}
+// FIXME - guess how to support or not this
+#if 0
+void  _rt_pthread_cleanup_push(void (*routine)(void *arg), void *arg)
+{
+   (void) routine;
+   (void) arg;
+   // FIXME -- issue a warning in the stream
+   PRINT ("pthread_cleanup_push called and we do not have support for it");
+   pthread_cleanup_push (routine, arg);
+}
+void  _rt_pthread_cleanup_pop(int ex)
+{
+   (void) ex;
+   PRINT ("pthread_cleanup_pop called and we do not have support for it");
+   pthread_cleanup_pop (ex);
+}
+#endif
 
 // attributes for mutexes
-int   _rt_pthread_mutexattr_init(pthread_mutexattr_t *);
-int   _rt_pthread_mutexattr_destroy(pthread_mutexattr_t *);
-int   _rt_pthread_mutexattr_getprioceiling( const pthread_mutexattr_t *restrict, int *restrict);
-int   _rt_pthread_mutexattr_getprotocol(const pthread_mutexattr_t *restrict, int *restrict);
-int   _rt_pthread_mutexattr_getpshared(const pthread_mutexattr_t *restrict, int *restrict);
-int   _rt_pthread_mutexattr_getrobust(const pthread_mutexattr_t *restrict, int *restrict);
-int   _rt_pthread_mutexattr_gettype(const pthread_mutexattr_t *restrict, int *restrict);
-int   _rt_pthread_mutexattr_setprioceiling(pthread_mutexattr_t *, int);
-int   _rt_pthread_mutexattr_setprotocol(pthread_mutexattr_t *, int);
-int   _rt_pthread_mutexattr_setpshared(pthread_mutexattr_t *, int);
-int   _rt_pthread_mutexattr_setrobust(pthread_mutexattr_t *, int);
-int   _rt_pthread_mutexattr_settype(pthread_mutexattr_t *, int);
+//int   _rt_pthread_mutexattr_init(pthread_mutexattr_t *);
+//int   _rt_pthread_mutexattr_destroy(pthread_mutexattr_t *);
+//int   _rt_pthread_mutexattr_getprioceiling( const pthread_mutexattr_t *restrict, int *restrict);
+//int   _rt_pthread_mutexattr_getprotocol(const pthread_mutexattr_t *restrict, int *restrict);
+//int   _rt_pthread_mutexattr_getpshared(const pthread_mutexattr_t *restrict, int *restrict);
+//int   _rt_pthread_mutexattr_getrobust(const pthread_mutexattr_t *restrict, int *restrict);
+//int   _rt_pthread_mutexattr_gettype(const pthread_mutexattr_t *restrict, int *restrict);
+//int   _rt_pthread_mutexattr_setprioceiling(pthread_mutexattr_t *, int);
+//int   _rt_pthread_mutexattr_setprotocol(pthread_mutexattr_t *, int);
+//int   _rt_pthread_mutexattr_setpshared(pthread_mutexattr_t * a, int s)
+int   _rt_pthread_mutexattr_settype(pthread_mutexattr_t *a, int type)
+{
+   (void) a;
+   if (type != PTHREAD_MUTEX_NORMAL) return EINVAL;
+   return 0;
+}
+int   _rt_pthread_mutexattr_setrobust(pthread_mutexattr_t *a, int rob)
+{
+   // We only support robust-mutexes (the default value)
+   (void) a;
+   if (rob != PTHREAD_MUTEX_STALLED) return EINVAL;
+   return 0;
+}
 
 // mutexes
-int   _rt_pthread_mutex_consistent(pthread_mutex_t *);
-int   _rt_pthread_mutex_destroy(pthread_mutex_t *);
-int   _rt_pthread_mutex_getprioceiling(const pthread_mutex_t *restrict, int *restrict);
-int   _rt_pthread_mutex_init(pthread_mutex_t *restrict, const pthread_mutexattr_t *restrict);
-int   _rt_pthread_mutex_lock(pthread_mutex_t *);
-int   _rt_pthread_mutex_setprioceiling(pthread_mutex_t *restrict, int, int *restrict);
-int   _rt_pthread_mutex_timedlock(pthread_mutex_t *restrict, const struct timespec *restrict);
-int   _rt_pthread_mutex_trylock(pthread_mutex_t *);
-int   _rt_pthread_mutex_unlock(pthread_mutex_t *);
+//int   _rt_pthread_mutex_init(pthread_mutex_t *restrict, const pthread_mutexattr_t *restrict);
+//int   _rt_pthread_mutex_destroy(pthread_mutex_t *);
+//int   _rt_pthread_mutex_getprioceiling(const pthread_mutex_t *restrict, int *restrict);
+//int   _rt_pthread_mutex_setprioceiling(pthread_mutex_t *restrict, int, int *restrict);
+int   _rt_pthread_mutex_consistent(pthread_mutex_t *m)
+{
+   (void) m;
+   return EINVAL;
+}
+int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
+{
+   struct rt_tcb *me = __rt_thst.current;
+   int ret;
+
+   _rt_thread_protocol_yield (me);
+   ret = pthread_mutex_lock (m);
+   _rt_thread_protocol_wait (me);
+   TRACE1 (_MTXLOCK, m);
+   return ret;
+}
+
+int   _rt_pthread_mutex_unlock(pthread_mutex_t *m)
+{
+   int ret;
+   ret = pthread_mutex_unlock (m);
+   TRACE1 (_MTXUNLK, m);
+   return ret;
+}
+
+int   _rt_pthread_mutex_timedlock(pthread_mutex_t *restrict m,
+      const struct timespec *restrict tm)
+{
+   (void) m;
+   (void) tm;
+   // FIXME -- issue a warning in the stream
+   PRINT ("pthread_mutex_timedlock called and we do not have support for it");
+   return EINVAL;
+}
+
+int   _rt_pthread_mutex_trylock(pthread_mutex_t * m)
+{
+   (void) m;
+   // FIXME -- issue a warning in the stream
+   PRINT ("pthread_mutex_trylock called and we do not have support for it");
+   return EINVAL;
+}
 
 // attributes for conditional variables
 int   _rt_pthread_condattr_destroy(pthread_condattr_t *);
@@ -307,7 +374,6 @@ void  _rt_thread_init (void)
    printf ("stid: rt: threading: initializing the multithreading library\n");
    __rt_thst.next = 1;
    __rt_thst.current = __rt_thst.tcbs;
-   __rt_thst.num_mutex = 0;
    __rt_thst.num_ths_alive = 1;
    _rt_thread_protocol_wait (__rt_thst.current);
 }
@@ -320,7 +386,7 @@ void  _rt_thread_term (void)
    // otherwise
    if (TID (__rt_thst.current) != 0)
    {
-      FLPRINT ("error: thread %d called exit() but this runtime "
+      PRINT ("error: thread %d called exit() but this runtime "
             "only supports calls to exit() from the main thread",
             TID (__rt_thst.current));
       exit (1);
@@ -329,7 +395,7 @@ void  _rt_thread_term (void)
    // and it should call it only when the main thread is the only one alive
    if  (__rt_thst.num_ths_alive > 1)
    {
-      FLPRINT ("error: main thread called exit() but %d other threads are still alive;"
+      PRINT ("error: main thread called exit() but %d other threads are still alive;"
             " this is not currently supported by the runtime",
             __rt_thst.num_ths_alive - 1);
       exit (1);
@@ -337,7 +403,7 @@ void  _rt_thread_term (void)
 
    // copy information to the trace structure
    rt->trace.num_ths = __rt_thst.next;
-   rt->trace.num_mutex = __rt_thst.num_mutex;
+   //rt->trace.num_mutex = 0;
 
    // release the cs mutex (no other thread can acquire it)
    _rt_thread_protocol_yield (__rt_thst.current);
@@ -383,7 +449,7 @@ void _rt_thread_protocol_wait (struct rt_tcb *t)
    }
 
 err_panic :
-   FLPRINT ("error: t%d: acquiring internal mutex: %s", TID (t), strerror (ret));
+   PRINT ("error: t%d: acquiring internal mutex: %s", TID (t), strerror (ret));
    _rt_end (255);
 }
 
@@ -401,7 +467,7 @@ void _rt_thread_protocol_yield (struct rt_tcb *t)
    return;
 
 err_panic :
-   FLPRINT ("error: t%d: releasing internal mutex: %s", TID (t), strerror (ret));
+   PRINT ("error: t%d: releasing internal mutex: %s", TID (t), strerror (ret));
    _rt_end (255);
 }
 
@@ -412,9 +478,6 @@ int _rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr)
    // get stack paramters from a
    ret = pthread_attr_getstack (attr, &t->stackaddr, &t->stacksize);
    if (ret) goto err_getstack;
-   SHOW (ret, "d");
-   SHOW (t->stackaddr, "p");
-   SHOW (t->stacksize, "zu");
 
    // user already set up the stack
    if (t->stackaddr != 0) return 0;

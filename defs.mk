@@ -50,7 +50,7 @@ TOOLS_TEST_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(TOOLS_TEST_MSRCS)))
 TOOLS_TEST_TARGETS:=$(TOOLS_TEST_MOBJS:.o=)
 
 # ### rt ###
-RT_SRCS:=$(wildcard rt/main.c rt/*.s)
+RT_SRCS:=$(wildcard rt/main.c rt/lsd.c rt/*.s)
 #RT_SRCS:=$(wildcard rt/*.c rt/*.s)
 RT_MSRCS:=
 RT_OBJS:=$(patsubst %.c,%.ll,$(patsubst %.s,%.ll,$(RT_SRCS)))
@@ -125,8 +125,8 @@ YACC:=bison
 	@echo "DOT $<"
 	@dot -T jpg < $< > $@
 
-CFLAGS_:=-Wall -Wextra -std=c11 -g
-CXXFLAGS_:=-Wall -Wextra -std=c++11 -O3 -g
+CFLAGS_:=-Wall -Wextra -std=c11 -pthread -g -O0
+CXXFLAGS_:=-Wall -Wextra -std=c++11 -pthread -O0 -g
 
 %.ll : %.c
 	@echo "CC  $< (c -> ll)"

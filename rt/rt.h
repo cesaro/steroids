@@ -69,6 +69,8 @@ void *_rt_realloc (void *ptr, size_t size);
 
 // unistd.h
 void _rt_exit (int status);
+unsigned int _rt_sleep (unsigned int secs);
+int _rt_usleep (useconds_t us);
 
 // errno.h
 int *_rt___errno_location ();
@@ -131,7 +133,7 @@ struct eventrace {
    uint64_t size;
 
    int num_ths;
-   int num_mutex;
+   //int num_mutex;
 };
 
 // this stores the entire state of the runtime

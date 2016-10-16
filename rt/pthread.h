@@ -9,9 +9,11 @@
 // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/pthread.h.html
 
 #include <pthread.h>
+#include "lsd.h"
 
 #define RT_MAX_THREADS 128
 #define RT_DEFAULT_STACK_SIZE (8 << 20) // 8M
+#define RT_MAX_OWNED_MUTEXES 64
 
 // Thread Control Block
 struct rt_tcb
@@ -34,6 +36,15 @@ struct rt_tcb
    // location of the stack
    void  *stackaddr;
    size_t stacksize;
+
+   // the list of mutexes currently owned by the thread
+   pthread_mutex_t *ownedmut[RT_MAX_OWNED_MUTEXES];
+   unsigned ownedmut_size;
+};
+
+struct rt_mut
+{
+   struct lsd node;
 };
 
 // thread attributes
@@ -87,15 +98,15 @@ int   _rt_pthread_mutexattr_setrobust(pthread_mutexattr_t *, int);
 int   _rt_pthread_mutexattr_settype(pthread_mutexattr_t *, int);
 
 // mutexes
-int   _rt_pthread_mutex_consistent(pthread_mutex_t *);
+int   _rt_pthread_mutex_init(pthread_mutex_t *restrict, const pthread_mutexattr_t *restrict);
 int   _rt_pthread_mutex_destroy(pthread_mutex_t *);
 int   _rt_pthread_mutex_getprioceiling(const pthread_mutex_t *restrict, int *restrict);
-int   _rt_pthread_mutex_init(pthread_mutex_t *restrict, const pthread_mutexattr_t *restrict);
-int   _rt_pthread_mutex_lock(pthread_mutex_t *);
 int   _rt_pthread_mutex_setprioceiling(pthread_mutex_t *restrict, int, int *restrict);
+int   _rt_pthread_mutex_consistent(pthread_mutex_t *);
+int   _rt_pthread_mutex_lock(pthread_mutex_t *);
+int   _rt_pthread_mutex_unlock(pthread_mutex_t *);
 int   _rt_pthread_mutex_timedlock(pthread_mutex_t *restrict, const struct timespec *restrict);
 int   _rt_pthread_mutex_trylock(pthread_mutex_t *);
-int   _rt_pthread_mutex_unlock(pthread_mutex_t *);
 
 // attributes for conditional variables
 int   _rt_pthread_condattr_destroy(pthread_condattr_t *);
