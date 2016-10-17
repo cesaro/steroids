@@ -256,88 +256,75 @@ void conft::build ()
 bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
 {
    actiont ac;
+   int ty;
    auto act = *it;
+
    while (act != _stream.end ()) 
    {
-      switch (act.type ())
+      ty = act.type ();
+      switch (ty)
       {
       // loads
       case RT_RD8 : 
          ac.type = action_typet::RD8;
-         ac.addr = *act.addr ();
-         ac.val  = act.val ();
+         ac.addr = act.addr ();
+         ac.val  = *act.val ();
          b_ev.redbox.push_back (ac);
          break; 
       case RT_RD16 : 
          ac.type = action_typet::RD16;
-         ac.addr = *act.addr ();
-         ac.val  = act.val ();
+         ac.addr = act.addr ();
+         ac.val  = *act.val ();
          b_ev.redbox.push_back (ac);
          break; 
       case RT_RD32 : 
          ac.type = action_typet::RD32;
-         ac.addr = *act.addr ();
-         ac.val  = act.val ();
+         ac.addr = act.addr ();
+         ac.val  = *act.val ();
          b_ev.redbox.push_back (ac);
          break;
       case RT_RD64 : 
          ac.type = action_typet::RD64;
-         ac.addr = *act.addr ();
-         ac.val  = act.val ();
-         b_ev.redbox.push_back (ac);
-         break;
-      case RT_RD128 : 
-         ac.type = action_typet::RD64;
          ac.addr = act.addr ();
-         ac.val  = act.val ();
-         b_ev.redbox.push_back (ac);
-         ac.val  = act.val2 ();
+         ac.val  = *act.val ();
          b_ev.redbox.push_back (ac);
          break;
       // stores
       case RT_WR8 : 
          ac.type = action_typet::WR8;
          ac.addr = act.addr ();
-         ac.val  = act.val ();
+         ac.val  = *act.val ();
          b_ev.redbox.push_back (ac);
          break;
       case RT_WR16 : 
          ac.type = action_typet::WR16;
          ac.addr = act.addr ();
-         ac.val  = act.val ();
+         ac.val  = *act.val ();
          b_ev.redbox.push_back (ac);
          break;
       case RT_WR32 : 
          ac.type = action_typet::WR32;
          ac.addr = act.addr ();
-         ac.val  = act.val ();
+         ac.val  = *act.val ();
          b_ev.redbox.push_back (ac);
          break;
       case RT_WR64 : 
          ac.type = action_typet::WR64;
          ac.addr = act.addr ();
-         ac.val  = act.val ();
-         b_ev.redbox.push_back (ac);
-         break;
-      case RT_WR128 : 
-         ac.type = action_typet::WR64;
-         ac.addr = act.addr ();
-         ac.val  = act.val ();
-         b_ev.redbox.push_back (ac);
-         ac.val  = act.val2 ();
+         ac.val  = *act.val ();
          b_ev.redbox.push_back (ac);
          break;
       // memory management
       case RT_ALLOCA :
          ac.type = action_typet::MALLOC;
          ac.addr = act.addr ();
-         ac.val  = act.val ();
+         ac.val  = *act.val ();
          b_ev.redbox.push_back (ac);
          break;
       case RT_MALLOC :
          ac.type = action_typet::MALLOC;
          ac.addr = act.addr ();
-         ac.val  = act.val ();
+         ac.val  = *act.val ();
          b_ev.redbox.push_back (ac);
          break;
       case RT_FREE :
@@ -360,7 +347,31 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
          break;
       // the remainder are global actions
       default : 
-        // @FIXME : deal here with the multi-word RD/WR actions !!!!
+        if (RT_IS_MULTIW_RD (ty))
+        {
+           // min 5 max 31
+           ac.type = action_typet::RD64;
+           ac.addr = act.addr ();
+           for (int i = 0; i < act.val_size (); i++)
+           {
+             ac.val = *act.val ();
+             b_ev.redbox.push_back (ac);
+           }
+           break;
+        }
+        if (RT_IS_MULTIW_WR (ty))
+        {
+           // min 5 max 31
+           ac.type = action_typet::WR64;
+           ac.addr = act.addr ();
+           for (int i = 0; i < act.val_size (); i++)
+           {
+             ac.val = *act.val ();
+             b_ev.redbox.push_back (ac);
+           }
+           break;
+        }
+
         printf ("going to exit the red event box of event %2d\n", b_ev.sidx ());
         return true;
       }
