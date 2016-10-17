@@ -1,6 +1,7 @@
 
 #include <err.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -216,6 +217,16 @@ int stid_test ()
    //printf ("stid_test: exited stid_get_poexec\n");
    //r = stid_print_po (*po); 
    //printf ("stid_test: result of print %2d\n", r);
+   const char *user = getenv ("USER");
+
+   // for Cesar
+   // if (user and strcmp (user, "cesar") == 0)
+   // {
+   //    test6 ();
+   //    return 0;
+   // }
+
+   // for anyone else
    test5 ();
    fflush(stdout);
    return 0;

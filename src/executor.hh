@@ -37,11 +37,15 @@ private :
    llvm::LLVMContext             &ctx;
    llvm::Module                  *m;
    llvm::ExecutionEngine         *ee;
+   int (*entry) (int, const char* const*, const char* const*);
 
-   llvm::Constant *ptr_to_llvm (void *ptr, llvm::Type *t);
    void initialize_and_instrument_rt ();
    void instrument_events ();
+   void jit_compile ();
+   void optimize ();
+   void restart_trace ();
    void malloc_memreg (struct memreg *m, size_t size);
+   llvm::Constant *ptr_to_llvm (void *ptr, llvm::Type *t);
 };
 
 class MyMemoryManager : public llvm::SectionMemoryManager
