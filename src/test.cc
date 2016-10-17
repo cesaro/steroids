@@ -289,7 +289,7 @@ void test5 ()
    ExecutorConfig conf;
    conf.memsize = 512 << 20; // 512M
    conf.stacksize = 16 << 20; // 16M
-   conf.tracesize = 8 << 20; // 8M events (x 11 bytes per event)
+   conf.tracesize = 16 << 20; // 16M events (x 11 bytes per event)
    Executor e (std::move (mod), conf);
 
    // write instrumented code to file, for debugging purposes

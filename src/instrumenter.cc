@@ -63,16 +63,8 @@ bool Instrumenter::instrument (llvm::Module &m)
 
 bool Instrumenter::find_rt ()
 {
-   //ld1  = m->getFunction ("_rt_load1");
-   ld8  = m->getFunction ("_rt_load8");
-   ld16 = m->getFunction ("_rt_load16");
-   ld32 = m->getFunction ("_rt_load32");
-   ld64 = m->getFunction ("_rt_load64");
-   ldf = m->getFunction ("_rt_loadf");
-   ldd = m->getFunction ("_rt_loadd");
-   ldld = m->getFunction ("_rt_loadld");
-
-   //st1  = m->getFunction ("_rt_store1");
+   load_pre  = m->getFunction ("_rt_load_pre");
+   load_post = m->getFunction ("_rt_load_post");
    store_pre  = m->getFunction ("_rt_store_pre");
    store_post = m->getFunction ("_rt_store_post");
 
@@ -83,7 +75,7 @@ bool Instrumenter::find_rt ()
    call = m->getFunction ("_rt_call");
    ret  = m->getFunction ("_rt_ret");
 
-   return ld32 != nullptr;
+   return load_pre != nullptr and store_post != nullptr;
 }
 
 bool Instrumenter::is_rt_fun (llvm::Function *f)
@@ -157,86 +149,46 @@ void Instrumenter::init_maps ()
 
 void Instrumenter::visitLoadInst (llvm::LoadInst &i)
 {
-   llvm::IRBuilder<> b (i.getNextNode ());
+   llvm::IRBuilder<> b (&i); // we instrument BEFORE the load instruction
    llvm::Value *addr;
-   llvm::Type *t;
-   llvm::Function *f;
-   llvm::Value *newi;
+   uint64_t size;
 
-   //llvm::outs() << "stid: visit load\n";
-   //llvm::outs() << "stid:   i" << i << "\n";
+   //llvm::outs() << "stid: " << i << "\n";
 
-   // if we are tring to load a pointer, make a bitcast to uint64_t
+   // get the address from where we want to load and bitcast it to i8*
    addr = i.getPointerOperand ();
-   if (i.getType()->isPointerTy())
+   addr = b.CreateBitCast (addr, b.getInt8PtrTy ());
+
+   // compute the size of the loaded value, according to the DataLayaout
+   size = m->getDataLayout().getTypeStoreSize (i.getType());
+
+   // make sure size has not a crazy value
+   switch (size)
    {
-      // t = i64*, address is bitcasted to type t
-      t = llvm::Type::getInt64PtrTy (*ctx, addr->getType()->getPointerAddressSpace());
-      addr = b.CreateBitCast (addr, t, "imnt");
-      f = ld64;
-   }
-   else if (i.getType()->isIntegerTy())
-   {
-      // integers
-      // use isSized() + queries to the DataLayaout system to generalize this
-      switch (i.getType()->getIntegerBitWidth ())
+   case 1 :
+   case 2 :
+   case 4 :
+   case 8 :
+      break;
+   default :
+      if (size & 7)
       {
-      //case 1 : f = ld8; break;
-      case 8 : f = ld8; break;
-      case 16 : f = ld16; break;
-      case 32 : f = ld32; break;
-      case 64 : f = ld64; break;
-      default :
-         llvm::outs() << "stid:   " << i << "\n";
-         throw std::runtime_error ("Instrumentation: load instruction: integer type: cannot handle bitwith");
+         int ssize = (size + 8) & -8;
+         std::string s;
+         print_value (&i, s);
+         DEBUG ("stid: instrumenter: WARNING: casting %u bit load to %u bit load:",
+               8 * size, 8 * ssize);
+         size = ssize;
+         DEBUG ("stid: instrumenter:  %s", s.c_str());
       }
-   }
-   else if (i.getType()->isFloatTy ())
-   {
-      f = ldf;
-   }
-   else if (i.getType()->isDoubleTy ())
-   {
-      f = ldd;
-   }
-   else if (i.getType()->isX86_FP80Ty ())
-   {
-      f = ldld;
-   }
-   else
-   {
-      llvm::outs() << "stid:   " << i << "\n";
-      throw std::runtime_error ("Instrumentation: load instruction: cannot handle the type");
    }
 
    // instruction to call to the runtime
-   newi = b.CreateCall (f, {addr});
+   b.CreateCall (load_pre, {addr, b.getInt32 (size)});
 
-   // if we typecasted a pointer to a pointer, then undo the cast after loading
-   if (i.getType()->isPointerTy())
-   {
-      newi = b.CreateIntToPtr (newi, i.getType(), "imnt");
-   }
-   //llvm::outs() << "stid:   newi " << *newi << "\n";
-
-   // replace all uses of i by the value newi
-   i.replaceAllUsesWith (newi);
-
-#if 0
-   // this won't work, as you invalidate the iterator on the first modification
-   // and the loop iterates only 1 time
-   llvm::outs() << "stid:   i.uses:\n";
-   for (auto &use : i.uses())
-   {
-      llvm::User *user = use.getUser ();
-      llvm::outs() << "stid:     user " << user << " operand " <<
-            use.getOperandNo () << " dump " << *user << "\n";
-      //user->setOperand (use.getOperandNo (), newi);
-   }
-#endif
-
-   // remove i
-   i.eraseFromParent ();
+   // reattach the builder after the instruction and instrument a second call
+   b.SetInsertPoint (i.getNextNode ());
+   b.CreateCall (load_post, {addr, b.getInt32 (size)});
 
    count++;
 }
@@ -249,7 +201,7 @@ void Instrumenter::visitStoreInst (llvm::StoreInst &i)
    llvm::Type *t;
    uint64_t size;
 
-   llvm::outs() << "stid: " << i << "\n";
+   //llvm::outs() << "stid: " << i << "\n";
 
    // get the address where we want to store and bitcast it to i8*
    addr = i.getPointerOperand ();
@@ -316,10 +268,10 @@ void Instrumenter::visitAllocaInst (llvm::AllocaInst &i)
 
 void Instrumenter::visitCallInst (llvm::CallInst &i)
 {
-   llvm::outs() << "stid: instrumenter: " << i << "\n";
+   //llvm::outs() << "stid: instrumenter: " << i << "\n";
    auto it = substmap.find (i.getCalledFunction ());
    if (it == substmap.end ()) return;
-   DEBUG ("stid: instrumenter: applying substitution");
+   //DEBUG ("stid: instrumenter: applying substitution");
    i.setCalledFunction (it->second);
 }
 

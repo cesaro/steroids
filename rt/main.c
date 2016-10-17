@@ -14,7 +14,6 @@
 
 // only the event
 #define TRACE0(e) \
-      _rt_debug_trace0 (e); \
       *rt->trace.evptr++   = e;
 // event + address
 #define TRACE1(e,addr) \

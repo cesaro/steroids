@@ -26,14 +26,8 @@ private:
    llvm::Module      *m;
    //llvm::DataLayout *layout;
 
-   llvm::Function *ld8;
-   llvm::Function *ld16;
-   llvm::Function *ld32;
-   llvm::Function *ld64;
-   llvm::Function *ldf;
-   llvm::Function *ldd;
-   llvm::Function *ldld;
-
+   llvm::Function *load_pre;
+   llvm::Function *load_post;
    llvm::Function *store_pre;
    llvm::Function *store_post;
 

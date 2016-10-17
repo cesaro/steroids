@@ -136,7 +136,7 @@ int main2 ()
    char buff[256];
 
    printf ("before strcpy\n");
-   mystrcpy (buff, "hello world, this is a test!!12");
+   mystrcpy (buff, "Hello world, this is a test!!");
    printf ("after strcpy\n");
    printf ("buff %p\n", buff);
    return 111;
@@ -518,7 +518,7 @@ int main9 ()
 //int main (int argc, char **argv)
 int main ()
 {
-   //return main8 ();
-   return main2 ();
+   return main8 ();
+   //return main2 ();
 }
 

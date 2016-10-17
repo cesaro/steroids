@@ -57,7 +57,7 @@ static void _rt_debug_trace128 (uint8_t a, const void *addr, long double v)
          _rt_action_to_str (a), addr, v);
    //fflush (stdout);
 }
-static void _rt_debug_store (uint8_t a, const void *addr, uint32_t size)
+static void _rt_debug_rdwr (uint8_t a, const void *addr, uint32_t size)
 {
    uint64_t v;
    switch (size)
@@ -164,8 +164,9 @@ static inline void _rt_log_rdwr_val (const void *addr, uint32_t size)
    rt->trace.valptr = dst;
 }
 
-static inline void _rt_check_trace_capacity () {}
 
+#if 0
+static inline void _rt_check_trace_capacity () {}
 // memory loads - FIXME, later on we should make RD into TRACE1
 //
 uint8_t  _rt_load8  (uint8_t  *addr)
@@ -235,7 +236,6 @@ long double _rt_loadld (long double *addr)
    return v;
 }
 
-#if 0
 void _rt_store8 (uint8_t *addr, uint8_t v)
 {
    TRACE2 (_WR8, addr, v);
@@ -296,7 +296,25 @@ void _rt_store_post (const void *addr, uint32_t size)
 {
    _rt_log_rdwr_val (addr, size);
    uint8_t a = _rt_rdwr_get_action (0, size);
-   _rt_debug_store (a, addr, size);
+   _rt_debug_rdwr (a, addr, size);
+}
+
+
+// memory loads
+//
+void _rt_load_pre   (const void *addr, uint32_t size)
+{
+   uint8_t a = _rt_rdwr_get_action (1, size);
+   _rt_log_action (a);
+   _rt_log_addr (addr);
+   _rt_check_oom (addr, size);
+}
+
+void _rt_load_post  (const void *addr, uint32_t size)
+{
+   _rt_log_rdwr_val (addr, size);
+   uint8_t a = _rt_rdwr_get_action (1, size);
+   _rt_debug_rdwr (a, addr, size);
 }
 
 
