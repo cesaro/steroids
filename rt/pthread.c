@@ -439,7 +439,14 @@ void _rt_thread_protocol_wait (struct rt_tcb *t)
    while (1)
    {
       printf ("stid: rt: threading: proto: t%d: acquired cs lock\n", TID (t));
-      TRACE3 (RT_THCTXSW, TID (t));
+      if (__rt_thst.current == t)
+      {
+         printf ("stid: rt: threading: no need to issue a THCTXSW to the current thread\n");
+      }
+      else 
+      {
+         TRACE3 (RT_THCTXSW, TID (t));
+      }
       __rt_thst.current = t;
       return;
       // FIXME - if first event or replay == CS or ...; then return

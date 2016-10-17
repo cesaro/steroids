@@ -320,7 +320,7 @@ void test5 ()
 
    // build the partial order
    po.build ();
-   //po.print ();
+   po.print ();
 
    fflush (stdout);
    fflush (stderr);

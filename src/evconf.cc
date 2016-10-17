@@ -159,6 +159,7 @@ void conft::build ()
  
       // add the blue event to its thread
       events[cur_tid].push_back (ev);
+      printf ("added event to tid %2d. current size is %2d\n", cur_tid, events[cur_tid].size ());
       }
 
       is_new_ev = true;
@@ -189,9 +190,10 @@ void conft::build ()
       case RT_THCTXSW :
          // change the current tid
          cur_tid = act.id ();
-         // if there are not events in the cur_tid generate THSTART 
+         // if there are no events in the cur_tid generate THSTART 
          if (events[cur_tid].size () == 0)
          {
+            printf ("THCTXSW new thread\n");
             ev = eventt (sidx++, createvs[cur_tid], cur_tid);
          }
          else
@@ -200,6 +202,7 @@ void conft::build ()
             // if it is not the case that the we are in the beginning of a
             // new thread, we move to the next event which can only be a 
             // JOIN or a LOCK. 
+            printf ("THCTXSW already thread\n");
             is_new_ev = false;
          }
          break;
@@ -210,23 +213,6 @@ void conft::build ()
         ASSERT (exitevs[ac.val].act.type == action_typet::THEXIT);
         ev = eventt (sidx++, ac, ev, exitevs[ac.val]);
         break; 
-        // @TODO: the MTXINIT event has been removed,
-        // does this impact the code in this file?
-#if 0
-      case RT_MTXINIT :
-      {
-        ac.type = action_typet::MTXINIT;
-        ac.addr = act.addr ();
-        // create the event
-        ev = eventt (sidx++, ac, ev);
-        // assert that the mutexmax for this addr is empty
-        auto mut = mutexmax.find (ac.addr);
-        ASSERT (mut == mutexmax.end ());
-        // update the value of mutexmax
-        mutexmax[ac.addr] = &ev;
-        break; 
-      }
-#endif
       case RT_MTXLOCK :
       {
         ac.type = action_typet::MTXLOCK;
@@ -258,7 +244,10 @@ void conft::build ()
         // update the value of mutexmax
         mutexmax[ac.addr] = &ev;
         break;
-      } 
+      }
+      default :
+        printf ("we should be at a blue event\n");
+        ASSERT(false); 
       }
    }
 }
@@ -269,7 +258,6 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
    auto act = *it;
    while (act != _stream.end ()) 
    {
-      i++;
       switch (act.type ())
       {
       // loads
@@ -372,10 +360,11 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
       // the remainder are global actions
       default : 
         // @FIXME : deal here with the multi-word RD/WR actions !!!!
-        printf ("going to exit the red event box\n");
+        printf ("going to exit the red event box of event %2d\n", b_ev.sidx ());
         return true;
       }
       act = *++it;
+      i++;
    }
 
    // This line should be unreachable
