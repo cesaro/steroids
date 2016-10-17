@@ -220,7 +220,7 @@ bool action_stream_itt::has_id ()
 
 action_stream2t::action_stream2t (action_streamt &s)
 {
-   int i = 0;
+   unsigned i;
    actt a;
 
    for (auto &ac : s)
@@ -249,6 +249,10 @@ action_stream2t::action_stream2t (action_streamt &s)
 
 void action_stream2t::diff (const action_stream2t &other)
 {
+   size_t i;
+   unsigned j;
+   bool spotted;
+
    printf (
 R"XX(
 == diff begin ==
@@ -257,11 +261,45 @@ What              Stream1                 Stream2
 ================= ======================= =======================
 this              %-18p %-18p
 size              %-18zu %-18zu %s
--
 )XX",
          this, &other,
          this->stream.size(), other.stream.size(),
          this->stream.size() != other.stream.size() ? "!!" : ""
          );
+
+   for (i = 0; i < stream.size(); i++)
+   {
+      spotted = false;
+      if (stream[i].type != other.stream[i].type) spotted = true;
+      if (stream[i].addr != other.stream[i].addr) spotted = true;
+      for (j = 0; j < MAX_WORDS; j++)
+         if (stream[i].val[j] != other.stream[i].val[j]) spotted = true;
+      if (spotted)
+      {
+         printf (
+R"XX(
+-
+idx %-13zu type %-18s type %-18s %s
+                  addr %-#18lx addr %-#18lx %s
+)XX",
+               i,
+               _rt_action_to_str (stream[i].type),
+               _rt_action_to_str (other.stream[i].type),
+               stream[i].type != other.stream[i].type ? "!!" : "",
+               stream[i].addr, other.stream[i].addr,
+               stream[i].addr != other.stream[i].addr ? "!!" : ""
+               );
+
+         for (j = 0; j < MAX_WORDS; j++)
+         {
+            printf ("                  %s %-#18lx %s %-#18lx %s\n",
+                  j == 1 ? "val  " : "     ",
+                  stream[i].val[j],
+                  j == 1 ? "val  " : "     ",
+                  other.stream[i].val[j],
+                  stream[i].val[j] != other.stream[i].val[j] ? "!!" : "");
+         }
+      }
+   }
 }
 

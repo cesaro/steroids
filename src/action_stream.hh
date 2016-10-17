@@ -63,7 +63,7 @@ private:
 class action_stream2t
 {
 public:
-   static const int MAX_WORDS = 4;
+   static const unsigned MAX_WORDS = 4;
    typedef struct
    {
       int type;
