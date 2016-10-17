@@ -154,7 +154,7 @@ struct eventrace {
    uint64_t size;
 
    int num_ths;
-   //int num_mutex;
+   // @FIXME: vector of size_t integers up to N proc constants
 };
 
 // this stores the entire state of the runtime

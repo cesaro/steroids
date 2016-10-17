@@ -39,7 +39,7 @@ public:
    inline unsigned sidx () { return _sidx; }
 
    // index in the process array
-   inline unsigned idx (const conft &c);
+   unsigned idx (const conft &c);
 
    // predecessor in another thread, if any
    inline eventt *pre_other () { return _pre_other; }
@@ -50,6 +50,11 @@ public:
 
    // the bottom even is always the first in the stream
    inline bool is_bottom () { return _sidx == 0; }
+
+   // print the event 
+   void print (const conft &c); 
+
+   void print_simple (const conft &c); 
 };
 
 class conft {
@@ -63,11 +68,14 @@ public:
    // just for debug purposes
    void print_original_stream ();
 
-private:
-   bool add_red_events (action_stream_itt&, int&, eventt&);
+   int get_num_ths () { return num_ths; }
 
    std::vector<std::vector<eventt>> events;
    std::unordered_map<addrt,eventt*> mutexmax;
+
+private:
+   bool add_red_events (action_stream_itt&, int&, eventt&);
+
    action_streamt &_stream;
    int num_ths;
    //int num_mutex;

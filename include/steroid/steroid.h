@@ -91,7 +91,7 @@ int stid_run (struct stid *s, struct stid_replay *rep);
 int stid_get_seqexec (struct stid *s, struct stid_exec *run);
 
 // get the (public version of) the lock partial order
-int stid_get_poexec (struct stid *s, struct stid_po *po);
+struct stid_po * stid_get_poexec (struct stid *s);
 
 int stid_test ();
 
