@@ -403,7 +403,7 @@ void *thread8 (void *arg)
    printf ("thread%d: starting! arg %p\n", i, arg);
    ms = 100 + random () % 500;
    printf ("thread%d: sleeping %dms ...!\n", i, ms);
-   usleep (ms * 1000);
+   //usleep (ms * 1000);
 
    // lock, unlock
    ret = pthread_mutex_lock (&m8);
@@ -505,7 +505,7 @@ int main9 ()
    float x1, x2;
    long double y;
 
-   printf ("give me two numbers: ");
+   printf ("give me two numbers: \n");
    fflush (stdout);
    scanf ("%f%f", &x1, &x2);
 
@@ -518,7 +518,7 @@ int main9 ()
 //int main (int argc, char **argv)
 int main ()
 {
+   //return main9 ();
    return main8 ();
-   //return main2 ();
 }
 

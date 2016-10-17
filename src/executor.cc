@@ -84,6 +84,7 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    instrument_events ();
    optimize ();
    jit_compile ();
+   detex_init ();
 }
 
 Executor::~Executor ()
@@ -180,6 +181,11 @@ void Executor::initialize_and_instrument_rt ()
       print_value (g, s);
       DEBUG ("stid: executor: - %s", s.c_str());
    }
+
+   // finally, initialize the std{in,out,err} fields of the rt
+   rt.stdin  = stdin;
+   rt.stdout = stdout;
+   rt.stderr = stderr;
 }
 
 void Executor::optimize ()
@@ -236,12 +242,30 @@ void Executor::instrument_events ()
       throw std::runtime_error ("Executor: rt missing in input module");
    }
    DEBUG ("stid: executor: done");
+} 
+
+void Executor::detex_init ()
+{
+   detex.rseed = (unsigned) time (0);
+}
+
+void Executor::detex_apply ()
+{
+   DEBUG ("stid: executor: detex: starting");
+   DEBUG ("stid: executor: detex: srand(3) seed %u", detex.rseed);
+   srand (detex.rseed);
+
+   // we should clear memory here
+   DEBUG ("stid: executor: detex: done");
 }
 
 void Executor::run ()
 {
    // reinitialize the action stream
    restart_trace ();
+
+   // clear memory for deterministic execution
+   detex_apply ();
 
    // make sure that argv and envp members have the right null pointer at the
    // end

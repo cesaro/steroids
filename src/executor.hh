@@ -44,8 +44,15 @@ private :
    void jit_compile ();
    void optimize ();
    void restart_trace ();
+   void detex_init ();
+   void detex_apply ();
    void malloc_memreg (struct memreg *m, size_t size);
    llvm::Constant *ptr_to_llvm (void *ptr, llvm::Type *t);
+
+   struct
+   {
+      unsigned rseed;
+   } detex;
 };
 
 class MyMemoryManager : public llvm::SectionMemoryManager

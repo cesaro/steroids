@@ -370,16 +370,28 @@ int   _rt_pthread_atfork(void (*)(void), void (*)(void), void(*)(void));
 
 void  _rt_thread_init (void)
 {
+   int ret;
+
    // whoever calls this function becomes the main thread (tid = 0)
    printf ("stid: rt: threading: initializing the multithreading library\n");
    __rt_thst.next = 1;
    __rt_thst.current = __rt_thst.tcbs;
    __rt_thst.num_ths_alive = 1;
+
+   ret = pthread_mutex_init (&__rt_thst.m, 0);
+   if (ret)
+   {
+      // FIXME -- issue a warning into the stream here
+      printf ("stid: rt: threading: initializing cs mutex: error: %s\n",
+            strerror (ret));
+   }
    _rt_thread_protocol_wait (__rt_thst.current);
 }
 
 void  _rt_thread_term (void)
 {
+   int ret;
+
    printf ("stid: rt: threading: terminating the multithreading library\n");
 
    // only the main thread should be calling this, stop the model checker
@@ -407,6 +419,16 @@ void  _rt_thread_term (void)
 
    // release the cs mutex (no other thread can acquire it)
    _rt_thread_protocol_yield (__rt_thst.current);
+
+
+   // destroy the cs mutex
+   ret = pthread_mutex_destroy (&__rt_thst.m);
+   if (ret)
+   {
+      // FIXME -- issue a warning into the stream here
+      printf ("stid: rt: threading: destroying cs mutex: error: %s\n",
+            strerror (ret));
+   }
 }
 
 void *_rt_thread_start (void *arg)
@@ -441,7 +463,7 @@ void _rt_thread_protocol_wait (struct rt_tcb *t)
       printf ("stid: rt: threading: proto: t%d: acquired cs lock\n", TID (t));
       if (__rt_thst.current == t)
       {
-         printf ("stid: rt: threading: no need to issue a THCTXSW to the current thread\n");
+         printf ("stid: rt: threading: ctxsw to same thread, skipping THCTXSW\n");
       }
       else 
       {
@@ -457,7 +479,7 @@ void _rt_thread_protocol_wait (struct rt_tcb *t)
 
 err_panic :
    PRINT ("error: t%d: acquiring internal mutex: %s", TID (t), strerror (ret));
-   _rt_end (255);
+   _rt_cend (255);
 }
 
 void _rt_thread_protocol_yield (struct rt_tcb *t)
@@ -475,7 +497,7 @@ void _rt_thread_protocol_yield (struct rt_tcb *t)
 
 err_panic :
    PRINT ("error: t%d: releasing internal mutex: %s", TID (t), strerror (ret));
-   _rt_end (255);
+   _rt_cend (255);
 }
 
 int _rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr)

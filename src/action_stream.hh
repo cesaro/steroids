@@ -51,9 +51,12 @@ public:
    action_stream_itt end () const
       { return action_stream_itt (*this, false); }
 
-   // @TODO: rt should be const
+   // @TODO : should we have this here, or only get_trace() ??
    inline const struct rt * get_rt()
       { return rt; }
+   inline size_t size () const
+      { return rt->trace.size; }
+   void print () const;
 
 private:
    const struct rt *rt;
@@ -73,11 +76,16 @@ public:
       inline unsigned val_size ()
          { return RT_MULTIW_COUNT (type); }
    } actt;
+   typedef enum
+   {
+      FULL,
+      SPOT_FIRST
+   } optt;
 
    std::vector<actt> stream;
 
    action_stream2t (const action_streamt &s);
-   void diff (const action_stream2t &other);
+   void diff (const action_stream2t &other, optt opt = FULL);
 };
 
 #endif

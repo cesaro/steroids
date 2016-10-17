@@ -70,10 +70,11 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
       trace.valptr += 2;
       break;
    default:
-      if (RT_IS_MULTIW_RD (a) || RT_IS_MULTIW_WR (a))
+      if (RT_IS_MULTIW_RDWR (a))
       {
          trace.addrptr++;
          trace.valptr += RT_MULTIW_COUNT (a);
+         break;
       }
       ASSERT (0);
    }
@@ -218,10 +219,35 @@ bool action_stream_itt::has_id ()
    }
 }
 
+void action_streamt::print () const
+{
+   // iterate throught the actions
+   int i = 0;
+   for (auto &ac : *this)
+   {
+      // for efficiency purposes ac has type "action_stream_itt" rather than
+      // "actiont"
+      printf ("idx %5d action %#4x '%s' addr %#18lx val[0] %#18lx valsize %u "
+            "id %#10x\n",
+            i,
+            ac.type (),
+            _rt_action_to_str (ac.type ()),
+            ac.addr (),
+            *ac.val (),
+            ac.val_size(),
+            ac.id ());
+      i++;
+      //if (i >= 200) break;
+   }
+}
+
 action_stream2t::action_stream2t (const action_streamt &s)
 {
    unsigned i;
    actt a;
+
+   // reserve space in the vector
+   stream.reserve (s.size ());
 
    for (auto &ac : s)
    {
@@ -233,7 +259,7 @@ action_stream2t::action_stream2t (const action_streamt &s)
       a.addr = ac.has_addr() ? ac.addr() : (ac.has_id() ? ac.id() : 0);
       if (ac.has_val())
       {
-         ASSERT (ac.val_size() < MAX_WORDS);
+         ASSERT (ac.val_size() <= MAX_WORDS);
          for (i = 0; i < ac.val_size(); i++) a.val[i] = ac.val()[i];
          for (; i < MAX_WORDS; i++) a.val[i] = 0;
       }
@@ -247,10 +273,10 @@ action_stream2t::action_stream2t (const action_streamt &s)
    }
 }
 
-void action_stream2t::diff (const action_stream2t &other)
+void action_stream2t::diff (const action_stream2t &other, optt opt)
 {
    size_t i, min;
-   unsigned j;
+   unsigned j, differences;
    bool spotted;
 
    printf (
@@ -267,6 +293,7 @@ size              %-23zu %-23zu %s
          );
 
    min = std::min (stream.size(), other.stream.size());
+   differences = 0;
    for (i = 0; i < min; i++)
    {
       spotted = false;
@@ -296,6 +323,12 @@ idx %-13zu type %-18s type %-18s %s
                   j, other.stream[i].val[j],
                   stream[i].val[j] != other.stream[i].val[j] ? "!!" : "");
          }
+         differences++;
+      }
+      if (differences and opt == SPOT_FIRST)
+      {
+         printf ("-\nidx %zu to %zu not examined\n", i+1, min);
+         break;
       }
    }
 
@@ -311,4 +344,3 @@ idx %-13zu type %-18s type %-18s %s
 
    printf ("== diff end ==\n");
 }
-

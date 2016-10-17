@@ -79,22 +79,7 @@ conft::conft (action_streamt &s) :
 // For debug purposes only (FOR NOW)
 void conft::print_original_stream ()
 {
-   // iterate throught the actions
-   int i = 0;
-   for (auto &ac : _stream)
-   {
-      // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
-      printf ("idx %5d action %#4x '%s' addr %#18lx val[0] %#18lx valsize %u id %#10x\n",
-         i,
-         ac.type (),
-         _rt_action_to_str (ac.type ()),
-         ac.addr (),
-         *ac.val (),
-         ac.val_size(),
-         ac.id ());
-      i++;
-      //if (i >= 200) break;
-   }
+   _stream.print ();
 }
 
 // For debug purposes only (FOR NOW)

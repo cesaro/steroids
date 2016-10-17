@@ -50,13 +50,7 @@ static void _rt_debug_trace3 (uint8_t a, uint16_t v)
          _rt_action_to_str (a), v, _rt_quote (v));
    //fflush (stdout);
 }
-static void _rt_debug_trace128 (uint8_t a, const void *addr, long double v)
-{
-   
-   printf ("stid: rt: %s %18p       [2 x 64bits] %.20Le\n",
-         _rt_action_to_str (a), addr, v);
-   //fflush (stdout);
-}
+
 static void _rt_debug_rdwr (uint8_t a, const void *addr, uint32_t size)
 {
    uint64_t v;
@@ -88,7 +82,7 @@ static inline void _rt_check_oom (const void *ptr, uint32_t size)
    if ((uint64_t) ptr < memstart || size + (uint64_t) ptr >= memend)
    {
       printf ("stid: rt: out-of-memory access: addr %p, size %u\n", ptr, size);
-      _rt_end (255);
+      _rt_cend (255);
    }
 }
 
@@ -96,7 +90,7 @@ static inline void _rt_log_action (uint8_t action)
 {
    // this requires 2 memory access: one load and one store of evptr
    uint8_t *ptr = rt->trace.evptr;
-   if ((uint64_t) ptr == evend) _rt_end (254);
+   if ((uint64_t) ptr == evend) _rt_cend (254);
    *ptr = action;
    rt->trace.evptr = ptr + 1;
 }
@@ -380,9 +374,9 @@ int _rt_mainn (int argc, const char * const *argv, const char * const *env)
    _rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
    printf ("stid: rt: main: ======================\n");
 
-   // initialize subsystems
-   _rt_mm_init ();
-   _rt_thread_init ();
+   // initialize subsystems (before this there is no guarantee that
+   // std{in,out,err} are correctly initialized!!!
+   _rt_libc_init ();
 
    // determine number of environment variables
    for (n = 0, v = env; *v; ++n, ++v)
@@ -423,16 +417,22 @@ int _rt_mainn (int argc, const char * const *argv, const char * const *env)
    return ret;
 }
 
-void _rt_c_end (int status)
+void _rt_cend (uint32_t exitcode)
 {
-   (void) status;
+   (void) exitcode;
+
+   // termination functions for different subsystems
+   _rt_libc_term ();
 
    // this function will be called from the exit prologue routine (_rt_end) and
    // will be the last thing executed before giving back control to the host
-   rt->trace.size = (uint64_t) (rt->trace.evptr - (uint8_t*) rt->trace.ev.begin);
+   rt->trace.size =
+         (uint64_t) (rt->trace.evptr - (uint8_t*) rt->trace.ev.begin);
 
    fflush (stdout);
    fflush (stderr);
+
+   _rt_end (exitcode);
 }
 
 void _rt_save_host_rsp (uint64_t rsp)

@@ -55,11 +55,15 @@ POSIX threads library
 
 
 Questions:
-- when the application exit(3)'s, should it call pthread_cancel for every thread
-  still alive?
+- when the application exit(3)'s, should it call pthread_cancel for every
+  thread still alive?
 - Can we return to the host from a thread different than main?
 - How can we reclaim the stack from the same thread ??
 - with the current implementation, how to detect a deadlock in the runtime?
+- we make copy of the pointers stdio, stderr, and stdin inside the guest and
+  initialize it the beginning, but this won't work if someones wants to modify
+  the value of these pointers. How to deal in general with the problem of
+  having variables in the libc that are accessible in the program?
 
   
 continue here:

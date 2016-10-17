@@ -57,9 +57,6 @@ _rt_end :
    andq $-16, %rsp
    mov  %rdi, %rbx
    
-   # call the _c_end function, last thing executed before going back
-   call _rt_c_end
-
    # restore the host stack
    call _rt_get_host_rsp
    mov  %rax, %rsp

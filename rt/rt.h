@@ -83,6 +83,9 @@ void _rt_end (uint32_t exitcode);
 // called from _rt_start, will call main()
 int _rt_mainn (int argc, const char * const *argv, const char * const *env);
 
+// call this function to exit, with errors or normal exit
+void _rt_cend (uint32_t exitcode);
+
 // the user's main function, epic :)
 int main (int argc, char **argv, char **env);
 
@@ -108,13 +111,13 @@ void _rt_ctsw (uint32_t id);
 void _rt_save_host_rsp (uint64_t rsp);
 uint64_t _rt_get_host_rsp ();
 
-// last function called before giving back the control to the host code
-void _rt_c_end ();
-
 // stop execution, print an error and enter an infinite loop
 void _rt_panic ();
 
 
+// libc (internal)
+void _rt_libc_init ();
+void _rt_libc_term ();
 
 // stdlib.h
 void _rt_mm_init (); // internal
@@ -130,6 +133,8 @@ int _rt_usleep (useconds_t us);
 
 // errno.h
 int *_rt___errno_location ();
+
+// pthread.h -> see rt/pthread.h
 
 // memory region
 struct memreg
@@ -167,6 +172,10 @@ struct rt
    struct memreg data;
    struct memreg heap;
    struct memreg stacks;
+
+   FILE *stdin;
+   FILE *stdout;
+   FILE *stderr;
 
    // event trace
    struct eventrace trace;

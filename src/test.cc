@@ -378,47 +378,25 @@ void test6 ()
 
    // run the guest
    e.run ();
-
-   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-
-   // run the guest
-   e.run ();
-   return;
-
-   // prepare a stream object
    action_streamt actions (e.get_trace ());
-
-   conft po (actions);
-
-   // print it !
-   po.print_original_stream ();
-
-   // build the partial order and print it
-   po.build ();
-   po.print ();
-
-#if 1
-   // build an action stream differ
-   DEBUG ("stid: building s1");
+   actions.print ();
    action_stream2t s1 (actions);
+
+   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+   // run the guest 2nd time
+   e.run ();
+   actions.print ();
    action_stream2t s2 (actions);
 
-   // create some differences
-   s1.stream.pop_back ();
-   s1.stream.pop_back ();
-   s1.stream.pop_back ();
-   s1.stream[18].type = 0x12;
-   s1.stream[5].type = 0x22;
-   s2.stream[50].addr = 0x1122334455667788;
-   s1.stream[79].val[2] = 0x1234;
-
+   // diff
    printf ("\n");
-   s1.diff (s2);
-#endif
+   //s1.diff (s2, action_stream2t::optt::SPOT_FIRST);
+   s1.diff (s2, action_stream2t::optt::FULL);
 
    fflush (stdout);
    fflush (stderr);
