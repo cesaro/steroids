@@ -103,7 +103,7 @@ bool action_stream_itt::has_addr ()
    case RT_ACTION_CLASS_WR64:
       return true;
    case RT_ACTION_CLASS_MM:
-      switch (RT_ACTION_ID (t))
+      switch (t)
       {
       case RT_ALLOCA :
       case RT_MALLOC :
@@ -117,7 +117,7 @@ bool action_stream_itt::has_addr ()
          return true;
       }
    case RT_ACTION_CLASS_TH:
-      switch (RT_ACTION_ID (t))
+      switch (t)
       {
       case RT_MTXLOCK :
       case RT_MTXUNLK :
@@ -150,7 +150,7 @@ bool action_stream_itt::has_val ()
    case RT_ACTION_CLASS_WR64:
       return true;
    case RT_ACTION_CLASS_MM:
-      switch (RT_ACTION_ID (t))
+      switch (t)
       {
       case RT_ALLOCA :
       case RT_MALLOC :
@@ -184,7 +184,7 @@ bool action_stream_itt::has_id ()
    case RT_ACTION_CLASS_WR64:
       return false;
    case RT_ACTION_CLASS_MM:
-      switch (RT_ACTION_ID (t))
+      switch (t)
       {
       case RT_CALL :
       case RT_RET :
@@ -198,7 +198,7 @@ bool action_stream_itt::has_id ()
          return true;
       }
    case RT_ACTION_CLASS_TH:
-      switch (RT_ACTION_ID (t))
+      switch (t)
       {
       case RT_MTXLOCK :
       case RT_MTXUNLK :
@@ -218,7 +218,7 @@ bool action_stream_itt::has_id ()
    }
 }
 
-action_stream2t::action_stream2t (action_streamt &s)
+action_stream2t::action_stream2t (const action_streamt &s)
 {
    unsigned i;
    actt a;
@@ -249,25 +249,25 @@ action_stream2t::action_stream2t (action_streamt &s)
 
 void action_stream2t::diff (const action_stream2t &other)
 {
-   size_t i;
+   size_t i, min;
    unsigned j;
    bool spotted;
 
    printf (
-R"XX(
-== diff begin ==
-Stream
-What              Stream1                 Stream2
-================= ======================= =======================
-this              %-18p %-18p
-size              %-18zu %-18zu %s
+R"XX(== diff begin ==
+What              Stream 1                Stream 2                Difference spotted
+================= ======================= ======================= ==================
+this              %-23p %-23p %s
+size              %-23zu %-23zu %s
 )XX",
          this, &other,
+         this != &other ? "!!" : "",
          this->stream.size(), other.stream.size(),
          this->stream.size() != other.stream.size() ? "!!" : ""
          );
 
-   for (i = 0; i < stream.size(); i++)
+   min = std::min (stream.size(), other.stream.size());
+   for (i = 0; i < min; i++)
    {
       spotted = false;
       if (stream[i].type != other.stream[i].type) spotted = true;
@@ -277,8 +277,7 @@ size              %-18zu %-18zu %s
       if (spotted)
       {
          printf (
-R"XX(
--
+R"XX(-
 idx %-13zu type %-18s type %-18s %s
                   addr %-#18lx addr %-#18lx %s
 )XX",
@@ -292,14 +291,24 @@ idx %-13zu type %-18s type %-18s %s
 
          for (j = 0; j < MAX_WORDS; j++)
          {
-            printf ("                  %s %-#18lx %s %-#18lx %s\n",
-                  j == 1 ? "val  " : "     ",
-                  stream[i].val[j],
-                  j == 1 ? "val  " : "     ",
-                  other.stream[i].val[j],
+            printf ("                  v%02u  %-#18lx v%02u  %-#18lx %s\n",
+                  j, stream[i].val[j],
+                  j, other.stream[i].val[j],
                   stream[i].val[j] != other.stream[i].val[j] ? "!!" : "");
          }
       }
    }
+
+   if (this->stream.size() != other.stream.size())
+   {
+      char str1[48];
+      char str2[48];
+      sprintf (str1, "%zu more actions", this->stream.size() - min);
+      sprintf (str2, "%zu more actions", other.stream.size() - min);
+
+      printf ("-\nidx %-13zu %-23s %-23s !!\n", min, str1, str2);
+   }
+
+   printf ("== diff end ==\n");
 }
 

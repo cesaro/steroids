@@ -52,8 +52,6 @@ extern "C" {
 #define RT_RD128              (RT_ACTION_CLASS_RD64 | 2)
 #define RT_RD192              (RT_ACTION_CLASS_RD64 | 3)
 #define RT_RD256              (RT_ACTION_CLASS_RD64 | 4)
-#define RT_IS_MULTIW_RD(x)    (((x) & RT_ACTION_CLASS_MASK) == RT_ACTION_CLASS_RD64)
-#define RT_MULTIW_COUNT(x)    ((x) & RT_ACTION_ID_MASK)
 #define RT_WR8                (RT_ACTION_CLASS_WR8 | 1)
 #define RT_WR16               (RT_ACTION_CLASS_WR8 | 2)
 #define RT_WR32               (RT_ACTION_CLASS_WR8 | 4)
@@ -61,7 +59,6 @@ extern "C" {
 #define RT_WR128              (RT_ACTION_CLASS_WR64 | 2)
 #define RT_WR192              (RT_ACTION_CLASS_WR64 | 3)
 #define RT_WR256              (RT_ACTION_CLASS_WR64 | 4)
-#define RT_IS_MULTIW_WR(x)    (((x) & RT_ACTION_CLASS_MASK) == RT_ACTION_CLASS_WR64)
 #define RT_ALLOCA             (RT_ACTION_CLASS_MM | RT_ACTION_ALLOCA)
 #define RT_MALLOC             (RT_ACTION_CLASS_MM | RT_ACTION_MALLOC)
 #define RT_FREE               (RT_ACTION_CLASS_MM | RT_ACTION_FREE)
@@ -73,6 +70,11 @@ extern "C" {
 #define RT_THCTXSW            (RT_ACTION_CLASS_TH | RT_ACTION_THCTXSW)
 #define RT_MTXLOCK            (RT_ACTION_CLASS_TH | RT_ACTION_MTXLOCK)
 #define RT_MTXUNLK            (RT_ACTION_CLASS_TH | RT_ACTION_MTXUNLK)
+
+#define RT_IS_MULTIW_RDWR(x)  (RT_IS_MULTIW_RD(x) || RT_IS_MULTIW_WR(x))
+#define RT_IS_MULTIW_RD(x)    (((x) & RT_ACTION_CLASS_MASK) == RT_ACTION_CLASS_RD64)
+#define RT_IS_MULTIW_WR(x)    (((x) & RT_ACTION_CLASS_MASK) == RT_ACTION_CLASS_WR64)
+#define RT_MULTIW_COUNT(x)    ((x) & RT_ACTION_ID_MASK)
 
 // these two are in start.s; host should invoke _rt_start
 void _rt_start (int argc, const char * const *argv, const char * const *env);

@@ -64,7 +64,7 @@ inline unsigned eventt::idx (const conft &c)
 conft::conft (action_streamt &s) :
    _stream (s)
 {
-   rt *rt = s.get_rt ();
+   const struct rt *rt = s.get_rt ();
 
    num_ths = rt->trace.num_ths;
    ASSERT (num_ths > 0);

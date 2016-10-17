@@ -27,7 +27,7 @@ public:
    inline uint64_t *val ()
       { return trace.valptr; }
    inline unsigned val_size ()
-      { return RT_MULTIW_COUNT (type ()); }
+      { return RT_IS_MULTIW_RDWR(type()) ? RT_MULTIW_COUNT(type()) : 1; }
    inline uint16_t id ()
       { return *trace.idptr; }
 
@@ -44,7 +44,7 @@ private:
 class action_streamt
 {
 public:
-   action_streamt (struct rt *rt) :
+   action_streamt (const struct rt *rt) :
       rt (rt) {}
    action_stream_itt begin () const
       { return action_stream_itt (*this, true); }
@@ -52,11 +52,11 @@ public:
       { return action_stream_itt (*this, false); }
 
    // @TODO: rt should be const
-   inline struct rt * get_rt()
+   inline const struct rt * get_rt()
       { return rt; }
 
 private:
-   struct rt *rt;
+   const struct rt *rt;
    friend class action_stream_itt;
 };
 
@@ -76,7 +76,7 @@ public:
 
    std::vector<actt> stream;
 
-   action_stream2t (action_streamt &s);
+   action_stream2t (const action_streamt &s);
    void diff (const action_stream2t &other);
 };
 

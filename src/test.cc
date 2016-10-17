@@ -318,9 +318,28 @@ void test5 ()
    // print it !
    po.print_original_stream ();
 
-   // build the partial order
+   // build the partial order and print it
    po.build ();
    po.print ();
+
+#if 0
+   // build an action stream differ
+   DEBUG ("stid: building s1");
+   action_stream2t s1 (actions);
+   action_stream2t s2 (actions);
+
+   // create some differences
+   s1.stream.pop_back ();
+   s1.stream.pop_back ();
+   s1.stream.pop_back ();
+   s1.stream[18].type = 0x12;
+   s1.stream[5].type = 0x22;
+   s2.stream[50].addr = 0x1122334455667788;
+   s1.stream[79].val[2] = 0x1234;
+
+   printf ("\n");
+   s1.diff (s2);
+#endif
 
    fflush (stdout);
    fflush (stderr);
