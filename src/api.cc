@@ -1,6 +1,7 @@
 
 #include <err.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -62,6 +63,16 @@ int stid_get_poexec (struct stid *s, struct stid_po *po)
 
 int stid_test ()
 {
+   const char *user = getenv ("USER");
+
+   // for Cesar
+   if (user and strcmp (user, "cesar") == 0)
+   {
+      test6 ();
+      return 0;
+   }
+
+   // for anyone else
    test5 ();
    return 0;
 }

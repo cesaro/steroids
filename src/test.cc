@@ -322,7 +322,86 @@ void test5 ()
    po.build ();
    po.print ();
 
-#if 0
+   fflush (stdout);
+   fflush (stderr);
+}
+
+void test6 ()
+{
+   // related to the JIT engine, can we move it to some static class constructor
+   // of the Executor??
+   llvm::InitializeNativeTarget();
+   llvm::InitializeNativeTargetAsmPrinter();
+   llvm::InitializeNativeTargetAsmParser();
+
+   // get a context
+   llvm::LLVMContext &context = llvm::getGlobalContext();
+   llvm::SMDiagnostic err;
+   std::string errors;
+
+   // file to load and execute
+   std::string path = "input.ll";
+   //std::string path = "cunf.ll";
+   //std::string path = "invalid.ll";
+
+   // parse the .ll file and get a Module out of it
+   std::unique_ptr<llvm::Module> mod (llvm::parseIRFile (path, err, context));
+   llvm::Module * m = mod.get();
+
+   // if errors found, report and terminate
+   if (! mod.get ()) {
+      llvm::raw_string_ostream os (errors);
+      err.print (path.c_str(), os);
+      os.flush ();
+      printf ("Error: %s\n", errors.c_str());
+      return;
+   }
+
+   // prepare an Executor, the constructor instruments and allocates guest
+   // memory
+   ExecutorConfig conf;
+   conf.memsize = 512 << 20; // 512M
+   conf.stacksize = 16 << 20; // 16M
+   conf.tracesize = 16 << 20; // 16M events (x max 17 bytes per event)
+   Executor e (std::move (mod), conf);
+
+   // write instrumented code to file, for debugging purposes
+   ir_write_ll (m, "out.ll");
+   DEBUG ("stid: test: module saved to 'out.ll'");
+
+   // prepare arguments for the program
+   e.argv.push_back ("cunf");
+   e.argv.push_back ("/tmp/dme3.ll_net");
+   e.envp.push_back ("HOME=/home/cesar");
+   e.envp.push_back ("PWD=/usr/bin");
+   e.envp.push_back (nullptr);
+
+   // run the guest
+   e.run ();
+
+   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+   DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+   // run the guest
+   e.run ();
+   return;
+
+   // prepare a stream object
+   action_streamt actions (e.get_trace ());
+
+   conft po (actions);
+
+   // print it !
+   po.print_original_stream ();
+
+   // build the partial order and print it
+   po.build ();
+   po.print ();
+
+#if 1
    // build an action stream differ
    DEBUG ("stid: building s1");
    action_stream2t s1 (actions);

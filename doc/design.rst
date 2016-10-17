@@ -65,7 +65,10 @@ Questions:
 continue here:
 x how to insert main as the first thread
 x how to prevent pthreads to call exit on the last thread
-- for those functions that we do not handle, issue a warning in the stream
-- improve support for arbitrary types on load/store
-- show we generate events RD|WR for 1 bit ?
+x improve support for arbitrary types on load/store
+x show we generate events RD|WR for 1 bit ?
+- for those pthread functions that we do not handle, issue a warning in the stream
+- repeat execution & diff
+- memory clearing strategy
+- replay
 

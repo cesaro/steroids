@@ -255,7 +255,7 @@ void action_stream2t::diff (const action_stream2t &other)
 
    printf (
 R"XX(== diff begin ==
-What              Stream 1                Stream 2                Difference spotted
+Index / What      Stream 1                Stream 2                Difference spotted
 ================= ======================= ======================= ==================
 this              %-23p %-23p %s
 size              %-23zu %-23zu %s

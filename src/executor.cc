@@ -67,8 +67,7 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    // create a JIT execution engine, using the (new) MCJIT engine
    eb.setErrorStr (&errors);
    eb.setOptLevel (llvm::CodeGenOpt::Level::Aggressive);
-   eb.setVerifyModules (true);
-   //eb.setMCJITMemoryManager(llvm::make_unique<llvm::SectionMemoryManager>());
+   //eb.setVerifyModules (true);
    eb.setMCJITMemoryManager(std::move (mm));
    ee = eb.create();
    if (! ee)
@@ -83,6 +82,8 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    // initialize guest memory area and instrument the llvm module
    initialize_and_instrument_rt ();
    instrument_events ();
+   optimize ();
+   jit_compile ();
 }
 
 Executor::~Executor ()
@@ -128,27 +129,26 @@ void Executor::initialize_and_instrument_rt ()
 
    // allocate memory for the event stream, ids (uint8_t)
    malloc_memreg (&rt.trace.ev, conf.tracesize);
-   rt.trace.evptr = rt.trace.ev.begin;
    if (rt.trace.ev.begin == 0)
       throw std::runtime_error ("malloc: cannot allocate memory for log trace");
 
    // addr operands
    malloc_memreg (&rt.trace.addr, conf.tracesize * sizeof (uint64_t));
-   rt.trace.addrptr = (uint64_t *) rt.trace.addr.begin;
    if (rt.trace.addr.begin == 0)
       throw std::runtime_error ("malloc: cannot allocate memory for log trace");
 
    // id operands
    malloc_memreg (&rt.trace.id, conf.tracesize * sizeof (uint16_t));
-   rt.trace.idptr = (uint16_t *) rt.trace.id.begin;
    if (rt.trace.id.begin == 0)
       throw std::runtime_error ("malloc: cannot allocate memory for log trace");
 
    // val operands
    malloc_memreg (&rt.trace.val, conf.tracesize * sizeof (uint64_t));
-   rt.trace.valptr = (uint64_t *) rt.trace.val.begin;
    if (rt.trace.val.begin == 0)
       throw std::runtime_error ("malloc: cannot allocate memory for log trace");
+
+   // restart the pointers in the trace
+   restart_trace ();
 
    // function _rt_start will save here the hosts's stack pointer
    rt.host_rsp = 0;
@@ -182,31 +182,35 @@ void Executor::initialize_and_instrument_rt ()
    }
 }
 
-void Executor::instrument_events ()
+void Executor::optimize ()
 {
-   // instrument the code
-   Instrumenter i;
-   if (not i.instrument (*m))
-   {
-      throw std::runtime_error ("Executor: rt missing in input module");
-   }
+   // call the LLVM optimizer here
+   DEBUG ("stid: executor: optimizing code...");
+   DEBUG ("stid: executor: done");
 }
 
-void Executor::run ()
+void Executor::restart_trace ()
+{
+   DEBUG ("stid: executor: restarting pointers in the action stream");
+   rt.trace.evptr = rt.trace.ev.begin;
+   rt.trace.addrptr = (uint64_t *) rt.trace.addr.begin;
+   rt.trace.idptr = (uint16_t *) rt.trace.id.begin;
+   rt.trace.valptr = (uint64_t *) rt.trace.val.begin;
+}
+
+void Executor::jit_compile ()
 {
    void *ptr;
-   int (*entry) (int, const char* const*, const char* const*);
-
-   // make sure that argv and envp members have the right null pointer at the
-   // end
-   ASSERT (argv.size() >= 1 and argv[0] != 0);
-   ASSERT (envp.size() and envp.back() == 0);
+   DEBUG ("stid: executor: jit compiling ...");
 
    // ask LLVM to JIT the program
    ee->finalizeObject ();
    ptr = (void *) ee->getFunctionAddress ("_rt_start");
    entry = (int (*) (int, const char* const*, const char* const*)) ptr;
-   ASSERT (ptr);
+   if (entry == 0)
+   {
+      throw std::runtime_error ("Executor: cannot find entry symbol (_rt_start) after JIT compilation");
+   }
 
    // allocation of the data segments takes place in finalizeObject(), so we
    // need to now correct (define) the heap memory region in rt
@@ -214,10 +218,54 @@ void Executor::run ()
    rt.heap.end = rt.stacks.begin;
    rt.heap.size = rt.heap.end - rt.heap.begin;
 
-   //DEBUG ("stid: rt       %16p", &rt);
-   //DEBUG ("stid: memstart %16p", rt.mem.begin);
-   //DEBUG ("stid: memend   %16p", rt.mem.end);
-   //DEBUG ("stid: evmend   %16p", rt.trace.ev.end);
+   DEBUG ("stid: executor: done, entry function (_rt_start) at %p", entry);
+
+   //DEBUG ("stid: executor: rt       %18p", &rt);
+   //DEBUG ("stid: executor: memstart %18p", rt.mem.begin);
+   //DEBUG ("stid: executor: memend   %18p", rt.mem.end);
+   //DEBUG ("stid: executor: evend    %18p", rt.trace.ev.end);
+}
+
+void Executor::instrument_events ()
+{
+   // instrument the code
+   Instrumenter i;
+   DEBUG ("stid: executor: instrumenting source...");
+   if (not i.instrument (*m))
+   {
+      throw std::runtime_error ("Executor: rt missing in input module");
+   }
+   DEBUG ("stid: executor: done");
+}
+
+void Executor::run ()
+{
+   // reinitialize the action stream
+   restart_trace ();
+
+   // make sure that argv and envp members have the right null pointer at the
+   // end
+   DEBUG ("stid: executor: checking argv, argp");
+   if (argv.size() == 0)
+   {
+      std::string s = fmt ("Executor: argv needs to contain at least one argument");
+      throw std::runtime_error (s);
+   }
+   if (argv[0] == 0)
+   {
+      std::string s = fmt ("Executor: argv[0] cannot be a null pointer");
+      throw std::runtime_error (s);
+   }
+   if (envp.size() == 0)
+   {
+      std::string s = fmt ("Executor: envp needs to contain at least one entry");
+      throw std::runtime_error (s);
+   }
+   if (envp.back() != 0)
+   {
+      std::string s = fmt ("Executor: envp: last entry should be a null pointer");
+      throw std::runtime_error (s);
+   }
 
    // run the user program!!
    DEBUG ("stid: executor: starting guest execution");
@@ -227,6 +275,7 @@ void Executor::run ()
    DEBUG ("stid: executor: ==========================================================");
    DEBUG ("stid: executor: guest execution terminated");
    DEBUG ("stid: executor: %zu events collected", rt.trace.size);
+   DEBUG ("stid: executor: exitcode %d", exitcode);
    ASSERT (rt.trace.size == (size_t) (rt.trace.evptr - (uint8_t*) rt.trace.ev.begin));
 }
 
