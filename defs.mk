@@ -125,8 +125,8 @@ YACC:=bison
 	@echo "DOT $<"
 	@dot -T jpg < $< > $@
 
-CFLAGS_:=-Wall -Wextra -std=c11 -pthread -g -O0
-CXXFLAGS_:=-Wall -Wextra -std=c++11 -pthread -O0 -g
+CFLAGS_:=-Wall -Wextra -std=c11 -pthread
+CXXFLAGS_:=-Wall -Wextra -std=c++11 -pthread
 
 %.ll : %.c
 	@echo "CC  $< (c -> ll)"

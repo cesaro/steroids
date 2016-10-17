@@ -84,15 +84,15 @@ void conft::print_original_stream ()
    for (auto ac : _stream)
    {
       // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
-      printf ("idx %5d type %2d '%s' addr %#18lx val %#18lx id %#10x\n",
+      printf ("idx %5d action %#4x '%s' addr %#18lx val %#18lx id %#10x\n",
          i,
          ac.type (),
-         _rt_ev_to_str ((enum eventtype) ac.type ()),
+         _rt_action_to_str (ac.type ()),
          ac.addr (),
          ac.val (),
          ac.id ());
       i++;
-      if (i >= 200) break;
+      //if (i >= 200) break;
    }
 }
 
@@ -102,10 +102,10 @@ void conft::print ()
    // iterate throught the actions
    int tid = 0;
    int i = 0;
-   for (auto ths : events)
+   for (auto &ths : events)
    {
       printf ("Printing events of thread %2d\n", tid++);
-      for (auto es : ths)
+      for (auto &es : ths)
       {
       // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
       printf ("idx: %2d\t sidx: %2d\t type: %s\t size of red events: %5zu\n",
@@ -168,14 +168,14 @@ void conft::build ()
       switch (act.type ())
       { 
       // threads
-      case _THCREAT :
+      case RT_THCREAT :
          ac.type = action_typet::THCREAT;
          ac.val  = act.id ();
          // verify this code
          ev = eventt (sidx++, ac, ev);
          createvs[ac.val] = ev;
          break;
-      case _THEXIT :
+      case RT_THEXIT :
          // @TODO: no other event from this thread can occur after
          // so it not necessary to search from red events
          // the current st_it is either the end of the stream
@@ -186,7 +186,7 @@ void conft::build ()
          if (st_it == _stream.end ())
             events[cur_tid].push_back (ev);
          break;
-      case _THCTXSW :
+      case RT_THCTXSW :
          // change the current tid
          cur_tid = act.id ();
          // if there are not events in the cur_tid generate THSTART 
@@ -203,14 +203,17 @@ void conft::build ()
             is_new_ev = false;
          }
          break;
-      case _THJOIN :
+      case RT_THJOIN :
         ac.type = action_typet::THJOIN;
         ac.val = act.id ();
         // assert that we have already seen the exit event
         ASSERT (exitevs[ac.val].act.type == action_typet::THEXIT);
         ev = eventt (sidx++, ac, ev, exitevs[ac.val]);
         break; 
-      case _MTXINIT :
+        // @TODO: the MTXINIT event has been removed,
+        // does this impact the code in this file?
+#if 0
+      case RT_MTXINIT :
       {
         ac.type = action_typet::MTXINIT;
         ac.addr = act.addr ();
@@ -223,7 +226,8 @@ void conft::build ()
         mutexmax[ac.addr] = &ev;
         break; 
       }
-      case _MTXLOCK :
+#endif
+      case RT_MTXLOCK :
       {
         ac.type = action_typet::MTXLOCK;
         ac.addr = act.addr ();
@@ -243,7 +247,7 @@ void conft::build ()
         mutexmax[ac.addr] = &ev;
         break;
       } 
-      case _MTXUNLK : 
+      case RT_MTXUNLK : 
       {
         ac.type = action_typet::MTXUNLK;
         ac.addr = act.addr ();
@@ -269,31 +273,31 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
       switch (act.type ())
       {
       // loads
-      case _RD8 : 
+      case RT_RD8 : 
          ac.type = action_typet::RD8;
          ac.addr = act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break; 
-      case _RD16 : 
+      case RT_RD16 : 
          ac.type = action_typet::RD16;
          ac.addr = act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break; 
-      case _RD32 : 
+      case RT_RD32 : 
          ac.type = action_typet::RD32;
          ac.addr = act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break;
-      case _RD64 : 
+      case RT_RD64 : 
          ac.type = action_typet::RD64;
          ac.addr = act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break;
-      case _RD128 : 
+      case RT_RD128 : 
          ac.type = action_typet::RD64;
          ac.addr = act.addr ();
          ac.val  = act.val ();
@@ -302,31 +306,31 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
          b_ev.redbox.push_back (ac);
          break;
       // stores
-      case _WR8 : 
+      case RT_WR8 : 
          ac.type = action_typet::WR8;
          ac.addr = act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break;
-      case _WR16 : 
+      case RT_WR16 : 
          ac.type = action_typet::WR16;
          ac.addr = act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break;
-      case _WR32 : 
+      case RT_WR32 : 
          ac.type = action_typet::WR32;
          ac.addr = act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break;
-      case _WR64 : 
+      case RT_WR64 : 
          ac.type = action_typet::WR64;
          ac.addr = act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break;
-      case _WR128 : 
+      case RT_WR128 : 
          ac.type = action_typet::WR64;
          ac.addr = act.addr ();
          ac.val  = act.val ();
@@ -335,47 +339,46 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
          b_ev.redbox.push_back (ac);
          break;
       // memory management
-      case _ALLO :
+      case RT_ALLOCA :
          ac.type = action_typet::MALLOC;
          ac.addr = act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break;
-      case _MLLO :
+      case RT_MALLOC :
          ac.type = action_typet::MALLOC;
          ac.addr = act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break;
-      case _FREE :
+      case RT_FREE :
          ac.type = action_typet::FREE;
          ac.addr = act.addr ();
          b_ev.redbox.push_back (ac);
          break;
-      case _CALL :
+      case RT_CALL :
          // @TODO: Check that CALL -> MALLOC 
          ac.type = action_typet::MALLOC;
          ac.addr = act.id ();
          b_ev.redbox.push_back (ac);
          break;
-      case _RET  :
+      case RT_RET  :
          ac.type = action_typet::FREE;
          // store the id in the addr field for consistency of
          // the FREE action
          ac.addr = act.id ();
          b_ev.redbox.push_back (ac);
          break;
-      // misc
-      case _NONE : return false;
       // the remainder are global actions
       default : 
+        // @FIXME : deal here with the multi-word RD/WR actions !!!!
         printf ("going to exit the red event box\n");
         return true;
       }
       act = *++it;
-   } 
+   }
 
-   // This code should be unreachable
+   // This line should be unreachable
    ASSERT (0);
    return false;
 }

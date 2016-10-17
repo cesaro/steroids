@@ -23,7 +23,8 @@ public:
 
 private:
    llvm::LLVMContext *ctx;
-   llvm::Module   *m;
+   llvm::Module      *m;
+   //llvm::DataLayout *layout;
 
    llvm::Function *ld8;
    llvm::Function *ld16;
@@ -33,13 +34,8 @@ private:
    llvm::Function *ldd;
    llvm::Function *ldld;
 
-   llvm::Function *st8;
-   llvm::Function *st16;
-   llvm::Function *st32;
-   llvm::Function *st64;
-   llvm::Function *stf;
-   llvm::Function *std;
-   llvm::Function *stld;
+   llvm::Function *store_pre;
+   llvm::Function *store_post;
 
    llvm::Function *allo;
    llvm::Function *mllo;

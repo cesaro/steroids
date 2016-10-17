@@ -127,7 +127,6 @@ void Executor::initialize_and_instrument_rt ()
    rt.data.size = 0;
 
    // allocate memory for the event stream, ids (uint8_t)
-   ASSERT (_NONE < 256);
    malloc_memreg (&rt.trace.ev, conf.tracesize);
    rt.trace.evptr = rt.trace.ev.begin;
    if (rt.trace.ev.begin == 0)
@@ -161,7 +160,7 @@ void Executor::initialize_and_instrument_rt ()
    std::string s;
    g = m->getGlobalVariable ("rt", true);
    t = m->getTypeByName ("struct.rt");
-   if (!g or !t) throw std::runtime_error ("Executor: input missing runtime");
+   if (!g or !t) throw std::runtime_error ("Executor: input missing runtime: no struct.rt type found");
    g->setInitializer (ptr_to_llvm (&rt, t));
    print_value (g, s);
    DEBUG ("stid: executor: - %s", s.c_str());
@@ -174,7 +173,7 @@ void Executor::initialize_and_instrument_rt ()
    for (auto &p : pairs)
    {
       g = m->getGlobalVariable (p.first, true);
-      if (!g) throw std::runtime_error ("Executor: input missing runtime");
+      if (!g) throw std::runtime_error ("Executor: input missing runtime: xx");
       g->setInitializer (llvm::ConstantInt::get
             (llvm::Type::getInt64Ty (ctx), p.second));
       s.clear();

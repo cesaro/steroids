@@ -35,14 +35,14 @@ void *_rt_malloc  (size_t size)
    ptr = (void*) __malloc_ptr;
    __malloc_ptr = ALIGN16 (__malloc_ptr + size);
    //printf ("stid: rt: malloc: ret %p size %zu\n", ptr, size);
-   TRACE2 (_MLLO, ptr, size);
+   TRACE2 (RT_MALLOC, ptr, size);
    memset (ptr, 0, size); // necessary for repeatable execution!!!!
    return ptr;
 }
 
 void _rt_free (void *ptr)
 {
-   TRACE1 (_FREE, ptr);
+   TRACE1 (RT_FREE, ptr);
    //printf ("stid: rt: free: ptr %p", ptr);
    (void) ptr; 
 }
@@ -78,7 +78,7 @@ void _rt_exit (int status)
    _rt_mm_term ();
 
    // EXIT event for the calling thread (which will be main at this point)
-   TRACE0 (_THEXIT);
+   TRACE0 (RT_THEXIT);
 
    // return control to the host
    _rt_end (status);

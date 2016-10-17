@@ -112,7 +112,7 @@ int   _rt_pthread_create(pthread_t *tid,
          t->stackaddr,
          UNITS_SIZE (t->stacksize),
          UNITS_UNIT (t->stacksize));
-   TRACE3 (_THCREAT, TID (t));
+   TRACE3 (RT_THCREAT, TID (t));
    return 0;
 
 err_create:
@@ -146,7 +146,7 @@ int   _rt_pthread_join(pthread_t t, void **retval)
 
    // possibly return with error, log event, and write the retval if user interested
    if (ret) return ret;
-   TRACE3 (_THJOIN, TID (other));
+   TRACE3 (RT_THJOIN, TID (other));
    if (retval) *retval = other->retval;
    return 0;
 }
@@ -162,7 +162,7 @@ void  _rt_pthread_exit(void *retval)
    if (TID (me) == 0) _rt_exit (0);
 
    // otherwise, log the _THEXIT event and decrement number of threads alive
-   TRACE0 (_THEXIT);
+   TRACE0 (RT_THEXIT);
    __rt_thst.num_ths_alive--;
    me->retval = retval;
    me->flags.alive = 0;
@@ -270,7 +270,7 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
    _rt_thread_protocol_yield (me);
    ret = pthread_mutex_lock (m);
    _rt_thread_protocol_wait (me);
-   TRACE1 (_MTXLOCK, m);
+   TRACE1 (RT_MTXLOCK, m);
    return ret;
 }
 
@@ -278,7 +278,7 @@ int   _rt_pthread_mutex_unlock(pthread_mutex_t *m)
 {
    int ret;
    ret = pthread_mutex_unlock (m);
-   TRACE1 (_MTXUNLK, m);
+   TRACE1 (RT_MTXUNLK, m);
    return ret;
 }
 
@@ -439,7 +439,7 @@ void _rt_thread_protocol_wait (struct rt_tcb *t)
    while (1)
    {
       printf ("stid: rt: threading: proto: t%d: acquired cs lock\n", TID (t));
-      TRACE3 (_THCTXSW, TID (t));
+      TRACE3 (RT_THCTXSW, TID (t));
       __rt_thst.current = t;
       return;
       // FIXME - if first event or replay == CS or ...; then return

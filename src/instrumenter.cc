@@ -63,6 +63,7 @@ bool Instrumenter::instrument (llvm::Module &m)
 
 bool Instrumenter::find_rt ()
 {
+   //ld1  = m->getFunction ("_rt_load1");
    ld8  = m->getFunction ("_rt_load8");
    ld16 = m->getFunction ("_rt_load16");
    ld32 = m->getFunction ("_rt_load32");
@@ -71,13 +72,9 @@ bool Instrumenter::find_rt ()
    ldd = m->getFunction ("_rt_loadd");
    ldld = m->getFunction ("_rt_loadld");
 
-   st8  = m->getFunction ("_rt_store8");
-   st16 = m->getFunction ("_rt_store16");
-   st32 = m->getFunction ("_rt_store32");
-   st64 = m->getFunction ("_rt_store64");
-   stf = m->getFunction ("_rt_storef");
-   std = m->getFunction ("_rt_stored");
-   stld = m->getFunction ("_rt_storeld");
+   //st1  = m->getFunction ("_rt_store1");
+   store_pre  = m->getFunction ("_rt_store_pre");
+   store_post = m->getFunction ("_rt_store_post");
 
    allo = m->getFunction ("_rt_allo");
    mllo = m->getFunction ("_rt_mllo");
@@ -86,7 +83,7 @@ bool Instrumenter::find_rt ()
    call = m->getFunction ("_rt_call");
    ret  = m->getFunction ("_rt_ret");
 
-   return ld32 != nullptr and st32 != nullptr; // for instance
+   return ld32 != nullptr;
 }
 
 bool Instrumenter::is_rt_fun (llvm::Function *f)
@@ -184,11 +181,13 @@ void Instrumenter::visitLoadInst (llvm::LoadInst &i)
       // use isSized() + queries to the DataLayaout system to generalize this
       switch (i.getType()->getIntegerBitWidth ())
       {
+      //case 1 : f = ld8; break;
       case 8 : f = ld8; break;
       case 16 : f = ld16; break;
       case 32 : f = ld32; break;
       case 64 : f = ld64; break;
       default :
+         llvm::outs() << "stid:   " << i << "\n";
          throw std::runtime_error ("Instrumentation: load instruction: integer type: cannot handle bitwith");
       }
    }
@@ -206,6 +205,7 @@ void Instrumenter::visitLoadInst (llvm::LoadInst &i)
    }
    else
    {
+      llvm::outs() << "stid:   " << i << "\n";
       throw std::runtime_error ("Instrumentation: load instruction: cannot handle the type");
    }
 
@@ -247,55 +247,49 @@ void Instrumenter::visitStoreInst (llvm::StoreInst &i)
    llvm::Value *addr;
    llvm::Value *v;
    llvm::Type *t;
-   llvm::Function *f;
+   uint64_t size;
 
-   //llvm::outs() << "stid: " << i << "\n";
+   llvm::outs() << "stid: " << i << "\n";
 
-   // if we are tring to store a pointer, make a bitcast to uint64_t
-   v = i.getValueOperand ();
+   // get the address where we want to store and bitcast it to i8*
    addr = i.getPointerOperand ();
-   if (v->getType()->isPointerTy())
-   {
-      // t = i64*, address is bitcasted to type t
-      t = llvm::Type::getInt64PtrTy (*ctx, addr->getType()->getPointerAddressSpace());
-      addr = b.CreateBitCast (addr, t, "imnt");
-      // lodaded value is converted to i64
-      v = b.CreatePtrToInt (v, b.getInt64Ty(), "imnt");
-   }
+   //t = llvm::Type::getInt8PtrTy (*ctx, addr->getType()->getPointerAddressSpace());
+   t = b.getInt8PtrTy ();
+   addr = b.CreateBitCast (addr, t);
 
-   // depending on the type of the value we need instrument a call to a
-   // different function
-   if (v->getType()->isIntegerTy())
+   // compute the size of the value stored, according to the DataLayaout
+   v = i.getValueOperand ();
+   size = m->getDataLayout().getTypeStoreSize (v->getType());
+
+   // make sure size has not a crazy value
+   switch (size)
    {
-      switch (v->getType()->getIntegerBitWidth ())
+   case 1 :
+   case 2 :
+   case 4 :
+   case 8 :
+      break;
+   default :
+      if (size & 7)
       {
-      case 8 : f = st8; break;
-      case 16 : f = st16; break;
-      case 32 : f = st32; break;
-      case 64 : f = st64; break;
-      default :
-         throw std::runtime_error ("Instrumentation: store instruction: integer type: cannot handle bitwith");
+         int ssize = (size + 8) & -8;
+         std::string s;
+         print_value (&i, s);
+         DEBUG ("stid: instrumenter: WARNING: casting %u bit store to %u bit store:",
+               8 * size, 8 * ssize);
+         size = ssize;
+         DEBUG ("stid: instrumenter:  %s", s.c_str());
       }
-   }
-   else if (v->getType()->isFloatTy ())
-   {
-      f = stf;
-   }
-   else if (v->getType()->isDoubleTy ())
-   {
-      f = std;
-   }
-   else if (v->getType()->isX86_FP80Ty ())
-   {
-      f = stld;
-   }
-   else
-   {
-      throw std::runtime_error ("Instrumentation: store instruction: cannot handle the type");
    }
 
    // instruction to call to the runtime
-   b.CreateCall (f, {addr, v});
+   b.CreateCall (store_pre, {addr, b.getInt32 (size)});
+
+   // reattach the builder after the store instruction and instrument a second
+   // call
+   b.SetInsertPoint (i.getNextNode ());
+   b.CreateCall (store_post, {addr, b.getInt32 (size)});
+
    count++;
 }
 

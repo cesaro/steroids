@@ -297,10 +297,11 @@ void test5 ()
    DEBUG ("stid: module saved to 'out.ll'");
 
    // prepare arguments for the program
-   e.argv.push_back ("prog");
-   e.argv.push_back ("a");
-   e.argv.push_back ("b");
-   e.argv.push_back ("c");
+   e.argv.push_back ("cunf");
+   e.argv.push_back ("/tmp/dme3.ll_net");
+   //e.argv.push_back ("a");
+   //e.argv.push_back ("b");
+   //e.argv.push_back ("c");
    e.envp.push_back ("HOME=/home/cesar");
    e.envp.push_back ("PWD=/usr/bin");
    e.envp.push_back (nullptr);
@@ -314,9 +315,12 @@ void test5 ()
 
    conft po (actions);
 
-   po.build ();
+   // print it !
+   po.print_original_stream ();
 
-   po.print (); //_original_stream ();
+   // build the partial order
+   po.build ();
+   //po.print ();
 
    fflush (stdout);
    fflush (stderr);

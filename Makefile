@@ -24,8 +24,14 @@ compile: $(TARGETS)
 r run: compile input.ll
 	./tools/test/main
 
-input.ll : tests/hello.ll rt/rt.ll
+input.ll : program.ll rt/rt.ll
 	llvm-link-$(LLVMVERS) -S $^ -o $@
+
+#program.ll : /tmp/cunf3.ll rt/rt.ll
+#program.ll : /tmp/cunf0.ll rt/rt.ll
+program.ll : tests/hello.ll
+	#opt-3.7 -S -O3 -mem2reg $< > $@
+	opt-3.7 -S -verify $< > $@
 
 src/libsteroids.a : $(LIB_OBJS) $(LIB_MOBJS)
 	@echo "AR  $@"

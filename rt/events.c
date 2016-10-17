@@ -24,93 +24,183 @@ static void _rt_debug_header ()
    printf ("stid: rt: ======= ================== ================== ======================\n");
 }
 
-static void _rt_debug_trace0 (enum eventtype e)
+static void _rt_debug_trace0 (uint8_t a)
 {
-   printf ("stid: rt: %s\n", _rt_ev_to_str (e));
+   printf ("stid: rt: %s\n", _rt_action_to_str (a));
    //fflush (stdout);
 }
 
-static void _rt_debug_trace1 (enum eventtype e, const void *addr)
+static void _rt_debug_trace1 (uint8_t a, const void *addr)
 {
    printf ("stid: rt: %s %18p\n",
-         _rt_ev_to_str (e), addr);
+         _rt_action_to_str (a), addr);
    //fflush (stdout);
 }
 
-static void _rt_debug_trace2 (enum eventtype e, const void *addr, uint64_t v)
+static void _rt_debug_trace2 (uint8_t a, const void *addr, uint64_t v)
 {
    printf ("stid: rt: %s %18p %#18lx %s\n",
-         _rt_ev_to_str (e), addr, v, _rt_quote (v));
+         _rt_action_to_str (a), addr, v, _rt_quote (v));
    //fflush (stdout);
 }
 
-static void _rt_debug_trace3 (enum eventtype e, uint16_t v)
+static void _rt_debug_trace3 (uint8_t a, uint16_t v)
 {
    printf ("stid: rt: %s                    %#18x %s\n",
-         _rt_ev_to_str (e), v, _rt_quote (v));
+         _rt_action_to_str (a), v, _rt_quote (v));
    //fflush (stdout);
 }
-static void _rt_debug_trace128 (enum eventtype e, const void *addr, long double v)
+static void _rt_debug_trace128 (uint8_t a, const void *addr, long double v)
 {
    
    printf ("stid: rt: %s %18p       [2 x 64bits] %.20Le\n",
-         _rt_ev_to_str (e), addr, v);
+         _rt_action_to_str (a), addr, v);
+   //fflush (stdout);
+}
+static void _rt_debug_store (uint8_t a, const void *addr, uint32_t size)
+{
+   uint64_t v;
+   switch (size)
+   {
+   case 1 :
+      v = * (const uint8_t*) addr;
+      break;
+   case 2 :
+      v = * (const uint16_t*) addr;
+      break;
+   case 4 :
+      v = * (const uint32_t*) addr;
+      break;
+   case 8 :
+      v = * (const uint64_t*) addr;
+      break;
+   default:
+      v = 0xdeadbeefdeadbeef;
+   }
+   printf ("stid: rt: %s %18p %#18lx %s\n",
+         _rt_action_to_str (a), addr, v, _rt_quote (v));
    //fflush (stdout);
 }
 
-static inline void _rt_check_limits_addr (const void *ptr, enum eventtype e)
+static inline void _rt_check_oom (const void *ptr, uint32_t size)
 {
-   // if the memory access is offlimits, we finish execution
-   if ((uint64_t) ptr < memstart || (uint64_t) ptr >= memend)
+   // if the memory access is offlimits, we terminate execution
+   if ((uint64_t) ptr < memstart || size + (uint64_t) ptr >= memend)
    {
-      TRACE1 (e, ptr); // temporary solution to see RD OOMs
-      printf ("stid: rt: out-of-memory access: event %d addr %p\n", e, ptr);
+      printf ("stid: rt: out-of-memory access: addr %p, size %u\n", ptr, size);
       _rt_end (255);
    }
 }
 
-static inline void _rt_check_trace_capacity ()
+static inline void _rt_log_action (uint8_t action)
 {
-   // if the buffer space is exhausted, we finish
-   // observe that this requires only one memory access (for evptr)
-   if ((uint64_t) rt->trace.evptr == evend) _rt_end (255);
+   // this requires 2 memory access: one load and one store of evptr
+   uint8_t *ptr = rt->trace.evptr;
+   if ((uint64_t) ptr == evend) _rt_end (254);
+   *ptr = action;
+   rt->trace.evptr = ptr + 1;
 }
+
+static inline void _rt_log_addr (const void *addr)
+{
+   *rt->trace.addrptr++ = (uint64_t) addr;
+}
+
+static inline uint8_t _rt_rdwr_get_action (int isread, uint32_t size)
+{
+   uint8_t class;
+
+   // we accept sizes of 1, 2, 4, or multiples of 8 from 8 to 256
+
+   class = isread ? RT_ACTION_CLASS_RD8 : RT_ACTION_CLASS_WR8;
+   switch (size)
+   {
+   case 1 :
+      return class | 1; // 8bits
+   case 2 :
+      return class | 2; // 16bits
+   case 4 :
+      return class | 4; // 32bits
+   default :
+      break;
+   }
+
+   // 64bits or more
+   class = isread ? RT_ACTION_CLASS_RD64 : RT_ACTION_CLASS_WR64;
+   return class | ((size / 8) & RT_ACTION_ID_MASK);
+
+   // if size == 3, 5, 6, 7, then kind == 0
+   // if size >= 256, then we silently ignore part of the memory chunk
+}
+
+static inline void _rt_log_rdwr_val (const void *addr, uint32_t size)
+{
+   unsigned i;
+   unsigned char *src = (unsigned char *) addr;
+   uint64_t *dst = rt->trace.valptr;
+
+   // 1, 2 or 4 bytes
+   switch (size)
+   {
+   case 1 :
+      *rt->trace.valptr++ = * (uint8_t*) src;
+      return;
+   case 2 :
+      *rt->trace.valptr++ = * (uint16_t*) src;
+      return;
+   case 4 :
+      *rt->trace.valptr++ = * (uint32_t*) src;
+      return;
+   default:
+      break;
+   }
+
+   // 64 bit words
+   size = ((size / 8) & RT_ACTION_ID_MASK) * 8;
+   for (i = 0; i < size; i += 8)
+   {
+      *dst++ = * (uint64_t*) (src + i);
+   }
+   rt->trace.valptr = dst;
+}
+
+static inline void _rt_check_trace_capacity () {}
 
 // memory loads - FIXME, later on we should make RD into TRACE1
 //
 uint8_t  _rt_load8  (uint8_t  *addr)
 {
    uint8_t v;
-   _rt_check_limits_addr ((void*) addr, _RD8);
+   _rt_check_oom (addr, 8);
    v = *addr;
-   TRACE2 (_RD8, addr, v);
+   TRACE2 (RT_RD8, addr, v);
    _rt_check_trace_capacity ();
    return v;
 }
 uint16_t _rt_load16 (uint16_t *addr)
 {
    uint16_t v;
-   _rt_check_limits_addr ((void*) addr, _RD16);
+   _rt_check_oom (addr, 16);
    v = *addr;
-   TRACE2 (_RD16, addr, v);
+   TRACE2 (RT_RD16, addr, v);
    _rt_check_trace_capacity ();
    return v;
 }
 uint32_t _rt_load32 (uint32_t *addr)
 {
    uint32_t v;
-   _rt_check_limits_addr ((void*) addr, _RD32);
+   _rt_check_oom (addr, 32);
    v = *addr;
-   TRACE2 (_RD32, addr, v);
+   TRACE2 (RT_RD32, addr, v);
    _rt_check_trace_capacity ();
    return v;
 }
 uint64_t _rt_load64 (uint64_t *addr)
 {
    uint64_t v;
-   _rt_check_limits_addr ((void*) addr, _RD64);
+   _rt_check_oom (addr, 64);
    v = *addr;
-   TRACE2 (_RD64, addr, v);
+   TRACE2 (RT_RD64, addr, v);
    _rt_check_trace_capacity ();
    return v;
 }
@@ -118,9 +208,9 @@ float    _rt_loadf  (float *addr)
 {
    float v;
    ASSERT (sizeof (float) == 4)
-   _rt_check_limits_addr ((void*) addr, _RD32);
+   _rt_check_oom (addr, 32);
    v = *addr;
-   TRACE2 (_RD32, addr, * (uint32_t*) (void*) &v);
+   TRACE2 (RT_RD32, addr, * (uint32_t*) (void*) &v);
    _rt_check_trace_capacity ();
    return v;
 }
@@ -128,9 +218,9 @@ double   _rt_loadd  (double *addr)
 {
    double v;
    ASSERT (sizeof (double) == 8)
-   _rt_check_limits_addr ((void*) addr, _RD64);
+   _rt_check_oom (addr, 64);
    v = *addr;
-   TRACE2 (_RD64, addr, * (uint64_t*) (void*) &v);
+   TRACE2 (RT_RD64, addr, * (uint64_t*) (void*) &v);
    _rt_check_trace_capacity ();
    return v;
 }
@@ -138,15 +228,14 @@ long double _rt_loadld (long double *addr)
 {
    long double v;
    ASSERT (sizeof (long double) == 16)
-   _rt_check_limits_addr ((void*) addr, _RD128);
+   _rt_check_oom (addr, 128);
    v = *addr;
-   TRACE128 (_RD128, addr, v); // event, address, 2 x val
+   TRACE128 (RT_RD128, addr, v); // event, address, 2 x val
    _rt_check_trace_capacity ();
    return v;
 }
 
-// memory stores
-//
+#if 0
 void _rt_store8 (uint8_t *addr, uint8_t v)
 {
    TRACE2 (_WR8, addr, v);
@@ -191,21 +280,40 @@ void _rt_storeld (long double *addr, long double v)
    _rt_check_limits_addr ((void*) addr, _WR128);
    _rt_check_trace_capacity ();
 }
+#endif
+
+// memory stores
+//
+void _rt_store_pre (const void *addr, uint32_t size)
+{
+   uint8_t a = _rt_rdwr_get_action (0, size);
+   _rt_log_action (a);
+   _rt_log_addr (addr);
+   _rt_check_oom (addr, size);
+}
+
+void _rt_store_post (const void *addr, uint32_t size)
+{
+   _rt_log_rdwr_val (addr, size);
+   uint8_t a = _rt_rdwr_get_action (0, size);
+   _rt_debug_store (a, addr, size);
+}
+
 
 // memory management
 //
 // for heap allocation (malloc/free) this is done directly in mm.c
 void _rt_allo (uint8_t *addr, uint32_t size)
 {
-   TRACE2 (_ALLO, addr, size);
+   TRACE2 (RT_ALLOCA, addr, size);
 }
 void _rt_call (uint16_t id)
 {
-   TRACE3 (_CALL, id);
+   TRACE3 (RT_CALL, id);
 }
 void _rt_ret (uint16_t id)
 {
-   TRACE3 (_RET, id);
+   TRACE3 (RT_RET, id);
 }
 
 void _rt_memreg_print (struct memreg *m, const char *prefix, const char *suffix)

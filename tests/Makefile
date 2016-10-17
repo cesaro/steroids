@@ -3,7 +3,7 @@ CC=clang-$(VERS)
 CXX=clang++-$(VERS)
 
 CPPFLAGS=
-CFLAGS=-Wall -O1
+CFLAGS=-Wall
 CXXFLAGS=-Wall -O1
 LDLIBS=-lpthread
 

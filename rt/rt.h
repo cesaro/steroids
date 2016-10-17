@@ -3,10 +3,72 @@
 #define _RT_RT_H_
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// event identifiers:
+// - event class: upper 3 bits
+// - event id:    lower 5 bits
+#define RT_ACTION_CLASS_MASK  0xe0  // 1110 0000
+#define RT_ACTION_ID_MASK     0x1f  // 0001 1111
+
+// event classes
+#define RT_ACTION_CLASS_RD8   0x00  // 000 0
+#define RT_ACTION_CLASS_RD64  0x20  // 001 0
+#define RT_ACTION_CLASS_WR8   0x40  // 010 0
+#define RT_ACTION_CLASS_WR64  0x60  // 011 0
+#define RT_ACTION_CLASS_MM    0x80  // 100 0
+#define RT_ACTION_CLASS_TH    0xa0  // 101 0
+
+// event kinds: RD8 : number of bytes read, from 1 to 4
+// event kinds: RD64: number of 64bit words read, from 1 to 31
+// event kinds: WR8/WR64: idem
+// event kinds: MM:
+#define RT_ACTION_ALLOCA      0x01  // 0 0001
+#define RT_ACTION_MALLOC      0x02  // 0 0010
+#define RT_ACTION_FREE        0x03  // 0 0011
+#define RT_ACTION_CALL        0x04  // 0 0100
+#define RT_ACTION_RET         0x05  // 0 0101
+// event kinds: TH
+#define RT_ACTION_THCREAT     0x00  // 0 0000
+#define RT_ACTION_THJOIN      0x01  // 0 0001
+#define RT_ACTION_THEXIT      0x02  // 0 0010
+#define RT_ACTION_THCTXSW     0x03  // 0 0011
+#define RT_ACTION_MTXLOCK     0x04  // 0 0100
+#define RT_ACTION_MTXUNLK     0x05  // 0 0101
+
+// often used event ids
+#define RT_RD8                (RT_ACTION_CLASS_RD8 | 1)
+#define RT_RD16               (RT_ACTION_CLASS_RD8 | 2)
+#define RT_RD32               (RT_ACTION_CLASS_RD8 | 4)
+#define RT_RD64               (RT_ACTION_CLASS_RD64 | 1)
+#define RT_RD128              (RT_ACTION_CLASS_RD64 | 2)
+#define RT_RD192              (RT_ACTION_CLASS_RD64 | 3)
+#define RT_RD256              (RT_ACTION_CLASS_RD64 | 4)
+#define RT_IS_MULTIW_RD(x)    (((x) & RT_ACTION_CLASS_MASK) == RT_ACTION_CLASS_RD64)
+#define RT_MULTIW_COUNT(x)    ((x) & RT_ACTION_ID_MASK)
+#define RT_WR8                (RT_ACTION_CLASS_WR8 | 1)
+#define RT_WR16               (RT_ACTION_CLASS_WR8 | 2)
+#define RT_WR32               (RT_ACTION_CLASS_WR8 | 4)
+#define RT_WR64               (RT_ACTION_CLASS_WR64 | 1)
+#define RT_WR128              (RT_ACTION_CLASS_WR64 | 2)
+#define RT_WR192              (RT_ACTION_CLASS_WR64 | 3)
+#define RT_WR256              (RT_ACTION_CLASS_WR64 | 4)
+#define RT_IS_MULTIW_WR(x)    (((x) & RT_ACTION_CLASS_MASK) == RT_ACTION_CLASS_WR64)
+#define RT_ALLOCA             (RT_ACTION_CLASS_MM | RT_ACTION_ALLOCA)
+#define RT_MALLOC             (RT_ACTION_CLASS_MM | RT_ACTION_MALLOC)
+#define RT_FREE               (RT_ACTION_CLASS_MM | RT_ACTION_FREE)
+#define RT_CALL               (RT_ACTION_CLASS_MM | RT_ACTION_CALL)
+#define RT_RET                (RT_ACTION_CLASS_MM | RT_ACTION_RET)
+#define RT_THCREAT            (RT_ACTION_CLASS_TH | RT_ACTION_THCREAT)
+#define RT_THJOIN             (RT_ACTION_CLASS_TH | RT_ACTION_THJOIN)
+#define RT_THEXIT             (RT_ACTION_CLASS_TH | RT_ACTION_THEXIT)
+#define RT_THCTXSW            (RT_ACTION_CLASS_TH | RT_ACTION_THCTXSW)
+#define RT_MTXLOCK            (RT_ACTION_CLASS_TH | RT_ACTION_MTXLOCK)
+#define RT_MTXUNLK            (RT_ACTION_CLASS_TH | RT_ACTION_MTXUNLK)
 
 // these two are in start.s; host should invoke _rt_start
 void _rt_start (int argc, const char * const *argv, const char * const *env);
@@ -35,6 +97,10 @@ void _rt_store64 (uint64_t *addr, uint64_t v);
 void _rt_storef  (float *addr, float v);
 void _rt_stored  (double *addr, double v);
 void _rt_storeld (long double *addr, long double v);
+
+// new instrumentation for load and stores
+void _rt_store_pre  (const void *addr, uint32_t size);
+void _rt_store_post (const void *addr, uint32_t size);
 
 // memory management
 void _rt_allo (uint8_t *addr, uint32_t size);
@@ -74,41 +140,6 @@ int _rt_usleep (useconds_t us);
 
 // errno.h
 int *_rt___errno_location ();
-
-// actions loged in the struct eventrace
-// @TODO: For consistency the enum should be renamed to event_typet
-enum eventtype
-{
-   // loads
-   _RD8,
-   _RD16,
-   _RD32,
-   _RD64,
-   _RD128,
-   // stores
-   _WR8,
-   _WR16,
-   _WR32,
-   _WR64,
-   _WR128,
-   // memory management
-   _ALLO,
-   _MLLO,
-   _FREE,
-   _CALL,
-   _RET,
-   // threads
-   _THCREAT,
-   _THJOIN,
-   _THEXIT,
-   _THCTXSW,
-   // locks
-   _MTXINIT,
-   _MTXLOCK,
-   _MTXUNLK,
-   // misc
-   _NONE, // this should be the last in the list
-};
 
 // memory region
 struct memreg
@@ -160,39 +191,58 @@ struct rt
 // static const uint64_t evend;
 // static struct rt * const rt;
 
-static inline const char *_rt_ev_to_str (enum eventtype e)
+static inline const char *_rt_action_to_str (uint8_t a)
 {
-   switch (e)
+   static char str[20];
+
+   switch (a)
    {
-   // loads
-   case _RD8       : return "RD8    ";
-   case _RD16      : return "RD16   ";
-   case _RD32      : return "RD32   ";
-   case _RD64      : return "RD64   ";
-   case _RD128     : return "RD128  ";
-   // stores
-   case _WR8       : return "WR8    ";
-   case _WR16      : return "WR16   ";
-   case _WR32      : return "WR32   ";
-   case _WR64      : return "WR64   ";
-   case _WR128     : return "WR128  ";
+   // most common loads
+   case RT_RD8     : return "RD8    ";
+   case RT_RD16    : return "RD16   ";
+   case RT_RD32    : return "RD32   ";
+   case RT_RD64    : return "RD64   ";
+   case RT_RD128   : return "RD128  ";
+   case RT_RD192   : return "RD192  ";
+   case RT_RD256   : return "RD256  ";
+   // most common stores
+   case RT_WR8     : return "WR8    ";
+   case RT_WR16    : return "WR16   ";
+   case RT_WR32    : return "WR32   ";
+   case RT_WR64    : return "WR64   ";
+   case RT_WR128   : return "WR128  ";
+   case RT_WR192   : return "WR192  ";
+   case RT_WR256   : return "WR256  ";
    // memory management
-   case _ALLO      : return "ALLO   ";
-   case _MLLO      : return "MLLO   ";
-   case _FREE      : return "FREE   ";
-   case _CALL      : return "CALL   ";
-   case _RET       : return "RET    ";
+   case RT_ALLOCA  : return "ALLO   ";
+   case RT_MALLOC  : return "MLLO   ";
+   case RT_FREE    : return "FREE   ";
+   case RT_CALL    : return "CALL   ";
+   case RT_RET     : return "RET    ";
    // threads
-   case _THCREAT   : return "THCREAT";
-   case _THJOIN    : return "THJOIN ";
-   case _THEXIT    : return "THEXIT ";
-   case _THCTXSW   : return "THCTXSW";
+   case RT_THCREAT : return "THCREAT";
+   case RT_THJOIN  : return "THJOIN ";
+   case RT_THEXIT  : return "THEXIT ";
+   case RT_THCTXSW : return "THCTXSW";
    // locks
-   case _MTXINIT   : return "MTXINIT";
-   case _MTXLOCK   : return "MTXLOCK";
-   case _MTXUNLK   : return "MTXUNLK";
-   // misc
-   case _NONE      : return "NONE";
+   case RT_MTXLOCK : return "MTXLOCK";
+   case RT_MTXUNLK : return "MTXUNLK";
+
+   // less common loads / stores
+   default :
+      if (RT_IS_MULTIW_RD (a))
+      {
+         // min 5 max 31
+         sprintf (str, "RD [%u x i64]", RT_MULTIW_COUNT (a));
+         return str;
+      }
+      if (RT_IS_MULTIW_WR (a))
+      {
+         // min 5 max 31
+         sprintf (str, "WR [%u x i64]", RT_MULTIW_COUNT (a));
+         return str;
+      }
+      return "???    ";
    }
 }
 

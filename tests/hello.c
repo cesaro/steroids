@@ -136,7 +136,7 @@ int main2 ()
    char buff[256];
 
    printf ("before strcpy\n");
-   mystrcpy (buff, "hello world, this is a test!!");
+   mystrcpy (buff, "hello world, this is a test!!12");
    printf ("after strcpy\n");
    printf ("buff %p\n", buff);
    return 111;
@@ -447,8 +447,78 @@ int main8 ()
    return 5656;
 }
 
+uint64_t words[128];
+uint64_t *wordsptr = words;
+
+static inline void instr (void *addr, int size)
+{
+   int i;
+   unsigned char *src = (unsigned char *) addr;
+
+#if 0
+   unsigned char *dst = (unsigned char *) wordsptr;
+   for (i = 0; i < size; i++) dst[i] = src[i];
+   wordsptr += size / 8;
+   if (size % 8) wordsptr++;
+#else
+   uint64_t *dst = wordsptr;
+   for (i = 0; i + 8 <= size; i += 8)
+   {
+      *dst++ = * (uint64_t*) (src + i);
+   }
+
+   switch (size - i)
+   {
+   case 1 :
+      *dst++ = * (uint8_t*) (src + i);
+      break;
+   case 2 :
+      *dst++ = * (uint16_t*) (src + i);
+      break;
+   case 3 :
+      *dst++ = * (uint16_t*) (src + i);
+      *dst++ = * (uint8_t*)  (src + i + 2);
+      break;
+   case 4 :
+      *dst++ = * (uint32_t*) (src + i);
+      break;
+   case 5 :
+      *dst++ = * (uint32_t*) (src + i);
+      *dst++ = * (uint8_t*)  (src + i + 4);
+      break;
+   case 6 :
+      *dst++ = * (uint32_t*) (src + i);
+      *dst++ = * (uint16_t*) (src + i + 4);
+      break;
+   case 7 :
+      *dst++ = * (uint32_t*) (src + i);
+      *dst++ = * (uint16_t*) (src + i + 4);
+      *dst++ = * (uint8_t*)  (src + i + 5);
+      break;
+   }
+   wordsptr = dst;
+#endif
+}
+
+int main9 ()
+{
+   float x1, x2;
+   long double y;
+
+   printf ("give me two numbers: ");
+   fflush (stdout);
+   scanf ("%f%f", &x1, &x2);
+
+   y = x1 + x2 + 123;
+
+   instr (&y, sizeof (long double));
+   return 0;
+}
+
 //int main (int argc, char **argv)
 int main ()
 {
-   return main8 ();
+   //return main8 ();
+   return main2 ();
 }
+
