@@ -200,7 +200,7 @@ foreign import ccall unsafe "stid_get_seqexec"
   stidGetSeqExec :: SteroidRef -> SteroidExecRef -> IO CInt
 
 foreign import ccall unsafe "stid_get_poexec"
-  stidGetPoExec :: SteroidRef -> SteroidPoRef -> IO CInt 
+  stidGetPoExec :: SteroidRef -> IO SteroidPoRef 
 
 -- Test API
 foreign import ccall unsafe "stid_test"

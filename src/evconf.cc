@@ -56,12 +56,52 @@ eventt::eventt (unsigned sidx, actiont ac, eventt &p, eventt &m) :
    vclock[_tid] += 2; // the +1 is the redbox events
 }
 
-inline unsigned eventt::idx (const conft &c)
-{ 
-   return this - &c.events[_tid][0];
+unsigned eventt::idx (const conft &c)
+{
+  //  printf ("getting idx of %p, %p\n", this, &c.events[_tid][0]);
+   unsigned i = 0;
+  // eventt *e = pre_proc ();
+  // while (e != NULL)
+  // {
+  //   i++;
+  //   e = e->pre_proc ();
+  // }
+   unsigned res = this - &c.events[_tid][0];
+   breakme ();
+    
+   return res; 
+}
+
+void eventt::print_simple (const conft &c)
+{
+   printf ("Event %5d Thread Id: %5d Idx: %5u\n", _sidx, _tid, idx (c));
+}
+
+void eventt::print (const conft &c)
+{
+   printf ("---------------------\n");
+   print_simple (c);
+   act.pretty_print ();
+   printf ("Size of red event box %2zu\n", redbox.size ());  
+  // switch (act.type) {
+  //    case action_typet::THSTART :
+  //      if (_sidx != 0)
+  //         this->pre_other()->print_simple (c); 
+  //      break;
+  //    case action_typet::MTXLOCK :
+  //      if (this->pre_other() != nullptr)
+  //      {
+  //         printf ("this mutex has memory predecessors!!!\n");
+  //         this->pre_other()->print_simple (c);
+  //      }
+  //      break;
+  //    case action_typet::THJOIN  : 
+  //         this->pre_other()->print_simple (c);
+  // }
 }
 
 conft::conft (action_streamt &s) :
+   mutexmax (),
    _stream (s)
 {
    const struct rt *rt = s.get_rt ();
@@ -69,11 +109,13 @@ conft::conft (action_streamt &s) :
    num_ths = rt->trace.num_ths;
    ASSERT (num_ths > 0);
    for (int i=0; i < num_ths; i++)
+   {
      events.push_back (std::vector<eventt> ());
-
+     events[i].reserve (1000);
+   }
    //num_mutex = rt->trace.num_mutex;
 
-   // std::vector<eventt> mutexmax (num_mutex);
+   //std::vector<eventt> mutexmax (num_mutex);
 }
 
 // For debug purposes only (FOR NOW)
@@ -87,20 +129,11 @@ void conft::print ()
 {
    // iterate throught the actions
    int tid = 0;
-   int i = 0;
    for (auto &ths : events)
    {
       printf ("Printing events of thread %2d\n", tid++);
       for (auto &es : ths)
-      {
-      // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
-      printf ("idx: %2d\t sidx: %2d\t type: %s\t size of red events: %5zu\n",
-         i,
-         es.sidx (),
-         es.act.type_str (),
-         es.redbox.size ());
-      i++;
-      }
+         es.print (*this);
    }
 }
 
@@ -114,7 +147,7 @@ void conft::build ()
  
    // safety check
    bool is_next_global = false;
- 
+
    // store the create event per thread
    std::vector<eventt> createvs(num_ths);
 
@@ -135,6 +168,8 @@ void conft::build ()
    {
       if (is_new_ev)
       {
+      printf ("-------------------------\n");
+      printf ("build: red events for event %d\n", ev.sidx ());
       is_next_global = add_red_events (st_it, sidx, ev);
       // at this point, the red events are already in ev
       // is_next_global ensures that the next event of the
@@ -145,7 +180,8 @@ void conft::build ()
  
       // add the blue event to its thread
       events[cur_tid].push_back (ev);
-      printf ("added event to tid %2d. current size is %2zu\n", cur_tid, events[cur_tid].size ());
+      ev.act.pretty_print ();
+      printf ("build: added to tid %2d; num events in tid is %2zu; pos %d\n", cur_tid, events[cur_tid].size (), sidx);
       }
 
       is_new_ev = true;
@@ -158,8 +194,8 @@ void conft::build ()
       case RT_THCREAT :
          ac.type = action_typet::THCREAT;
          ac.val  = act.id ();
-         // verify this code
          ev = eventt (sidx++, ac, ev);
+         printf ("build: RT_THCREAT tid %2d sidx %2d\n", ev.tid (), ev.sidx ());
          createvs[ac.val] = ev;
          break;
       case RT_THEXIT :
@@ -179,7 +215,7 @@ void conft::build ()
          // if there are no events in the cur_tid generate THSTART 
          if (events[cur_tid].size () == 0)
          {
-            printf ("THCTXSW new thread\n");
+            printf ("build: THCTXSW new thread\n");
             ev = eventt (sidx++, createvs[cur_tid], cur_tid);
          }
          else
@@ -188,8 +224,9 @@ void conft::build ()
             // if it is not the case that the we are in the beginning of a
             // new thread, we move to the next event which can only be a 
             // JOIN or a LOCK. 
-            printf ("THCTXSW already thread\n");
+            printf ("build: THCTXSW already thread\n");
             is_new_ev = false;
+            sidx++;
          }
          break;
       case RT_THJOIN :
@@ -209,10 +246,13 @@ void conft::build ()
         // ASSERT (mut != mut.end ()); 
         if (mut == mutexmax.end ())
         {
+            printf ("build: MUTEX HAS NO MEMORY PREDECESSORS!\n");
             ev = eventt (sidx++, ac, ev);
+            ASSERT (ev.pre_other () == nullptr);
         }
         else
         {
+            printf ("build: RT_MTXLOCK: %i \n", mut->second->sidx ());
             ev = eventt (sidx++, ac, ev, *mut->second);
         }
         // update the value of mutexmax
@@ -357,7 +397,7 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
            break;
         }
 
-        printf ("going to exit the red event box of event %2d\n", b_ev.sidx ());
+        printf ("add_red_events: exit of event %2d with position %2d\n", b_ev.sidx (), i);
         return true;
       }
       act = *++it;

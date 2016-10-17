@@ -23,10 +23,27 @@ struct stid_action * stid_new_action (int type, uint64_t addr, uint64_t val)
    return act; 
 }
 
+static inline const char *act_ty_to_str (int a)
+{
+   switch (a)
+   {
+   // threads
+   case STID_CREATE : return "STID_CREATE";
+   case STID_JOIN   : return "STID_JOIN  ";
+   case STID_ENTRY  : return "STID_ENTRY ";
+   case STID_EXIT   : return "STID_EXIT  ";
+   // locks
+   case STID_LOCK   : return "STID_LOCK  ";
+   case STID_UNLOCK : return "STID_UNLOCK";
+   default : return "FAIL";
+   }
+}
+
 int stid_print_action (struct stid_action *act)
 {
    if (act == 0) return 1;
-   printf ("action: %p type %d addr %#lx val %#lx\n", act, act->type, act->addr, act->val);
+   printf ("action: %p type %s addr %#lx val %#lx\n", 
+      act, act_ty_to_str(act->type), act->addr, act->val);
    return 0;
 }
 
@@ -164,7 +181,7 @@ int stid_print_po (struct stid_po po)
      e = &da_i (p, 0, struct stid_event); 
      for (int tlen = 0; tlen < p->len; tlen++)
      {
-       stid_print_event (e++, tid, 0);
+       stid_print_event (e++, tid, tlen);
      }
    }
 
