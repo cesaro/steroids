@@ -81,15 +81,16 @@ void conft::print_original_stream ()
 {
    // iterate throught the actions
    int i = 0;
-   for (auto ac : _stream)
+   for (auto &ac : _stream)
    {
       // for efficiency purposes ac has type "action_stream_itt" rather than "actiont"
-      printf ("idx %5d action %#4x '%s' addr %#18lx val %#18lx id %#10x\n",
+      printf ("idx %5d action %#4x '%s' addr %#18lx val[0] %#18lx valsize %u id %#10x\n",
          i,
          ac.type (),
          _rt_action_to_str (ac.type ()),
          ac.addr (),
-         ac.val (),
+         *ac.val (),
+         ac.val_size(),
          ac.id ());
       i++;
       //if (i >= 200) break;
@@ -159,7 +160,7 @@ void conft::build ()
  
       // add the blue event to its thread
       events[cur_tid].push_back (ev);
-      printf ("added event to tid %2d. current size is %2d\n", cur_tid, events[cur_tid].size ());
+      printf ("added event to tid %2d. current size is %2zu\n", cur_tid, events[cur_tid].size ());
       }
 
       is_new_ev = true;
@@ -263,25 +264,25 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
       // loads
       case RT_RD8 : 
          ac.type = action_typet::RD8;
-         ac.addr = act.addr ();
+         ac.addr = *act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break; 
       case RT_RD16 : 
          ac.type = action_typet::RD16;
-         ac.addr = act.addr ();
+         ac.addr = *act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break; 
       case RT_RD32 : 
          ac.type = action_typet::RD32;
-         ac.addr = act.addr ();
+         ac.addr = *act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break;
       case RT_RD64 : 
          ac.type = action_typet::RD64;
-         ac.addr = act.addr ();
+         ac.addr = *act.addr ();
          ac.val  = act.val ();
          b_ev.redbox.push_back (ac);
          break;

@@ -24,12 +24,16 @@ public:
       { return *trace.evptr; }
    inline uint64_t addr ()
       { return *trace.addrptr; }
-   inline uint64_t val ()
-      { return *trace.valptr; }
-   inline uint64_t val2 ()
-      { return trace.valptr[1]; }
+   inline uint64_t *val ()
+      { return trace.valptr; }
+   inline unsigned val_size ()
+      { return RT_MULTIW_COUNT (type ()); }
    inline uint16_t id ()
       { return *trace.idptr; }
+
+   inline bool has_addr ();
+   inline bool has_val ();
+   inline bool has_id ();
    
 private:
    action_stream_itt (const action_streamt &s, bool begin);
@@ -56,5 +60,24 @@ private:
    friend class action_stream_itt;
 };
 
+class action_stream2t
+{
+public:
+   static const int MAX_WORDS = 4;
+   typedef struct
+   {
+      int type;
+      uint64_t addr;
+      uint64_t val[MAX_WORDS];
+
+      inline unsigned val_size ()
+         { return RT_MULTIW_COUNT (type); }
+   } actt;
+
+   std::vector<actt> stream;
+
+   action_stream2t (action_streamt &s);
+   void diff (const action_stream2t &other);
+};
 
 #endif

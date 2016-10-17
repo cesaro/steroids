@@ -23,22 +23,26 @@ extern "C" {
 #define RT_ACTION_CLASS_MM    0x80  // 100 0
 #define RT_ACTION_CLASS_TH    0xa0  // 101 0
 
-// event kinds: RD8 : number of bytes read, from 1 to 4
-// event kinds: RD64: number of 64bit words read, from 1 to 31
-// event kinds: WR8/WR64: idem
-// event kinds: MM:
+// event ids: RD8 : number of bytes read, from 1 to 4
+// event ids: RD64: number of 64bit words read, from 1 to 31
+// event ids: WR8/WR64: idem
+// event ids: MM:
 #define RT_ACTION_ALLOCA      0x01  // 0 0001
 #define RT_ACTION_MALLOC      0x02  // 0 0010
 #define RT_ACTION_FREE        0x03  // 0 0011
 #define RT_ACTION_CALL        0x04  // 0 0100
 #define RT_ACTION_RET         0x05  // 0 0101
-// event kinds: TH
+// event ids: TH
 #define RT_ACTION_THCREAT     0x00  // 0 0000
 #define RT_ACTION_THJOIN      0x01  // 0 0001
 #define RT_ACTION_THEXIT      0x02  // 0 0010
 #define RT_ACTION_THCTXSW     0x03  // 0 0011
 #define RT_ACTION_MTXLOCK     0x04  // 0 0100
 #define RT_ACTION_MTXUNLK     0x05  // 0 0101
+
+// get the action class or the event id
+#define RT_ACTION_CLASS(x)    ((x) & RT_ACTION_CLASS_MASK)
+#define RT_ACTION_ID(x)       ((x) & RT_ACTION_ID_MASK)
 
 // often used event ids
 #define RT_RD8                (RT_ACTION_CLASS_RD8 | 1)

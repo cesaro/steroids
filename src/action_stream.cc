@@ -90,3 +90,178 @@ action_stream_itt action_stream_itt::action_stream_itt::operator++ (int)
    return ret;
 }
 
+bool action_stream_itt::has_addr ()
+{
+   uint8_t t = type ();
+
+   // reads, writes, alloca, malloc, free, lock, unlock
+   switch (RT_ACTION_CLASS (t))
+   {
+   case RT_ACTION_CLASS_RD8:
+   case RT_ACTION_CLASS_RD64:
+   case RT_ACTION_CLASS_WR8:
+   case RT_ACTION_CLASS_WR64:
+      return true;
+   case RT_ACTION_CLASS_MM:
+      switch (RT_ACTION_ID (t))
+      {
+      case RT_ALLOCA :
+      case RT_MALLOC :
+      case RT_FREE :
+         return true;
+      case RT_CALL :
+      case RT_RET :
+         return false;
+      default :
+         ASSERT (0);
+         return true;
+      }
+   case RT_ACTION_CLASS_TH:
+      switch (RT_ACTION_ID (t))
+      {
+      case RT_MTXLOCK :
+      case RT_MTXUNLK :
+         return true;
+      case RT_THCREAT :
+      case RT_THJOIN :
+      case RT_THEXIT :
+      case RT_THCTXSW :
+         return false;
+      default :
+         ASSERT (0);
+         return true;
+      }
+   default :
+      ASSERT (0);
+      return true;
+   }
+}
+
+bool action_stream_itt::has_val ()
+{
+   uint8_t t = type ();
+
+   // reads, writes, alloca, malloc
+   switch (RT_ACTION_CLASS (t))
+   {
+   case RT_ACTION_CLASS_RD8:
+   case RT_ACTION_CLASS_RD64:
+   case RT_ACTION_CLASS_WR8:
+   case RT_ACTION_CLASS_WR64:
+      return true;
+   case RT_ACTION_CLASS_MM:
+      switch (RT_ACTION_ID (t))
+      {
+      case RT_ALLOCA :
+      case RT_MALLOC :
+         return true;
+      case RT_FREE :
+      case RT_CALL :
+      case RT_RET :
+         return false;
+      default :
+         ASSERT (0);
+         return true;
+      }
+   case RT_ACTION_CLASS_TH:
+      return false;
+   default :
+      ASSERT (0);
+      return true;
+   }
+}
+
+bool action_stream_itt::has_id ()
+{
+   uint8_t t = type ();
+
+   // reads, writes, alloca, malloc, call, ret, creat, join, cs
+   switch (RT_ACTION_CLASS (t))
+   {
+   case RT_ACTION_CLASS_RD8:
+   case RT_ACTION_CLASS_RD64:
+   case RT_ACTION_CLASS_WR8:
+   case RT_ACTION_CLASS_WR64:
+      return false;
+   case RT_ACTION_CLASS_MM:
+      switch (RT_ACTION_ID (t))
+      {
+      case RT_CALL :
+      case RT_RET :
+         return true;
+      case RT_ALLOCA :
+      case RT_MALLOC :
+      case RT_FREE :
+         return false;
+      default :
+         ASSERT (0);
+         return true;
+      }
+   case RT_ACTION_CLASS_TH:
+      switch (RT_ACTION_ID (t))
+      {
+      case RT_MTXLOCK :
+      case RT_MTXUNLK :
+      case RT_THEXIT :
+         return false;
+      case RT_THCREAT :
+      case RT_THJOIN :
+      case RT_THCTXSW :
+         return true;
+      default :
+         ASSERT (0);
+         return true;
+      }
+   default :
+      ASSERT (0);
+      return true;
+   }
+}
+
+action_stream2t::action_stream2t (action_streamt &s)
+{
+   int i = 0;
+   actt a;
+
+   for (auto &ac : s)
+   {
+      // actions don't have both address and id
+      ASSERT (not ac.has_addr() or not ac.has_id());
+
+      // store the action in a
+      a.type = ac.type();
+      a.addr = ac.has_addr() ? ac.addr() : (ac.has_id() ? ac.id() : 0);
+      if (ac.has_val())
+      {
+         ASSERT (ac.val_size() < MAX_WORDS);
+         for (i = 0; i < ac.val_size(); i++) a.val[i] = ac.val()[i];
+         for (; i < MAX_WORDS; i++) a.val[i] = 0;
+      }
+      else
+      {
+         for (i = 0; i < MAX_WORDS; i++) a.val[i] = 0;
+      }
+
+      // make a copy in the vector
+      stream.push_back (a);
+   }
+}
+
+void action_stream2t::diff (const action_stream2t &other)
+{
+   printf (
+R"XX(
+== diff begin ==
+Stream
+What              Stream1                 Stream2
+================= ======================= =======================
+this              %-18p %-18p
+size              %-18zu %-18zu %s
+-
+)XX",
+         this, &other,
+         this->stream.size(), other.stream.size(),
+         this->stream.size() != other.stream.size() ? "!!" : ""
+         );
+}
+
