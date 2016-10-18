@@ -1,9 +1,14 @@
 
 #include "action.hh"
 
-const char *actiont::type_str ()
+const char *actiont_type_str (unsigned t)
 {
-   switch (type)
+   return actiont_type_str ((action_typet) t);
+}
+
+const char *actiont_type_str (action_typet t)
+{
+   switch (t)
    {
    // loads
    case action_typet::RD8       : return "RD8     ";
@@ -60,25 +65,25 @@ void actiont::pretty_print ()
    case action_typet::WR32      :
    case action_typet::WR64      :
       printf ("%s *%#-18lx =%s %#-18lx\n",
-            type_str (), addr, eq, val);
+            actiont_type_str (type), addr, eq, val);
       break;
 
    case action_typet::MALLOC    :
    case action_typet::MTXINIT   :
-      printf ("%s %#-18lx, %#-18lx\n", type_str (), addr, val);
+      printf ("%s %#-18lx, %#-18lx\n", actiont_type_str (type), addr, val);
       break;
 
    case action_typet::FREE      :
    case action_typet::MTXLOCK   :
    case action_typet::MTXUNLK   :
-      printf ("%s %#-18lx\n", type_str (), addr);
+      printf ("%s %#-18lx\n", actiont_type_str (type), addr);
       break;
 
    case action_typet::THCREAT   :
    case action_typet::THSTART   :
    case action_typet::THEXIT    :
    case action_typet::THJOIN    :
-      printf ("%s %u\n", type_str (), (unsigned) val);
+      printf ("%s %u\n", actiont_type_str (type), (unsigned) val);
       break;
    }
 }

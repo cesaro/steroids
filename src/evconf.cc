@@ -2,6 +2,7 @@
 #include "evconf.hh"
 #include "verbosity.h"
 
+#if 0
 eventt::eventt () :
    _tid (0),
    _sidx (0),
@@ -10,6 +11,7 @@ eventt::eventt () :
    redbox (),
    vclock (1)
 {}
+#endif
 
 eventt::eventt (int num_ths, unsigned sidx) :
    _tid (0),
@@ -18,7 +20,10 @@ eventt::eventt (int num_ths, unsigned sidx) :
    act ({.type = action_typet::THSTART}),
    redbox (),
    vclock (num_ths)
-{}
+{
+   printf ("stid: po: eventt: ctor: this %p sidx %u num %d (bot)\n",
+         this, sidx, num_ths);
+}
 
 eventt::eventt (unsigned sidx, eventt &creat, unsigned p) :
    _tid (p),
@@ -28,6 +33,8 @@ eventt::eventt (unsigned sidx, eventt &creat, unsigned p) :
    redbox (),
    vclock (creat.vclock)
 {
+   printf ("stid: po: eventt: ctor: this %p sidx %u creat %p proc %u\n",
+         this, sidx, &creat, p);
    ASSERT (creat._tid < p);
    ASSERT (vclock[p] == 0); // my clock should be zero so far!
 
@@ -42,6 +49,8 @@ eventt::eventt (unsigned sidx, actiont ac, eventt &p) :
    redbox (),
    vclock (p.vclock)
 {
+   printf ("stid: po: eventt: ctor: this %p sidx %u ac.type %s pre %p\n",
+         this, sidx, actiont_type_str(ac.type), &p);
    vclock[_tid] += 2; // the +1 is the redbox events
 }
 
@@ -53,11 +62,14 @@ eventt::eventt (unsigned sidx, actiont ac, eventt &p, eventt &m) :
    redbox (),
    vclock (p.vclock, m.vclock) // must come after constructing _pre_other
 {
+   printf ("stid: po: eventt: ctor: this %p sidx %u ac.type %s pre %p other %p\n",
+         this, sidx, actiont_type_str(ac.type), &p, &m);
    vclock[_tid] += 2; // the +1 is the redbox events
 }
 
 unsigned eventt::idx (const conft &c)
 {
+#if 0
   //  printf ("getting idx of %p, %p\n", this, &c.events[_tid][0]);
    unsigned i = 0;
   // eventt *e = pre_proc ();
@@ -66,10 +78,9 @@ unsigned eventt::idx (const conft &c)
   //   i++;
   //   e = e->pre_proc ();
   // }
-   unsigned res = this - &c.events[_tid][0];
+#endif
    breakme ();
-    
-   return res; 
+   return (unsigned) (this - &c.events[_tid][0]);
 }
 
 void eventt::print_simple (const conft &c)
@@ -79,6 +90,11 @@ void eventt::print_simple (const conft &c)
 
 void eventt::print (const conft &c)
 {
+   printf ("eventt this %18p tid %2d sidx %5d pos %4u ac.type %s\n",
+         this,
+         _tid, _sidx, idx (c), actiont_type_str (act.type));
+   return;
+
    printf ("---------------------\n");
    print_simple (c);
    act.pretty_print ();
@@ -129,16 +145,22 @@ void conft::print ()
 {
    // iterate throught the actions
    int tid = 0;
+   printf ("Print configgggggggggggggggg\n");
    for (auto &ths : events)
    {
-      printf ("Printing events of thread %2d\n", tid++);
+      printf ("Thread %d, size %zu, first %p, last %p\n", 
+            tid, ths.size(), &ths[0], &ths.back());
       for (auto &es : ths)
          es.print (*this);
+      tid++;
    }
 }
 
 void conft::build ()
 {
+   eventt *ev;
+   actiont ac;
+
    // position in the stream
    int sidx = 0;
 
@@ -149,10 +171,10 @@ void conft::build ()
    bool is_next_global = false;
 
    // store the create event per thread
-   std::vector<eventt> createvs(num_ths);
+   std::vector<eventt*> createvs(num_ths);
 
    // store the exit event per thread
-   std::vector<eventt> exitevs(num_ths);
+   std::vector<eventt*> exitevs(num_ths);
 
    // if the previous event was a context
    // switch, we might just want to advance
@@ -160,63 +182,69 @@ void conft::build ()
    bool is_new_ev = true;
 
    // create the bottom event
-   eventt ev = eventt (num_ths, sidx);
+   events[0].emplace_back (num_ths, sidx);
+   ev = &events[0].back();
  
    auto st_it = _stream.begin ();
-   actiont ac;
    while (st_it != _stream.end ())
    {
+      printf ("std: po: build: -------------------------------\n");
       if (is_new_ev)
       {
-      printf ("-------------------------\n");
-      printf ("build: red events for event %d\n", ev.sidx ());
-      is_next_global = add_red_events (st_it, sidx, ev);
-      // at this point, the red events are already in ev
-      // is_next_global ensures that the next event of the
-      // stream is a 'global' event
-      ASSERT (is_next_global);
-      // the iterator cannot be at the end of stream
-      ASSERT (st_it != _stream.end ());
+         is_next_global = add_red_events (st_it, sidx, *ev);
+         // at this point, the red events are already in ev
+         // is_next_global ensures that the next event of the
+         // stream is a 'global' event
+         ASSERT (is_next_global);
+         // the iterator cannot be at the end of stream
+         ASSERT (st_it != _stream.end ());
  
-      // add the blue event to its thread
-      events[cur_tid].push_back (ev);
-      ev.act.pretty_print ();
-      printf ("build: added to tid %2d; num events in tid is %2zu; pos %d\n", cur_tid, events[cur_tid].size (), sidx);
+         // add the blue event to its thread
+         //events[cur_tid].push_back (ev);
+         ev->act.pretty_print ();
+         //printf ("build: added to tid %2d; num events in tid is %2zu; pos %d\n", cur_tid, events[cur_tid].size (), sidx);
       }
 
       is_new_ev = true;
 
       // the iterator now should be pointing to a new blue event
       auto act = *st_it++;
+      breakme ();
+      printf ("std: po: new action %s\n", _rt_action_to_str (act.type()));
       switch (act.type ())
       { 
       // threads
       case RT_THCREAT :
          ac.type = action_typet::THCREAT;
          ac.val  = act.id ();
-         ev = eventt (sidx++, ac, ev);
-         printf ("build: RT_THCREAT tid %2d sidx %2d\n", ev.tid (), ev.sidx ());
+         events[cur_tid].emplace_back (sidx++, ac, events[cur_tid].back());
+         ev = &events[cur_tid].back();
+
+         printf ("build: RT_THCREAT tid %2d sidx %2d\n",
+               ev->tid (), ev->sidx ());
          createvs[ac.val] = ev;
          break;
+
       case RT_THEXIT :
          // @TODO: no other event from this thread can occur after
          // so it not necessary to search from red events
          // the current st_it is either the end of the stream
          // or a context switch. 
          ac.type = action_typet::THEXIT;
-         ev = eventt (sidx++, ac, ev);
+         events[cur_tid].emplace_back (sidx++, ac, events[cur_tid].back());
+         ev = &events[cur_tid].back();
          exitevs[cur_tid] = ev;
-         if (st_it == _stream.end ())
-            events[cur_tid].push_back (ev);
          break;
+
       case RT_THCTXSW :
          // change the current tid
          cur_tid = act.id ();
          // if there are no events in the cur_tid generate THSTART 
          if (events[cur_tid].size () == 0)
          {
-            printf ("build: THCTXSW new thread\n");
-            ev = eventt (sidx++, createvs[cur_tid], cur_tid);
+            //printf ("build: THCTXSW new thread\n");
+            events[cur_tid].emplace_back (sidx++, *createvs[cur_tid], cur_tid);
+            ev = &events[cur_tid].back();
          }
          else
          {
@@ -224,56 +252,67 @@ void conft::build ()
             // if it is not the case that the we are in the beginning of a
             // new thread, we move to the next event which can only be a 
             // JOIN or a LOCK. 
-            printf ("build: THCTXSW already thread\n");
+            //printf ("build: THCTXSW already thread\n");
             is_new_ev = false;
             sidx++;
          }
          break;
+
       case RT_THJOIN :
-        ac.type = action_typet::THJOIN;
-        ac.val = act.id ();
-        // assert that we have already seen the exit event
-        ASSERT (exitevs[ac.val].act.type == action_typet::THEXIT);
-        ev = eventt (sidx++, ac, ev, exitevs[ac.val]);
-        break; 
+         ac.type = action_typet::THJOIN;
+         ac.val = act.id ();
+         // assert that we have already seen the exit event
+         ASSERT (exitevs[ac.val]->act.type == action_typet::THEXIT);
+         events[cur_tid].emplace_back (sidx++, ac,
+               events[cur_tid].back(), *exitevs[ac.val]);
+         ev = &events[cur_tid].back();
+         break; 
+
       case RT_MTXLOCK :
       {
-        ac.type = action_typet::MTXLOCK;
-        ac.addr = act.addr ();
-        // create the event
-        auto mut = mutexmax.find (ac.addr);
-        // should we enforce that the init must happen?
-        // ASSERT (mut != mut.end ()); 
-        if (mut == mutexmax.end ())
-        {
-            printf ("build: MUTEX HAS NO MEMORY PREDECESSORS!\n");
-            ev = eventt (sidx++, ac, ev);
-            ASSERT (ev.pre_other () == nullptr);
-        }
-        else
-        {
-            printf ("build: RT_MTXLOCK: %i \n", mut->second->sidx ());
-            ev = eventt (sidx++, ac, ev, *mut->second);
-        }
-        // update the value of mutexmax
-        mutexmax[ac.addr] = &ev;
-        break;
-      } 
-      case RT_MTXUNLK : 
-      {
-        ac.type = action_typet::MTXUNLK;
-        ac.addr = act.addr ();
-        // create the event
-        auto mut = mutexmax.find (ac.addr);
-        ASSERT (mut != mutexmax.end ()); 
-        ev = eventt (sidx++, ac, ev, *mut->second);
-        // update the value of mutexmax
-        mutexmax[ac.addr] = &ev;
-        break;
+         ac.type = action_typet::MTXLOCK;
+         ac.addr = act.addr ();
+         // create the event
+         auto mut = mutexmax.find (ac.addr);
+         // should we enforce that the init must happen?
+         // ASSERT (mut != mut.end ()); 
+         if (mut == mutexmax.end ())
+         {
+             printf ("stid: po: build: MUTEX HAS NO MEMORY PREDECESSORS!\n");
+             events[cur_tid].emplace_back (sidx++, ac, events[cur_tid].back());
+             ev = &events[cur_tid].back();
+             ASSERT (ev->pre_other () == nullptr);
+         }
+         else
+         {
+             printf ("stid: po: build: RT_MTXLOCK: %i \n", mut->second->sidx ());
+
+             events[cur_tid].emplace_back (sidx++, ac, events[cur_tid].back(),
+                  *mut->second);
+             ev = &events[cur_tid].back();
+         }
+         // update the value of mutexmax
+         mutexmax[ac.addr] = ev;
+         break;
       }
+      case RT_MTXUNLK :
+      {
+         ac.type = action_typet::MTXUNLK;
+         ac.addr = act.addr ();
+         // create the event
+         auto mut = mutexmax.find (ac.addr);
+         ASSERT (mut != mutexmax.end ());
+         events[cur_tid].emplace_back (sidx++, ac, events[cur_tid].back(),
+               *mut->second);
+         ev = &events[cur_tid].back();
+         // update the value of mutexmax
+         mutexmax[ac.addr] = ev;
+         break;
+      }
+
       default :
-        printf ("we should be at a blue event\n");
-        ASSERT(false); 
+         //printf ("we should be at a blue event\n");
+         ASSERT(false);
       }
    }
 }
@@ -284,6 +323,9 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
    int ty;
    auto act = *it;
 
+   printf ("stid: po: build: redbox: starting, sidx %i ev %p ev.act.type %s\n",
+         i, &b_ev, actiont_type_str(b_ev.act.type));
+
    while (act != _stream.end ()) 
    {
       ty = act.type ();
@@ -291,10 +333,11 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
       {
       // loads
       case RT_RD8 : 
-         ac.type = action_typet::RD8;
-         ac.addr = act.addr ();
-         ac.val  = *act.val ();
-         b_ev.redbox.push_back (ac);
+         b_ev.redbox.emplace_back (
+            actiont {.type = action_typet::RD8,
+             .addr = act.addr (),
+             .val  = *act.val ()});
+         //b_ev.redbox.push_back (ac);
          break; 
       case RT_RD16 : 
          ac.type = action_typet::RD16;
@@ -397,7 +440,8 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
            break;
         }
 
-        printf ("add_red_events: exit of event %2d with position %2d\n", b_ev.sidx (), i);
+        printf ("stid: po: build: redbox: exiting, sidx %d\n", i);
+        //printf ("add_red_events: exit of event %2d with position %2d\n", b_ev.sidx (), i);
         return true;
       }
       act = *++it;

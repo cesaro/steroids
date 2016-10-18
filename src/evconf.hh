@@ -18,7 +18,7 @@ private:
    eventt *_pre_other; // needs to be initialized before vclock
 
 public:
-   eventt ();
+   //eventt ();
    // bottom (THSTART for process 0)
    eventt (int num_ths, unsigned sidx);
    // THSTART for process p, creat is the THCREAT
@@ -64,7 +64,7 @@ public:
    void build ();
 
    void print ();
-   
+
    // just for debug purposes
    void print_original_stream ();
 

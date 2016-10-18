@@ -45,7 +45,9 @@ struct actiont
    uint64_t val;
 
    void pretty_print ();
-   const char *type_str ();
 };
+
+const char *actiont_type_str (action_typet t);
+const char *actiont_type_str (unsigned t);
 
 #endif

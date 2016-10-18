@@ -26,9 +26,11 @@
 
 #include <steroid/steroid.h>
 
+#undef DEBUG // exported by ExecutionEngine.h
+#include "verbosity.h"
+
 #include "executor.hh"
 #include "checker.hh"
-#include "verbosity.h"
 #include "test.hh"
 #include <steroid/util/hsapi.h> 
 
@@ -217,16 +219,17 @@ int stid_test ()
    //printf ("stid_test: exited stid_get_poexec\n");
    //r = stid_print_po (*po); 
    //printf ("stid_test: result of print %2d\n", r);
+
    const char *user = getenv ("USER");
 
-   //user = 0;
+   user = 0;
 
    // for Cesar
-   // if (user and strcmp (user, "cesar") == 0)
-   // {
-   //    test6 ();
-   //    return 0;
-   // }
+   if (user and strcmp (user, "cesar") == 0)
+   {
+      test6 ();
+      return 0;
+   }
 
    // for anyone else
    test5 ();
