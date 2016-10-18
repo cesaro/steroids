@@ -154,19 +154,19 @@ int stid_convert_po (conft pocc, struct stid_po *po)
    eventt *e;
    eventt *other;
 
-   printf ("stid_convert_po : going to start iterations\n");
+   // printf ("stid_convert_po : going to start iterations\n");
    for (int i = 0; i < num_ths; i++)
    {
       p[i] = &da_i(&po->procs, i, struct da);
       da_init (p[i], struct stid_event);
       es_proc = pocc.events[i].size ();
       da_trunc (p[i], es_proc, struct stid_event);
-      printf ("stid_convert_po : going through thread %2d with size %2d\n", i, es_proc);
+      // printf ("stid_convert_po : going through thread %2d with size %2d\n", i, es_proc);
       for (int j = 0; j < es_proc; j++)
       {
          e = &pocc.events[i][j];
          other = e->pre_other ();
-         printf ("stid_convert_po : going through event %2d\n", j);
+         // printf ("stid_convert_po : going through event %2d\n", j);
 
          da_i (p[i], j, struct stid_event).act.type = stid_convert_act_type (e->act.type);
          da_i (p[i], j, struct stid_event).act.addr = e->act.addr;
@@ -175,7 +175,7 @@ int stid_convert_po (conft pocc, struct stid_po *po)
          if (other)
          {
             da_i (p[i], j, struct stid_event).pre_mem.tid = other->tid (); 
-            da_i (p[i], j, struct stid_event).pre_mem.idx = 0; //other->idx (pocc);
+            da_i (p[i], j, struct stid_event).pre_mem.idx = other->idx (pocc);
          }
          else
          {
@@ -189,6 +189,8 @@ int stid_convert_po (conft pocc, struct stid_po *po)
 
 struct stid_po * stid_get_poexec (struct stid *s)
 {
+   stid_run (s, nullptr);
+
    // prepare a stream object
    action_streamt actions (s->e->get_trace ());
 
@@ -197,10 +199,12 @@ struct stid_po * stid_get_poexec (struct stid *s)
    // build the partial order 
    pocc.build ();
   
-   pocc.print (); 
+   // pocc.print (); 
    struct stid_po *po;
    po = (struct stid_po *) malloc (sizeof (struct stid_po));
    if (po == 0) return 0;
+
+   da_init (&po->max_lock, struct stid_event);
 
    printf ("stid_get_poexec: exited build\n");
    stid_convert_po (pocc, po);
@@ -210,29 +214,29 @@ struct stid_po * stid_get_poexec (struct stid *s)
 
 int stid_test ()
 {
-   //printf ("stid_test: I feel fantastic!\n");
-   //struct stid *s = stid_init ();
-   //int r = stid_load_bytecode (s, "input.ll"); 
-   //printf ("stid_test: result of load %2d\n", r);
-   //stid_run (s, nullptr);
-   //struct stid_po *po = stid_get_poexec (s);
-   //printf ("stid_test: exited stid_get_poexec\n");
-   //r = stid_print_po (*po); 
-   //printf ("stid_test: result of print %2d\n", r);
 
-   const char *user = getenv ("USER");
+   //const char *user = getenv ("USER");
 
-   user = 0;
+   //user = 0;
 
-   // for Cesar
-   if (user and strcmp (user, "cesar") == 0)
-   {
-      test6 ();
-      return 0;
-   }
+   //// for Cesar
+   //if (user and strcmp (user, "cesar") == 0)
+   //{
+   //   test6 ();
+   //   return 0;
+   //}
 
-   // for anyone else
+   //// for anyone else
    test5 ();
+   printf ("stid_test: I feel fantastic!\n");
+   struct stid *s = stid_init ();
+   int r = stid_load_bytecode (s, "input.ll"); 
+   printf ("stid_test: result of load %2d\n", r);
+   // stid_run (s, nullptr);
+   struct stid_po *po = stid_get_poexec (s);
+   printf ("stid_test: exited stid_get_poexec\n");
+   r = stid_print_po (*po); 
+   printf ("stid_test: result of print %2d\n", r);
    fflush(stdout);
    return 0;
 }

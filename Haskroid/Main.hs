@@ -16,7 +16,7 @@ import Haskroid.Hapiroid
 import Haskroid.Haskroid
 import Haskroid.DynArr
 
-main = testPoset 
+main = realTest 
 
 test1 :: IO ()
 test1 = do
@@ -144,3 +144,21 @@ testPoset = do
   hs_po <- toSteroidPo hs_po_struct
   let po = toPoset hs_po 
   putStrLn $ show_poset_simple po
+
+
+realTest :: IO ()
+realTest = do
+  stid <- stidInit
+  rLoad <- stidLoadBytecode stid "input.ll"
+  print $ "HASKELL: " ++ show  rLoad
+  -- stidRun stid nullPtr
+  -- print $ "HASKELL: RUN COMPLETED"
+  poPtr <- stidGetPoExec stid  
+  print $ "HASKELL: GET PO"
+  hs_po_struct <- peek poPtr
+--  print hs_po_struct 
+  hs_po <- toSteroidPo hs_po_struct
+  let po = toPoset hs_po 
+  putStrLn $ show_poset_simple po
+  c <- stidTerm stid
+  print c

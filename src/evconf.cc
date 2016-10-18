@@ -188,7 +188,7 @@ void conft::build ()
    auto st_it = _stream.begin ();
    while (st_it != _stream.end ())
    {
-      printf ("std: po: build: -------------------------------\n");
+      // printf ("std: po: build: -------------------------------\n");
       if (is_new_ev)
       {
          is_next_global = add_red_events (st_it, sidx, *ev);
@@ -210,7 +210,7 @@ void conft::build ()
       // the iterator now should be pointing to a new blue event
       auto act = *st_it++;
       breakme ();
-      printf ("std: po: new action %s\n", _rt_action_to_str (act.type()));
+      // printf ("std: po: new action %s\n", _rt_action_to_str (act.type()));
       switch (act.type ())
       { 
       // threads
@@ -220,8 +220,8 @@ void conft::build ()
          events[cur_tid].emplace_back (sidx++, ac, events[cur_tid].back());
          ev = &events[cur_tid].back();
 
-         printf ("build: RT_THCREAT tid %2d sidx %2d\n",
-               ev->tid (), ev->sidx ());
+         // printf ("build: RT_THCREAT tid %2d sidx %2d\n",
+         //      ev->tid (), ev->sidx ());
          createvs[ac.val] = ev;
          break;
 
@@ -278,14 +278,14 @@ void conft::build ()
          // ASSERT (mut != mut.end ()); 
          if (mut == mutexmax.end ())
          {
-             printf ("stid: po: build: MUTEX HAS NO MEMORY PREDECESSORS!\n");
+             // printf ("stid: po: build: MUTEX HAS NO MEMORY PREDECESSORS!\n");
              events[cur_tid].emplace_back (sidx++, ac, events[cur_tid].back());
              ev = &events[cur_tid].back();
              ASSERT (ev->pre_other () == nullptr);
          }
          else
          {
-             printf ("stid: po: build: RT_MTXLOCK: %i \n", mut->second->sidx ());
+             // printf ("stid: po: build: RT_MTXLOCK: %i \n", mut->second->sidx ());
 
              events[cur_tid].emplace_back (sidx++, ac, events[cur_tid].back(),
                   *mut->second);
@@ -323,8 +323,8 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
    int ty;
    auto act = *it;
 
-   printf ("stid: po: build: redbox: starting, sidx %i ev %p ev.act.type %s\n",
-         i, &b_ev, actiont_type_str(b_ev.act.type));
+ //  printf ("stid: po: build: redbox: starting, sidx %i ev %p ev.act.type %s\n",
+ //        i, &b_ev, actiont_type_str(b_ev.act.type));
 
    while (act != _stream.end ()) 
    {
@@ -440,7 +440,7 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
            break;
         }
 
-        printf ("stid: po: build: redbox: exiting, sidx %d\n", i);
+        // printf ("stid: po: build: redbox: exiting, sidx %d\n", i);
         //printf ("add_red_events: exit of event %2d with position %2d\n", b_ev.sidx (), i);
         return true;
       }

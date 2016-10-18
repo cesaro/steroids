@@ -81,11 +81,19 @@ struct stid_event * stid_new_event (struct stid_action * act, unsigned int tid, 
 int stid_print_event (struct stid_event *e, unsigned int tid, unsigned int idx)
 {
    if (e == 0) return 1;
-   printf ("event: th %u pos %u id %u\n", tid, idx, e->sidx);
+
+   printf ("eventt this %18p tid %2d sidx %5d pos %4u ac.type %s\n",
+         e,
+         tid, e->sidx, idx, act_ty_to_str (e->act.type));
+
+   return 0;
+#if 0
+   printf ("eventt: th %u pos %u id %u\n", tid, idx, e->sidx);
    stid_print_action (&e->act);
    printf ("pre_mem: th %u pos %u\n", e->pre_mem.tid, e->pre_mem.idx);
    printf ("------------------\n");
    return 0;
+#endif
 }
 
 bool stid_has_pre_proc (struct stid_event *e)
@@ -171,18 +179,25 @@ int stid_print_po (struct stid_po po)
 {
    struct da *p;
    struct stid_event *e;
+   struct stid_event *e1;
 
    printf ("Begin Events\n------------------\n");
 
    for (int tid = 0; tid < po.procs.len; tid++)
    {
-     printf ("Thread %d\n------------------\n", tid);
-     p = &da_i (&po.procs, tid, struct da);
-     e = &da_i (p, 0, struct stid_event); 
-     for (int tlen = 0; tlen < p->len; tlen++)
-     {
-       stid_print_event (e++, tid, tlen);
-     }
+      p = &da_i (&po.procs, tid, struct da);
+      e = &da_i (p, 0, struct stid_event); 
+      e1 = &da_i (p, p->len, struct stid_event); 
+      printf ("Thread %d, size %u, first %p, last %p\n", 
+            tid, p->len, &e, &e1);
+
+      for (int tlen = 0; tlen < p->len; tlen++)
+      {
+      // printf ("eventt this %18p tid %2d sidx %5d pos %4u ac.type %s\n",
+      //       this,
+      //       _tid, _sidx, idx (c), actiont_type_str (act.type));
+        stid_print_event (e++, tid, tlen);
+      }
    }
 
    return 0; 
