@@ -52,6 +52,7 @@ private :
    struct
    {
       unsigned rseed;
+      std::vector<uint8_t> dataseg;
    } detex;
 };
 

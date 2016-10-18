@@ -219,12 +219,115 @@ bool action_stream_itt::has_id ()
    }
 }
 
+   // MALLOC   0x1122334411223344, 0x100
+   // ALLOCA   0x1122334411223344, 0x10
+   // FREE     0x182391293
+   // WR64     *0x1122334411223344 =  0x1122334411223344
+   // RD64     *0x1122334411223344 == 0x1122334411223344
+   // RD[64x8] *0x1122334411223344 == 0x1122334411223344 ...
+   // WR[64x8] *0x1122334411223344 =  0x1122334411223344 ...
+   // THCREAT  123
+   // THSTART  123
+   // THJOIN   123
+   // THEXIT   123
+   // MTX-INIT 0x1122334411223344, 0x1133
+   // MTX-LOCK 0x1122334411223344
+   // MTX-UNLK 0x1122334411223344
+
+
+const char *action_stream_itt::str ()
+{
+   static char str[128];
+   const char *action = _rt_action_to_str (type ());
+   const char *eq = "";
+   int a = type ();
+
+   switch (a)
+   {
+   // most common loads
+   case RT_RD8     :
+   case RT_RD16    :
+   case RT_RD32    :
+   case RT_RD64    :
+   case RT_RD128   :
+   case RT_RD192   :
+   case RT_RD256   :
+      eq = "=";
+
+   // most common stores
+   case RT_WR8     :
+   case RT_WR16    :
+   case RT_WR32    :
+   case RT_WR64    :
+   case RT_WR128   :
+   case RT_WR192   :
+   case RT_WR256   :
+      sprintf (str, "%s *%#-18lx =%s %#-18lx", action, addr(), eq, *val());
+      break;
+
+   // memory management
+   case RT_ALLOCA  :
+   case RT_MALLOC  :
+      sprintf (str, "%s %#-18lx, %#-18lx", action, addr(), *val());
+      break;
+
+   // call, ret, threads
+   case RT_CALL    :
+   case RT_RET     :
+   case RT_THCREAT :
+   case RT_THJOIN  :
+   case RT_THCTXSW :
+      sprintf (str, "%s %#x", action, id());
+      break;
+
+   // exit
+   case RT_THEXIT  :
+      sprintf (str, "%s", action);
+      break;
+
+   // mutex locks, free
+   case RT_FREE    :
+   case RT_MTXLOCK :
+   case RT_MTXUNLK :
+      sprintf (str, "%s %#-18lx", action, addr());
+      break;
+
+   // less common loads / stores
+   default :
+      if (RT_IS_MULTIW_RD (a))
+      {
+         action = "RD";
+         eq = "=";
+      }
+      else if (RT_IS_MULTIW_WR (a))
+      {
+         action = "WR";
+      }
+      else
+      {
+         ASSERT (0);
+      }
+      sprintf (str, "%s[64x%d] *%#-18lx =%s %#-18lx, ...",
+            action, RT_MULTIW_COUNT(a), addr(), eq, *val());
+      break;
+   }
+
+   return str;
+}
+
+
 void action_streamt::print () const
 {
    // iterate throught the actions
-   int i = 0;
+   unsigned i = 0;
+   int tid = 0;
    for (auto &ac : *this)
    {
+      if (ac.type() == RT_THCTXSW) tid = ac.id();
+      printf ("%05u %2d: %s\n", i, tid, ac.str());
+      i++;
+
+#if 0
       // for efficiency purposes ac has type "action_stream_itt" rather than
       // "actiont"
       printf ("idx %5d action %#4x '%s' addr %#18lx val[0] %#18lx valsize %u "
@@ -236,8 +339,7 @@ void action_streamt::print () const
             *ac.val (),
             ac.val_size(),
             ac.id ());
-      i++;
-      //if (i >= 200) break;
+#endif
    }
 }
 

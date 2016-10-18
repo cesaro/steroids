@@ -44,7 +44,7 @@ void actiont::pretty_print ()
    // THCREAT  123
    // THSTART  123
    // THJOIN   123
-   // THEXIT   123
+   // THEXIT   
    // MTX-INIT 0x1122334411223344, 0x1133
    // MTX-LOCK 0x1122334411223344
    // MTX-UNLK 0x1122334411223344

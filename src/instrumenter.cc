@@ -100,7 +100,9 @@ void Instrumenter::reset (llvm::Module &m)
    funids.clear ();
 
    // clear the function substitution map
-   substmap.clear ();
+   substmap_funs.clear ();
+   substmap_loads.clear ();
+   substmap_stores.clear ();
 }
 
 void Instrumenter::init_maps ()
@@ -108,7 +110,6 @@ void Instrumenter::init_maps ()
    std::string s;
    int i = 0;
 
-   // here
    for (auto &f : *m)
    {
       // associate a unique numeric identifier to every function declaration or
@@ -117,23 +118,53 @@ void Instrumenter::init_maps ()
 
       // for every function named _rt_*, we get a substitution table
       if (not is_rt_fun (&f)) continue;
-      s = f.getName ().substr(4);;
+      s = f.getName().substr(4);;
       llvm::Function *ff = m->getFunction (s); // stripping the "_rt_" prefix
       if (not ff) continue;
       DEBUG ("stid: instrumenter: init maps: substmap: %s %-20s -> %s",
-               ff->isDeclaration() ? "decl" : "fun ",
-               ff->getName().str().c_str(),
-               f.getName().str().c_str());
-      substmap[ff] = &f;
+            ff->isDeclaration() ? "decl" : "fun ",
+            ff->getName().str().c_str(),
+            f.getName().str().c_str());
+      substmap_funs[ff] = &f;
       if (f.getType () != ff->getType ())
       {
-         DEBUG ("stid: instrumenter: init maps: substmap: WARNING: type mismatch between fun and rtfun:");
+         DEBUG ("stid: instrumenter: init maps: substmap: "
+               "WARNING: type mismatch between fun and rtfun:");
          s.clear ();
          print_type (ff->getFunctionType(), s);
-         DEBUG ("stid: instrumenter: init maps: substmap:  fun  : %s", s.c_str());
+         DEBUG ("stid: instrumenter: init maps: substmap:  fun  : %s",
+               s.c_str());
          s.clear ();
          print_type (f.getFunctionType(), s);
-         DEBUG ("stid: instrumenter: init maps: substmap:  rtfun: %s", s.c_str());
+         DEBUG ("stid: instrumenter: init maps: substmap:  rtfun: %s",
+               s.c_str());
+      }
+   }
+
+   // for every "external global" global value, we determine if we have both a
+   // _rt_var_{load,store}_VAR function, and if yes we set up the substitution
+   // tables
+   for (auto &g : m->globals())
+   {
+      if (not g.hasExternalLinkage()) continue;
+      //llvm::outs() << g << "\n";
+
+      llvm::Function *f1 = m->getFunction("_rt_var_load_" + g.getName().str());
+      llvm::Function *f2 = m->getFunction ("_rt_var_store_" + g.getName().str());
+      if (f1 and f2)
+      {
+         substmap_loads[&g] = f1;
+         substmap_stores[&g] = f2;
+         DEBUG ("stid: instrumenter: init maps: substmap: extv %-20s -> "
+               "_rt_var_{load,store}_%s",
+               g.getName().str().c_str(),
+               g.getName().str().c_str());
+      }
+      if ((f1 and not f2) or (not f1 and f2))
+      {
+         DEBUG ("stid: instrumenter: init maps: WARNING: "
+               "one of _rt_var_{load,store}_%s given but not the other!",
+               g.getName().str().c_str());
       }
    }
 
@@ -147,6 +178,23 @@ void Instrumenter::init_maps ()
    }
 }
 
+bool Instrumenter::do_external_load (llvm::LoadInst &i)
+{
+   llvm::IRBuilder<> b (&i);
+   llvm::CallInst *call;
+   llvm::Function *loadfun;
+
+   // if this is a load to a "hooked" external variable, run the substitution
+   auto it = substmap_loads.find (i.getPointerOperand());
+   if (it == substmap_loads.end()) return false;
+   loadfun = it->second;
+
+   call = b.CreateCall(loadfun);
+   i.replaceAllUsesWith(call);
+   i.removeFromParent();
+   return true;
+}
+
 void Instrumenter::visitLoadInst (llvm::LoadInst &i)
 {
    llvm::IRBuilder<> b (&i); // we instrument BEFORE the load instruction
@@ -154,6 +202,9 @@ void Instrumenter::visitLoadInst (llvm::LoadInst &i)
    uint64_t size;
 
    //llvm::outs() << "stid: " << i << "\n";
+
+   // if it is aload to a "hooked" external variable, all happens inside
+   if (do_external_load (i)) return;
 
    // get the address from where we want to load and bitcast it to i8*
    addr = i.getPointerOperand ();
@@ -193,6 +244,19 @@ void Instrumenter::visitLoadInst (llvm::LoadInst &i)
    count++;
 }
 
+bool Instrumenter::do_external_store (llvm::StoreInst &i)
+{
+   llvm::IRBuilder<> b (&i);
+
+   // if this is a store to a "hooked" external variable, run the substitution
+   auto it = substmap_stores.find (i.getPointerOperand());
+   if (it == substmap_stores.end()) return false;
+
+   b.CreateCall(it->second, {i.getValueOperand()});
+   i.removeFromParent();
+   return true;
+}
+
 void Instrumenter::visitStoreInst (llvm::StoreInst &i)
 {
    llvm::IRBuilder<> b (&i); // we instrument BEFORE the store instruction
@@ -202,6 +266,9 @@ void Instrumenter::visitStoreInst (llvm::StoreInst &i)
    uint64_t size;
 
    //llvm::outs() << "stid: " << i << "\n";
+
+   // if it is aload to a "hooked" external variable, all happens inside
+   if (do_external_store (i)) return;
 
    // get the address where we want to store and bitcast it to i8*
    addr = i.getPointerOperand ();
@@ -269,8 +336,8 @@ void Instrumenter::visitAllocaInst (llvm::AllocaInst &i)
 void Instrumenter::visitCallInst (llvm::CallInst &i)
 {
    //llvm::outs() << "stid: instrumenter: " << i << "\n";
-   auto it = substmap.find (i.getCalledFunction ());
-   if (it == substmap.end ()) return;
+   auto it = substmap_funs.find (i.getCalledFunction ());
+   if (it == substmap_funs.end ()) return;
    //DEBUG ("stid: instrumenter: applying substitution");
    i.setCalledFunction (it->second);
 }

@@ -7,18 +7,10 @@
 #define ALIGN16(i) (((uint64_t) (i)) & 0xf ? (((uint64_t) (i)) + 16) & -16ul : (uint64_t) (i))
 
 int _rt_errno = 0;
-FILE *stdin = 0;
-FILE *stdout = 0;
-FILE *stderr = 0;
-
 static uint64_t __malloc_ptr;
 
 void _rt_libc_init ()
 {
-   stdin = rt->stdin;
-   stdout = rt->stdout;
-   stderr = rt->stderr;
-
    _rt_mm_init ();
    _rt_thread_init ();
 }
@@ -123,5 +115,81 @@ int *_rt___errno_location ()
    _rt_errno = *__errno_location (); // in glibc !!
    printf ("stid: rt: errno_location: called !!!!!!!!!!!!!!\n");
    return &_rt_errno;
+}
+
+// stdin
+extern inline FILE *_rt_var_load_stdin () {
+   return stdin;
+}
+
+extern inline void _rt_var_store_stdin (FILE *f)
+{
+   stdin = f;
+}
+
+// stdout
+extern inline FILE *_rt_var_load_stdout ()
+{
+   return stdout;
+}
+
+extern inline void _rt_var_store_stdout (FILE *f)
+{
+   stdout = f;
+}
+
+// stderr
+extern inline FILE *_rt_var_load_stderr ()
+{
+   return stderr;
+}
+
+extern inline void _rt_var_store_stderr (FILE *f)
+{
+   stderr = f;
+}
+
+// optarg
+extern inline char *_rt_var_load_optarg ()
+{
+   return optarg;
+}
+
+extern inline void _rt_var_store_optarg (char *c)
+{
+   optarg = c;
+}
+
+// optind
+extern inline int _rt_var_load_optind ()
+{
+   return optind;
+}
+
+extern inline void _rt_var_store_optind (int i)
+{
+   optind = i;
+}
+
+// opterr
+extern inline int _rt_var_load_opterr ()
+{
+   return opterr;
+}
+
+extern inline void _rt_var_store_opterr (int i)
+{
+   opterr = i;
+}
+
+// optopt
+extern inline int _rt_var_load_optopt ()
+{
+   return optopt;
+}
+
+extern inline void _rt_var_store_optopt (int i)
+{
+   optopt = i;
 }
 

@@ -222,8 +222,6 @@ int stid_test ()
 
    const char *user = getenv ("USER");
 
-   user = 0;
-
    // for Cesar
    if (user and strcmp (user, "cesar") == 0)
    {

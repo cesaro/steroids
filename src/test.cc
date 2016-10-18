@@ -372,6 +372,7 @@ void test6 ()
    // prepare arguments for the program
    e.argv.push_back ("cunf");
    e.argv.push_back ("/tmp/dme3.ll_net");
+   //e.argv.push_back ("-i");
    e.envp.push_back ("HOME=/home/cesar");
    e.envp.push_back ("PWD=/usr/bin");
    e.envp.push_back (nullptr);
@@ -379,7 +380,7 @@ void test6 ()
    // run the guest
    e.run ();
    action_streamt actions (e.get_trace ());
-   actions.print ();
+   //actions.print ();
    action_stream2t s1 (actions);
 
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -390,7 +391,7 @@ void test6 ()
 
    // run the guest 2nd time
    e.run ();
-   actions.print ();
+   //actions.print ();
    action_stream2t s2 (actions);
 
    // diff
@@ -401,4 +402,3 @@ void test6 ()
    fflush (stdout);
    fflush (stderr);
 }
-

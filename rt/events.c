@@ -26,33 +26,34 @@ static void _rt_debug_header ()
 
 static void _rt_debug_trace0 (uint8_t a)
 {
+   return;
    printf ("stid: rt: %s\n", _rt_action_to_str (a));
-   //fflush (stdout);
 }
 
 static void _rt_debug_trace1 (uint8_t a, const void *addr)
 {
-   printf ("stid: rt: %s %18p\n",
-         _rt_action_to_str (a), addr);
+   return;
+   printf ("stid: rt: %s %18p\n", _rt_action_to_str (a), addr);
    //fflush (stdout);
 }
 
 static void _rt_debug_trace2 (uint8_t a, const void *addr, uint64_t v)
 {
+   return;
    printf ("stid: rt: %s %18p %#18lx %s\n",
          _rt_action_to_str (a), addr, v, _rt_quote (v));
-   //fflush (stdout);
 }
 
 static void _rt_debug_trace3 (uint8_t a, uint16_t v)
 {
+   return;
    printf ("stid: rt: %s                    %#18x %s\n",
          _rt_action_to_str (a), v, _rt_quote (v));
-   //fflush (stdout);
 }
 
 static void _rt_debug_rdwr (uint8_t a, const void *addr, uint32_t size)
 {
+   return;
    uint64_t v;
    switch (size)
    {
@@ -78,6 +79,7 @@ static void _rt_debug_rdwr (uint8_t a, const void *addr, uint32_t size)
 
 static inline void _rt_check_oom (const void *ptr, uint32_t size)
 {
+   return;
    // if the memory access is offlimits, we terminate execution
    if ((uint64_t) ptr < memstart || size + (uint64_t) ptr >= memend)
    {

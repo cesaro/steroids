@@ -173,10 +173,6 @@ struct rt
    struct memreg heap;
    struct memreg stacks;
 
-   FILE *stdin;
-   FILE *stdout;
-   FILE *stderr;
-
    // event trace
    struct eventrace trace;
 

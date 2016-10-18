@@ -2,6 +2,7 @@
 #include <vector>
 #include <utility>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
@@ -181,11 +182,6 @@ void Executor::initialize_and_instrument_rt ()
       print_value (g, s);
       DEBUG ("stid: executor: - %s", s.c_str());
    }
-
-   // finally, initialize the std{in,out,err} fields of the rt
-   rt.stdin  = stdin;
-   rt.stdout = stdout;
-   rt.stderr = stderr;
 }
 
 void Executor::optimize ()
@@ -247,6 +243,7 @@ void Executor::instrument_events ()
 void Executor::detex_init ()
 {
    detex.rseed = (unsigned) time (0);
+   detex.dataseg.clear ();
 }
 
 void Executor::detex_apply ()
@@ -255,7 +252,33 @@ void Executor::detex_apply ()
    DEBUG ("stid: executor: detex: srand(3) seed %u", detex.rseed);
    srand (detex.rseed);
 
+   // if this is the first call, we save the program data segments for tuture
+   // re-executions of the guest; if it is not, we restore the data segments
+   // from the first execution
+   if (detex.dataseg.size() == 0)
+   {
+      DEBUG ("stid: executor: detex: preserving original JITed data segments, %zu B",
+            rt.data.size);
+      detex.dataseg.resize (rt.data.size);
+      memcpy (detex.dataseg.data(), rt.data.begin, rt.data.size);
+      detex.dataseg.shrink_to_fit();
+   }
+   else
+   {
+      DEBUG ("stid: executor: detex: restoring JITed data segments, %zu B",
+            detex.dataseg.size());
+      ASSERT (detex.dataseg.size() == rt.data.size);
+      memcpy (rt.data.begin, detex.dataseg.data(), rt.data.size);
+   }
+
    // we should clear memory here
+   DEBUG ("stid: executor: detex: clearing memory out...");
+   memset (rt.heap.begin, 0, rt.heap.size);
+   memset (rt.stacks.begin, 0, rt.stacks.size);
+
+   // restart optget(3)
+   optind = 1;
+
    DEBUG ("stid: executor: detex: done");
 }
 

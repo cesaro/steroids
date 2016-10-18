@@ -71,8 +71,28 @@ x how to insert main as the first thread
 x how to prevent pthreads to call exit on the last thread
 x improve support for arbitrary types on load/store
 x show we generate events RD|WR for 1 bit ?
+- when preserving data segments, we should only preserve initialized data
+  segments, such as .data and .rodata, not .bss !!
 - for those pthread functions that we do not handle, issue a warning in the stream
 - repeat execution & diff
 - memory clearing strategy
 - replay
+- printf the list of external references to variables, and check on 2/3 debian
+  packages
 
+
+Notes
+-----
+
+- add a new ERROR event to send back errors discovered by the rt
+- look at the possibility of implementing the threading rt with GNU pth:
+  https://www.gnu.org/software/pth/pth-manual.html
+- have a look to this white paper
+  https://www.dre.vanderbilt.edu/~schmidt/PDF/DSIS_Chapter_Waddington.pdf
+- Many example simple programs with pthreads:
+  https://github.com/snikulov/prog_posix_threads
+- Much easier to allow access to specific variables in the libc: white-list
+  them in advance so that the Instrumenter does not generate callbacks for them
+  and so you freely allow the thread to read/write from them!!!
+- the isalnum(3) macros return a pointer to a table located in the libc, see
+  <ctype.h>

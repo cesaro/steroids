@@ -34,6 +34,8 @@ public:
    inline bool has_addr ();
    inline bool has_val ();
    inline bool has_id ();
+
+   const char *str ();
    
 private:
    action_stream_itt (const action_streamt &s, bool begin);
