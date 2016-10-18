@@ -117,10 +117,10 @@ type SteroidExecRef = Ptr SteroidExec
 -- | struct stid_event
 data SteroidEvent = SteroidEvent
   { 
-    act_ :: SteroidAction
-  , pre_mem_tid_  :: CUInt
+    act_         :: SteroidAction
+  , pre_mem_tid_ :: CUInt
   , pre_mem_idx_ :: CUInt
-  , sidx_ :: CUInt
+  , sidx_        :: CUInt
   }
   deriving (Typeable, Show)
 type SteroidEventRef = Ptr SteroidEvent
@@ -247,7 +247,7 @@ stidHasPreMem ref = do
 foreign import ccall unsafe "stid_example_po"
   stidExamplePo :: IO SteroidPoRef
 
-foreign import ccall unsafe "stid_print_seq_po"
+foreign import ccall unsafe "stid_print_po"
   stidPrintSeqPo :: SteroidPoRef -> IO ()
 
 -- Replay

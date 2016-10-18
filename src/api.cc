@@ -142,7 +142,7 @@ int stid_convert_act_type (action_typet t)
    }
 }
 
-int stid_convert_po (conft pocc, struct stid_po *po)
+int stid_convert_po (conft &pocc, struct stid_po *po)
 {
    int num_ths = pocc.get_num_ths ();
 
@@ -164,6 +164,7 @@ int stid_convert_po (conft pocc, struct stid_po *po)
       {
          e = &pocc.events[i][j];
          other = e->pre_other ();
+         printf ("stid_convert_po: eventt %18p other %18p\n", e, other);
 
          da_i (p[i], j, struct stid_event).act.type = stid_convert_act_type (e->act.type);
          da_i (p[i], j, struct stid_event).act.addr = e->act.addr;
@@ -252,8 +253,8 @@ int stid_test ()
 #endif
 
    //// for anyone else
-   test5 ();
-#if 0
+   // test5 ();
+// #if 0
    printf ("stid_test: I feel fantastic!\n");
    struct stid *s = stid_init ();
    int r = stid_load_bytecode (s, "input.ll"); 
@@ -261,10 +262,10 @@ int stid_test ()
    // stid_run (s, nullptr);
    struct stid_po *po = stid_get_poexec (s);
    printf ("stid_test: exited stid_get_poexec\n");
-   r = stid_print_po (*po); 
+   r = stid_print_po (po); 
    printf ("stid_test: result of print %2d\n", r);
    fflush(stdout);
-#endif
+// #endif
    return 0;
 }
 

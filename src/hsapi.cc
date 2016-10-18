@@ -82,18 +82,16 @@ int stid_print_event (struct stid_event *e, unsigned int tid, unsigned int idx)
 {
    if (e == 0) return 1;
 
-   printf ("eventt this %18p tid %2d sidx %5d pos %4u ac.type %s\n",
+   printf ("eventt this %18p sidx %5d tid %2d pos %4u ac.type %s pre_mem { tid %4d idx %4d }\n",
          e,
-         tid, e->sidx, idx, act_ty_to_str (e->act.type));
+         e->sidx,
+         tid,
+         idx,
+         act_ty_to_str (e->act.type),
+         e->pre_mem.tid,
+         e->pre_mem.idx);
 
    return 0;
-#if 0
-   printf ("eventt: th %u pos %u id %u\n", tid, idx, e->sidx);
-   stid_print_action (&e->act);
-   printf ("pre_mem: th %u pos %u\n", e->pre_mem.tid, e->pre_mem.idx);
-   printf ("------------------\n");
-   return 0;
-#endif
 }
 
 bool stid_has_pre_proc (struct stid_event *e)
@@ -175,7 +173,7 @@ int stid_add_max_lock_po (struct stid_po *po, struct stid_event *e)
   return 0;
 }
 
-int stid_print_po (struct stid_po po)
+int stid_print_po (struct stid_po *po)
 {
    struct da *p;
    struct stid_event *e;
@@ -183,19 +181,16 @@ int stid_print_po (struct stid_po po)
 
    printf ("Begin Events\n------------------\n");
 
-   for (int tid = 0; tid < po.procs.len; tid++)
+   for (int tid = 0; tid < po->procs.len; tid++)
    {
-      p = &da_i (&po.procs, tid, struct da);
+      p = &da_i (&po->procs, tid, struct da);
       e = &da_i (p, 0, struct stid_event); 
-      e1 = &da_i (p, p->len, struct stid_event); 
+      e1 = &da_i (p, p->len-1, struct stid_event); 
       printf ("Thread %d, size %u, first %p, last %p\n", 
-            tid, p->len, &e, &e1);
+            tid, p->len, e, e1);
 
       for (int tlen = 0; tlen < p->len; tlen++)
       {
-      // printf ("eventt this %18p tid %2d sidx %5d pos %4u ac.type %s\n",
-      //       this,
-      //       _tid, _sidx, idx (c), actiont_type_str (act.type));
         stid_print_event (e++, tid, tlen);
       }
    }
@@ -203,7 +198,7 @@ int stid_print_po (struct stid_po po)
    return 0; 
 }
 
-int stid_print_seq_po (struct stid_po * po)
+int stid_print_seq_po (struct stid_po *po)
 {
    // current stream position
    int spos = 0;

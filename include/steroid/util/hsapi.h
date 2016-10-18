@@ -32,7 +32,7 @@ int stid_check_replay (struct stid_replay *);
 // testing steroid po
 struct stid_po * stid_new_po ();
 int stid_free_po (struct stid_po *);
-int stid_print_po (struct stid_po); 
+int stid_print_po (struct stid_po *); 
 int stid_print_seq_po (struct stid_po *); 
 
 struct stid_po * stid_example_po ();

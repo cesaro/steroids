@@ -153,7 +153,8 @@ realTest = do
   print $ "HASKELL: " ++ show  rLoad
   -- stidRun stid nullPtr
   -- print $ "HASKELL: RUN COMPLETED"
-  poPtr <- stidGetPoExec stid  
+  poPtr <- stidGetPoExec stid
+  stidPrintSeqPo poPtr 
   print $ "HASKELL: GET PO"
   hs_po_struct <- peek poPtr
 --  print hs_po_struct 
