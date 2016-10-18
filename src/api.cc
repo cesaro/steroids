@@ -142,7 +142,7 @@ int stid_convert_act_type (action_typet t)
    }
 }
 
-int stid_convert_po (conft pocc, struct stid_po *po)
+int stid_convert_po (conft &pocc, struct stid_po *po)
 {
    int num_ths = pocc.get_num_ths ();
 
@@ -154,19 +154,17 @@ int stid_convert_po (conft pocc, struct stid_po *po)
    eventt *e;
    eventt *other;
 
-   printf ("stid_convert_po : going to start iterations\n");
    for (int i = 0; i < num_ths; i++)
    {
       p[i] = &da_i(&po->procs, i, struct da);
       da_init (p[i], struct stid_event);
       es_proc = pocc.events[i].size ();
       da_trunc (p[i], es_proc, struct stid_event);
-      printf ("stid_convert_po : going through thread %2d with size %2d\n", i, es_proc);
       for (int j = 0; j < es_proc; j++)
       {
          e = &pocc.events[i][j];
          other = e->pre_other ();
-         printf ("stid_convert_po : going through event %2d\n", j);
+         printf ("stid_convert_po: eventt %18p other %18p\n", e, other);
 
          da_i (p[i], j, struct stid_event).act.type = stid_convert_act_type (e->act.type);
          da_i (p[i], j, struct stid_event).act.addr = e->act.addr;
@@ -175,7 +173,7 @@ int stid_convert_po (conft pocc, struct stid_po *po)
          if (other)
          {
             da_i (p[i], j, struct stid_event).pre_mem.tid = other->tid (); 
-            da_i (p[i], j, struct stid_event).pre_mem.idx = 0; //other->idx (pocc);
+            da_i (p[i], j, struct stid_event).pre_mem.idx = other->idx (pocc);
          }
          else
          {
@@ -183,12 +181,42 @@ int stid_convert_po (conft pocc, struct stid_po *po)
             da_i (p[i], j, struct stid_event).pre_mem.idx = 0;
          } 
       } 
-   } 
+   }
+
+   // generates the max_lock dynamic array 
+   int num_mut = pocc.mutexmax.size ();
+   struct da *a;
+   da_init (&po->max_lock, struct stid_event);
+   da_trunc (&po->max_lock, num_mut, struct stid_event);
+   int i = 0;
+   for (auto el : pocc.mutexmax)
+   {
+      a = &po->max_lock;
+      e = el.second;
+      other = e->pre_other ();
+      da_i (a, i, struct stid_event).act.type = stid_convert_act_type (e->act.type);
+      da_i (a, i, struct stid_event).act.addr = e->act.addr;
+      da_i (a, i, struct stid_event).act.val = e->act.val;
+      da_i (a, i, struct stid_event).sidx = e->sidx ();
+      if (other)
+      {
+         da_i (a, i, struct stid_event).pre_mem.tid = other->tid (); 
+         da_i (a, i, struct stid_event).pre_mem.idx = other->idx (pocc);
+      }
+      else
+      {
+         da_i (a, i, struct stid_event).pre_mem.tid = 0;
+         da_i (a, i, struct stid_event).pre_mem.idx = 0;
+      }
+      i++; 
+   }
    return 0;
 }
 
 struct stid_po * stid_get_poexec (struct stid *s)
 {
+   stid_run (s, nullptr);
+
    // prepare a stream object
    action_streamt actions (s->e->get_trace ());
 
@@ -197,7 +225,7 @@ struct stid_po * stid_get_poexec (struct stid *s)
    // build the partial order 
    pocc.build ();
   
-   pocc.print (); 
+   // pocc.print (); 
    struct stid_po *po;
    po = (struct stid_po *) malloc (sizeof (struct stid_po));
    if (po == 0) return 0;
@@ -210,16 +238,8 @@ struct stid_po * stid_get_poexec (struct stid *s)
 
 int stid_test ()
 {
-   //printf ("stid_test: I feel fantastic!\n");
-   //struct stid *s = stid_init ();
-   //int r = stid_load_bytecode (s, "input.ll"); 
-   //printf ("stid_test: result of load %2d\n", r);
-   //stid_run (s, nullptr);
-   //struct stid_po *po = stid_get_poexec (s);
-   //printf ("stid_test: exited stid_get_poexec\n");
-   //r = stid_print_po (*po); 
-   //printf ("stid_test: result of print %2d\n", r);
 
+#if 0
    const char *user = getenv ("USER");
 
    // for Cesar
@@ -228,10 +248,22 @@ int stid_test ()
       test6 ();
       return 0;
    }
+#endif
 
-   // for anyone else
-   test5 ();
+   //// for anyone else
+   // test5 ();
+// #if 0
+   printf ("stid_test: I feel fantastic!\n");
+   struct stid *s = stid_init ();
+   int r = stid_load_bytecode (s, "input.ll"); 
+   printf ("stid_test: result of load %2d\n", r);
+   // stid_run (s, nullptr);
+   struct stid_po *po = stid_get_poexec (s);
+   printf ("stid_test: exited stid_get_poexec\n");
+   r = stid_print_po (po); 
+   printf ("stid_test: result of print %2d\n", r);
    fflush(stdout);
+// #endif
    return 0;
 }
 

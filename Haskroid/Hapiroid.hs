@@ -10,9 +10,26 @@ module Haskroid.Hapiroid where
 import Haskroid.Haskroid
 import Haskroid.DynArr
 
+data ActType =
+    WR     
+  | RD     
+  | LOCK   
+  | UNLOCK 
+  | CREATE 
+  | JOIN   
+  | CTSW   
+  | EXIT   
+  | ENTRY  
+  | MALLOC 
+  | FREE   
+  | ALLOCA 
+  | CALL   
+  | RET    
+  deriving (Show, Enum, Ord, Eq)
+
 data Action = Act 
  { 
-   act_ty   :: Int
+   act_ty   :: ActType 
  , act_addr :: Integer
  , act_val  :: Integer
  }
@@ -20,18 +37,18 @@ data Action = Act
 
 data Event = Ev
  {
-   ev_act :: Action          -- ^ action
--- , ev_tid :: Integer         -- ^ thread of ev
--- , ev_idx :: Integer         -- ^ index in thread 
+   ev_act         :: Action  -- ^ action
+-- , ev_tid         :: Integer -- ^ thread of ev
+-- , ev_idx         :: Integer -- ^ index in thread 
  , ev_pre_mem_tid :: Integer -- ^ thread of mem pre
  , ev_pre_mem_idx :: Integer -- ^ index in thread of mem pre
- , ev_sidx :: Integer        -- ^ index in the stream
+ , ev_sidx        :: Integer -- ^ index in the stream
  }
  deriving Show
 
 data Poset = Poset
  {
-   evs_procs :: [[Event]] 
+   evs_procs    :: [[Event]] 
  , evs_max_lock :: [Event]
  }
  deriving Show
@@ -43,7 +60,7 @@ toList f (DynArr _ la) = map f la
 -- | Convert to pure poset 
 toPoset :: SteroidPo -> Poset
 toPoset p@SteroidPo{..} = 
-  let evs = toList (toList toEvent) ev_procs
+  let evs   = toList (toList toEvent) ev_procs
       locks = toList toEvent ev_max_lock
   in Poset evs locks
 
@@ -57,7 +74,7 @@ toEvent e@SteroidEvent{..} =
 
 toAction :: SteroidAction -> Action
 toAction a@SteroidAction{..} =
-  let act_ty = fromInteger $ toInteger ty 
+  let act_ty = toEnum $ fromInteger $ toInteger ty 
       act_addr = toInteger addr
       act_val = toInteger val 
   in Act act_ty act_addr act_val 
@@ -76,22 +93,19 @@ show_evs_per_proc evs_procs =
   in unlines strs 
  
 show_evs_proc :: Int -> [Event] -> String
-show_evs_proc tid es = showS_evs_proc tid (zip es [0..]) ""
+show_evs_proc tid es = showS_evs_proc (zip es [0..]) ""
  where
-  showS_evs_proc tid es s = 
-    case es of
+  showS_evs_proc evs s = 
+    case evs of
       [] -> s
       ((e,i):ee) ->
         let se = show_event tid i e
-        in showS_evs_proc tid ee (s ++ se) 
-
-sep = "\n-------------------\n"
+        in showS_evs_proc ee (s ++ se) 
 
 show_event :: Int -> Int -> Event -> String
 show_event tid i e@Ev{..} = 
-  let s1 = "Event: tid = " ++ show tid ++ ", pos = " ++ show i ++ ", id = " ++ show ev_sidx 
-      s2 = show ev_act
-      s3 = "Memory predecessor: tid = " ++ show ev_pre_mem_tid ++ ", pos = " ++ show ev_pre_mem_idx
-  in sep ++ s1 ++ "\n" ++ s2 ++ "\n" ++ s3 
-
+  let s1 = "eventt   tid  " ++ show tid ++ " pos  " ++ show i ++ " sidx  " ++ show ev_sidx 
+      s2 = " ac.type  " ++ show (act_ty ev_act)
+      s3 = " pre_mem { tid  " ++ show ev_pre_mem_tid ++ " idx " ++ show ev_pre_mem_idx
+  in s1 ++ s2 ++ s3 ++ " } \n"
 
