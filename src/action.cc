@@ -29,7 +29,7 @@ const char *actiont_type_str (action_typet t)
    case action_typet::THEXIT    : return "THEXIT  ";
    case action_typet::THJOIN    : return "THJOIN  ";
    // locks
-   case action_typet::MTXINIT   : return "MTX-INIT";
+   //case action_typet::MTXINIT   : return "MTX-INIT";
    case action_typet::MTXLOCK   : return "MTX-LOCK";
    case action_typet::MTXUNLK   : return "MTX-UNLK";
    }
@@ -69,7 +69,7 @@ void actiont::pretty_print ()
       break;
 
    case action_typet::MALLOC    :
-   case action_typet::MTXINIT   :
+   //case action_typet::MTXINIT   :
       printf ("%s %#-18lx, %#-18lx\n", actiont_type_str (type), addr, val);
       break;
 

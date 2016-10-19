@@ -316,7 +316,7 @@ void test5 ()
    conft po (actions);
 
    // print it !
-   po.print_original_stream ();
+   //po.print_original_stream ();
 
    // build the partial order and print it
    po.build ();
@@ -378,10 +378,18 @@ void test6 ()
    e.envp.push_back (nullptr);
 
    // run the guest
+   //std::vector<int> replay2 {0, 5, 2, 1, 1, 4, 0, 1, 2, 3, 0, 2, -1};
+   std::vector<int> replay2 {0, 3, 2, 1, -1};
+
+   e.set_replay (replay2.data(), (int) replay2.size());
    e.run ();
    action_streamt actions (e.get_trace ());
-   //actions.print ();
    action_stream2t s1 (actions);
+
+   // print the stream and the replay
+   actions.print ();
+   actions.print_replay ();
+   std::vector<int> replay = actions.get_replay ();
 
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -390,9 +398,12 @@ void test6 ()
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
    // run the guest 2nd time
+   e.set_replay (replay.data(), (int) replay.size());
+
    e.run ();
-   //actions.print ();
    action_stream2t s2 (actions);
+   actions.print ();
+   actions.print_replay ();
 
    // diff
    printf ("\n");
@@ -401,4 +412,6 @@ void test6 ()
 
    fflush (stdout);
    fflush (stderr);
+   return;
+
 }

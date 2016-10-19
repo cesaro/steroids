@@ -238,8 +238,6 @@ struct stid_po * stid_get_poexec (struct stid *s)
 
 int stid_test ()
 {
-
-#if 0
    const char *user = getenv ("USER");
 
    // for Cesar
@@ -248,11 +246,10 @@ int stid_test ()
       test6 ();
       return 0;
    }
-#endif
 
    //// for anyone else
-   // test5 ();
-// #if 0
+   test5 ();
+#if 0
    printf ("stid_test: I feel fantastic!\n");
    struct stid *s = stid_init ();
    int r = stid_load_bytecode (s, "input.ll"); 
@@ -263,7 +260,7 @@ int stid_test ()
    r = stid_print_po (po); 
    printf ("stid_test: result of print %2d\n", r);
    fflush(stdout);
-// #endif
+#endif
    return 0;
 }
 

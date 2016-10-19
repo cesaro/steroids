@@ -72,6 +72,7 @@ void breakme (void);
 		PRINT (__FILE__ ":%d: %s: Assertion `" #expr "' failed.\n", \
 				__LINE__, __func__); \
 		breakme (); \
+		fflush (stdout); \
 		exit (1); \
 	}}
 #else

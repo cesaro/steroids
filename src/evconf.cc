@@ -63,7 +63,7 @@ unsigned eventt::idx (const conft &c)
 
 void eventt::print (const conft &c)
 {
-   printf ("eventt this %18p tid %2d sidx %5d pos %4u ac.type %s |red| %2lu pre_proc %18p pre_mem %18p\n",
+   printf ("eventt this %18p tid %2d sidx %10d pos %4u ac.type %s |red| %10lu pre_proc %18p pre_mem %18p\n",
          this,
          _tid,
          _sidx,

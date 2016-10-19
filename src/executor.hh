@@ -8,6 +8,7 @@
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 
 #include "../rt/rt.h"
+#include "action_stream.hh"
 
 #define ALIGN16(i) (((uint64_t) (i)) & 0xf ? (((uint64_t) (i)) + 16) & -16ul : (uint64_t) (i))
 
@@ -28,8 +29,10 @@ public :
    Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c);
    ~Executor ();
 
-   void run ();
-   struct rt *get_trace ();
+   void           run ();
+   void           set_replay (int *tab, int size);
+   struct rt *    get_runtime ();
+   action_streamt get_trace ();
 
 private :
    struct rt                     rt;
@@ -37,6 +40,7 @@ private :
    llvm::LLVMContext             &ctx;
    llvm::Module                  *m;
    llvm::ExecutionEngine         *ee;
+   int replay_capacity;
    int (*entry) (int, const char* const*, const char* const*);
 
    void initialize_and_instrument_rt ();

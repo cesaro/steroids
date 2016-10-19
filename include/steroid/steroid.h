@@ -40,7 +40,7 @@ struct stid;
 struct stid_ctsw
 {
    unsigned int thid;
-   unsigned int nrev; 
+   unsigned int nrev;
 };
 
 struct stid_replay

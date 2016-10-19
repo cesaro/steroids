@@ -125,7 +125,7 @@ YACC:=bison
 	@echo "DOT $<"
 	@dot -T jpg < $< > $@
 
-CFLAGS_:=-Wall -Wextra -std=c11 -pthread
+CFLAGS_:=-Wall -Wextra -std=c11 -pthread -g
 CXXFLAGS_:=-Wall -Wextra -std=c++11 -pthread
 
 %.ll : %.c

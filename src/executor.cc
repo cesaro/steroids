@@ -25,6 +25,7 @@
 #include "../rt/rt.h"
 #include "instrumenter.hh"
 #include "executor.hh"
+#include "action_stream.hh"
 
 uint8_t *MyMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment,
          unsigned SectionID, llvm::StringRef SectionName, bool isReadOnly)
@@ -47,7 +48,8 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    conf (c),
    ctx (mod->getContext ()),
    m (mod.get()),
-   ee (0)
+   ee (0),
+   replay_capacity (2048) // 1024 context switches
 {
    std::string errors;
    llvm::EngineBuilder eb (std::move(mod));
@@ -58,9 +60,6 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    rt.trace.addr.begin = 0;
    rt.trace.id.begin = 0;
    rt.trace.val.begin = 0;
-   // by default, we initialize the num_ths to 1 
-   rt.trace.num_ths = 1;
-   //rt.trace.num_mutex = 0;
 
    // create a memory manager for the JIT engine (the builder owns the object)
    std::unique_ptr<llvm::RTDyldMemoryManager> mm (new MyMemoryManager (rt));
@@ -152,6 +151,12 @@ void Executor::initialize_and_instrument_rt ()
    // restart the pointers in the trace
    restart_trace ();
 
+   // our initial replay sequence is just the vector [-1]
+   ASSERT (replay_capacity >= 1);
+   rt.replay.tab = new int[replay_capacity];
+   rt.replay.tab[0] = -1; // we start in free mode
+   rt.replay.size = 1;
+
    // function _rt_start will save here the hosts's stack pointer
    rt.host_rsp = 0;
 
@@ -193,11 +198,17 @@ void Executor::optimize ()
 
 void Executor::restart_trace ()
 {
-   DEBUG ("stid: executor: restarting pointers in the action stream");
+   DEBUG ("stid: executor: restarting pointers in the action/replay streams");
    rt.trace.evptr = rt.trace.ev.begin;
    rt.trace.addrptr = (uint64_t *) rt.trace.addr.begin;
    rt.trace.idptr = (uint16_t *) rt.trace.id.begin;
    rt.trace.valptr = (uint64_t *) rt.trace.val.begin;
+
+   rt.trace.size = 0; // "wrong" default value
+   rt.trace.num_ths = -1; // "wrong" default value
+   for (int i = 0; i < RT_MAX_THREADS; i++) rt.trace.num_blue[i] = 0;
+
+   rt.replay.current = rt.replay.tab;
 }
 
 void Executor::jit_compile ()
@@ -262,9 +273,7 @@ void Executor::detex_apply ()
       detex.dataseg.resize (rt.data.size);
       memcpy (detex.dataseg.data(), rt.data.begin, rt.data.size);
       detex.dataseg.shrink_to_fit();
-   }
-   else
-   {
+   } else {
       DEBUG ("stid: executor: detex: restoring JITed data segments, %zu B",
             detex.dataseg.size());
       ASSERT (detex.dataseg.size() == rt.data.size);
@@ -316,14 +325,18 @@ void Executor::run ()
 
    // run the user program!!
    DEBUG ("stid: executor: starting guest execution");
-   DEBUG ("stid: executor: ==========================================================");
+   DEBUG ("stid: executor: ====================================================");
    breakme ();
    exitcode = entry (argv.size(), argv.data(), envp.data());
-   DEBUG ("stid: executor: ==========================================================");
+   DEBUG ("stid: executor: ====================================================");
    DEBUG ("stid: executor: guest execution terminated");
-   DEBUG ("stid: executor: %zu events collected", rt.trace.size);
+   DEBUG ("stid: executor: %zu events collected, %d thread created",
+         rt.trace.size, rt.trace.num_ths);
    DEBUG ("stid: executor: exitcode %d", exitcode);
    ASSERT (rt.trace.size == (size_t) (rt.trace.evptr - (uint8_t*) rt.trace.ev.begin));
+   ASSERT (rt.trace.num_ths >= 1);
+   ASSERT (rt.trace.num_ths <= RT_MAX_THREADS);
+   for (int i = 0; i < rt.trace.num_ths; i++) ASSERT (rt.trace.num_blue[i]);
 }
 
 llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)
@@ -337,7 +350,26 @@ llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)
    return c;
 }
 
-struct rt *Executor::get_trace ()
+void Executor::set_replay (int *tab, int size)
+{
+   if (size > replay_capacity)
+   {
+      replay_capacity = size * 1.5;
+      delete rt.replay.tab;
+      rt.replay.tab = new int[replay_capacity];
+   }
+
+   rt.replay.size = size;
+   memcpy (rt.replay.tab, tab, size * sizeof(int));
+}
+
+struct rt *Executor::get_runtime ()
 {
    return &rt;
 }
+
+action_streamt Executor::get_trace ()
+{
+   return action_streamt (&rt);
+}
+

@@ -33,7 +33,7 @@ enum class action_typet
    THEXIT,
    THJOIN,
    // locks
-   MTXINIT,
+   //MTXINIT,
    MTXLOCK,
    MTXUNLK,
 };

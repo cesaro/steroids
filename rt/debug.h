@@ -8,7 +8,7 @@
 #define CONFIG_DEBUG 1
 //#undef CONFIG_DEBUG
 
-void _rt_breakme (void);
+void breakme (void);
 
 #define BREAK(expr) if (expr) breakme ()
 #define PRINT(fmt,args...) \
@@ -17,9 +17,9 @@ void _rt_breakme (void);
 #ifdef CONFIG_DEBUG
 #define ASSERT(expr) \
 	{if (! (expr)) { \
-		PRINT (__FILE__ ":%d: %s: Assertion `" #expr "' failed.\n", \
-				__LINE__, __func__); \
-		_rt_breakme (); \
+		PRINT ("Assertion `" #expr "' failed.\n"); \
+		breakme (); \
+      fflush (stdout); \
 		exit (1); \
 	}}
 #define DEBUG(fmt,args...) PRINT (fmt,##args)

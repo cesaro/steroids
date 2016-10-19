@@ -59,6 +59,11 @@ public:
    inline size_t size () const
       { return rt->trace.size; }
    void print () const;
+   std::vector<int> get_replay ();
+   void             print_replay ();
+
+
+   static void print_replay (std::vector<int> replay);
 
 private:
    const struct rt *rt;

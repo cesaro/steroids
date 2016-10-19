@@ -7,6 +7,8 @@
 #define ALIGN16(i) (((uint64_t) (i)) & 0xf ? (((uint64_t) (i)) + 16) & -16ul : (uint64_t) (i))
 
 int _rt_errno = 0;
+// unistd.h
+
 static uint64_t __malloc_ptr;
 
 void _rt_libc_init ()
@@ -78,11 +80,34 @@ void *_rt_realloc (void *ptr, size_t size)
 
 void _rt_exit (int status)
 {
+   int ret;
    fflush (stdout);
    fflush (stderr);
 
-   // EXIT event for the calling thread (which will be main at this point)
+   // we do not support exiting from another thread != main
+   if (TID (__rt_thst.current) != 0)
+   {
+      PRINT ("t%d: called exit: not currently supported by the runtime",
+            TID (__rt_thst.current) != 0);
+      ASSERT (0);
+      _rt_panic ();
+   }
+
+   // log the EXIT event for the calling thread (will be main at this point)
    TRACE0 (RT_THEXIT);
+   rt->trace.num_blue[0]++;
+
+   // consume one event (the last) from the replay sequence
+   ASSERT (*rt->replay.current == 1 || *rt->replay.current == -1);
+   if (*rt->replay.current == 1) *rt->replay.current = 0;
+
+   // destroy conditional variable
+   ret = pthread_cond_destroy (&__rt_thst.tcbs[0].cond);
+   if (ret)
+   {
+      PRINT ("t0: cond var: errors while destroying: %s; ignoring",
+            strerror (ret));
+   }
 
    // return control to the host
    _rt_cend (status);

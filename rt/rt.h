@@ -9,6 +9,11 @@
 extern "C" {
 #endif
 
+// configuration
+#define RT_MAX_THREADS 128
+#define RT_DEFAULT_STACK_SIZE (8 << 20) // 8M
+#define RT_MAX_OWNED_MUTEXES 64
+
 // event identifiers:
 // - event class: upper 3 bits
 // - event id:    lower 5 bits
@@ -158,8 +163,18 @@ struct eventrace {
    
    uint64_t size;
 
-   int num_ths;
-   // @FIXME: vector of size_t integers up to N proc constants
+   int    num_ths;
+   size_t num_blue[RT_MAX_THREADS];
+};
+
+struct reptrace
+{
+   // points to an array of integers [tid1,nr,tid2,nr,tid3,nr...,-1]
+   int *tab;
+   // size of the array above
+   int size;
+   // pointer to the current event count in the array above
+   int *current;
 };
 
 // this stores the entire state of the runtime
@@ -175,6 +190,7 @@ struct rt
 
    // event trace
    struct eventrace trace;
+   struct reptrace replay;
 
    // stack pointer of the host upon entry on guest code
    uint64_t host_rsp;

@@ -357,6 +357,10 @@ int _rt_mainn (int argc, const char * const *argv, const char * const *env)
    ASSERT ((void *) rt->trace.addrptr == rt->trace.addr.begin);
    ASSERT ((void *) rt->trace.idptr == rt->trace.id.begin);
    ASSERT ((void *) rt->trace.valptr == rt->trace.val.begin);
+   ASSERT (rt->replay.current == rt->replay.tab);
+   ASSERT (rt->replay.tab[0] == 0 || rt->replay.tab[0] == -1); // main or EOF
+   ASSERT (rt->replay.tab[rt->replay.size - 1] == -1); // last is EOF
+   for (i = 0; i < RT_MAX_THREADS; i++) ASSERT (rt->trace.num_blue[i] == 0);
 
    // assert here that we did correct assumptions in _rt_{load,store}{f,d,ld}
    ASSERT (sizeof (float) == 4)
@@ -374,6 +378,14 @@ int _rt_mainn (int argc, const char * const *argv, const char * const *env)
    _rt_memreg_print (&rt->trace.addr, "stid: rt: main:  ", ", event trace (64bit addr)\n");
    _rt_memreg_print (&rt->trace.val, "stid: rt: main:  ", ", event trace (64bit val)\n");
    _rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
+   printf ("stid: rt: main: replay sequence:\nstid: rt: main:  ");
+   for (i = 0; rt->replay.tab[i] != -1; i += 2)
+   {
+      if (i % 20 == 0 && i)
+         printf ("\nstid: rt: main:  ");
+      printf ("%d %d; ", rt->replay.tab[i], rt->replay.tab[i+1]);
+   }
+   printf ("-1\n");
    printf ("stid: rt: main: ======================\n");
 
    // initialize subsystems (before this there is no guarantee that
@@ -449,7 +461,7 @@ uint64_t _rt_get_host_rsp ()
 
 void _rt_panic ()
 {
-   printf ("stid: rt: panic!!\n");
+   PRINT ("panic!!!!!");
    while (1);
 }
 

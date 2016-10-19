@@ -73,7 +73,8 @@ x improve support for arbitrary types on load/store
 x show we generate events RD|WR for 1 bit ?
 - when preserving data segments, we should only preserve initialized data
   segments, such as .data and .rodata, not .bss !!
-- for those pthread functions that we do not handle, issue a warning in the stream
+- for those pthread functions that we do not handle, issue a warning in the
+  stream
 - repeat execution & diff
 - memory clearing strategy
 - replay
@@ -96,3 +97,7 @@ Notes
   and so you freely allow the thread to read/write from them!!!
 - the isalnum(3) macros return a pointer to a table located in the libc, see
   <ctype.h>
+
+- initialize conditional variables
+- write replay support for lock and unlock
+- destroy cond vars at pthread_exit, and exit?

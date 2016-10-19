@@ -321,12 +321,38 @@ void action_streamt::print () const
    // iterate throught the actions
    unsigned i = 0;
    int tid = 0;
+
+   printf ("== action stream begin ==\n");
+   printf ("size %zu, num_ths %d, replay len %d\n",
+      rt->trace.size, rt->trace.num_ths, rt->replay.size);
+
+   printf ("intended replay:\n");
+   for (i = 0; i < rt->replay.size; i += 2)
+   {
+      if (rt->replay.tab[i] == -1)
+      {
+         printf ("%05u -1: end of replay\n\n", i);
+         continue;
+      }
+      ASSERT (i + 1 < rt->replay.size);
+      printf ("%05u %2d: %d\n", i, rt->replay.tab[i], rt->replay.tab[i+1]);
+   }
+
+   printf ("expected number of blue events per thread:\n");
+   ASSERT (rt->trace.num_ths <= RT_MAX_THREADS);
+   for (i = 0; i < rt->trace.num_ths; i++)
+   {
+      printf ("      %2d: %zu blues\n", i, rt->trace.num_blue[i]);
+   }
+   for (; i < RT_MAX_THREADS; i++) ASSERT (rt->trace.num_blue[i] == 0);
+
+   i = 0;
+   printf ("\nstream:\n");
    for (auto &ac : *this)
    {
       if (ac.type() == RT_THCTXSW) tid = ac.id();
       printf ("%05u %2d: %s\n", i, tid, ac.str());
       i++;
-
 #if 0
       // for efficiency purposes ac has type "action_stream_itt" rather than
       // "actiont"
@@ -341,6 +367,107 @@ void action_streamt::print () const
             ac.id ());
 #endif
    }
+   printf ("== action stream end ==\n");
+}
+
+std::vector<int> action_streamt::get_replay ()
+{
+   int i;
+   int count = 0;
+   int tid = 0;
+   std::vector<int> replay;
+   int sawfirst[RT_MAX_THREADS];
+   int blue[RT_MAX_THREADS];
+   int lastexit = 0;
+
+   // clean the sawfirst array
+   ASSERT (rt->trace.num_ths <= RT_MAX_THREADS);
+   for (i = 0; i < RT_MAX_THREADS; i++) sawfirst[i] = 0;
+
+   // first action is always from the main thread
+   count = 1;
+   sawfirst[0] = 1;
+   replay.push_back (0); // tid
+
+   for (auto &ac : *this)
+   {
+      // if previous one was exit, then this one needs to be context switch
+      ASSERT (not lastexit or ac.type() == RT_THCTXSW);
+
+      switch (ac.type())
+      {
+      case RT_THCTXSW :
+         if (ac.id() == tid) continue;
+         lastexit = 0;
+         replay.push_back (count); // count
+         tid = ac.id();
+         ASSERT (tid < rt->trace.num_ths);
+         if (sawfirst[tid])
+         {
+            count = 0;
+         }
+         else
+         {
+            sawfirst[tid] = 1;
+            count = 1;
+         }
+         replay.push_back (tid); // tid
+         break;
+
+      case RT_THCREAT :
+      case RT_THJOIN  :
+      case RT_MTXLOCK :
+      case RT_MTXUNLK :
+         lastexit = 0;
+         count++;
+         break;
+
+      case RT_THEXIT  :
+         lastexit = 1;
+         count++;
+         break;
+
+      default :
+         // make sure here that we didn't miss anything!
+         break;
+      }
+   }
+   replay.push_back (count); // count for last context switch
+   replay.push_back (-1); // end of replay, free mode!
+
+   // in this replay, the number of blue events per thread should equal that
+   // reported by the runtime; assert it
+   for (i = 0; i < RT_MAX_THREADS; i++) blue[i] = 0;
+   for (i = 0; i < replay.size(); i += 2)
+   {
+      if (replay[i] == -1) break;
+      ASSERT (i + 1 < replay.size());
+      blue[replay[i]] += replay[i+1];
+   }
+   for (i = 0; i < RT_MAX_THREADS; i++)
+      ASSERT (blue[i] == rt->trace.num_blue[i]);
+   return replay;
+}
+
+void action_streamt::print_replay ()
+{
+   print_replay (get_replay ());
+}
+
+void action_streamt::print_replay (std::vector<int> replay)
+{
+   printf ("== replay begin ==\n");
+   for (int i = 0; i < replay.size(); i += 2)
+   {
+      if (replay[i] == -1)
+      {
+         printf ("%05u %2d: end of replay\n", i, -1);
+         continue;
+      }
+      ASSERT (i + 1 < replay.size());
+      printf ("%05u %2d: %d\n", i, replay[i], replay[i+1]);
+   }
+   printf ("== replay end ==\n");
 }
 
 action_stream2t::action_stream2t (const action_streamt &s)

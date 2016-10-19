@@ -56,7 +56,7 @@ static const uint64_t memstart;
 static const uint64_t memend;
 static const uint64_t evend;
 
-void _rt_breakme () {}
+void breakme () {}
 
 #if 0
 // we need to redefine the errno macro for us, since instrumentation will not
@@ -68,7 +68,7 @@ void _rt_breakme () {}
 #endif
 
 #include "events.c"
-#include "libc.c"
 #include "pthread.c"
+#include "libc.c"
 #include "buddy.c"
 

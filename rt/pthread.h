@@ -11,10 +11,6 @@
 #include <pthread.h>
 #include "lsd.h"
 
-#define RT_MAX_THREADS 128
-#define RT_DEFAULT_STACK_SIZE (8 << 20) // 8M
-#define RT_MAX_OWNED_MUTEXES 64
-
 // Thread Control Block
 struct rt_tcb
 {
@@ -180,6 +176,7 @@ void  _rt_thread_init (void);
 void  _rt_thread_term (void);
 void *_rt_thread_start (void *arg);
 void  _rt_thread_protocol_wait (struct rt_tcb *t);
+void  _rt_thread_protocol_wait_first ();
 void  _rt_thread_protocol_yield (struct rt_tcb *t);
 int   _rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr);
 void  _rt_thread_stack_free (struct rt_tcb *t);
