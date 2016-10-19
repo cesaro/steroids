@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DoAndIfThenElse #-}
 -------------------------------------------------------------------------------
 -- Module    :  Hapiroid
 -- Synopsis  :  Haskell API for Steroid
@@ -7,6 +8,8 @@
 -------------------------------------------------------------------------------
 module Haskroid.Hapiroid where
 
+import Foreign.Ptr 
+import Foreign.Storable
 import Haskroid.Haskroid
 import Haskroid.DynArr
 
@@ -53,6 +56,34 @@ data Poset = Poset
  }
  deriving Show
 
+-- | API
+-- Start and Load an LLVM bytecode file
+start_and_load :: FilePath -> IO SteroidRef
+start_and_load file = do
+  stid <- stidInit
+  rLoad <- stidLoadBytecode stid file
+  if rLoad == 0
+  then return stid
+  else error $ "haskroid: start_and_load: error loading " ++ file 
+
+-- Terminate the steroid engine
+terminate :: SteroidRef -> IO ()
+terminate ptr = do
+  rTerm <- stidTerm ptr
+  if rTerm == 0
+  then return ()
+  else error $ "haskroid: terminate: fatal error code " ++ show rTerm
+
+-- Get a partial order in free mode
+run_free :: SteroidRef -> IO Poset 
+run_free stid = do
+  stidRun stid nullPtr
+  poPtr        <- stidGetPoExec stid
+  hs_po_struct <- peek poPtr
+  hs_po        <- toSteroidPo hs_po_struct
+  return $! toPoset hs_po
+ 
+-- | Converters  
 -- | Convert DynArr to List
 toList :: (a -> b) -> DynArr a -> [b]
 toList f (DynArr _ la) = map f la
@@ -79,6 +110,7 @@ toAction a@SteroidAction{..} =
       act_val = toInteger val 
   in Act act_ty act_addr act_val 
 
+-- | Pretty Printers
 show_poset_simple :: Poset -> String
 show_poset_simple p@Poset{..} =
   let evs_s = show_evs_per_proc evs_procs

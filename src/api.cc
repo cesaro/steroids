@@ -215,8 +215,6 @@ int stid_convert_po (conft &pocc, struct stid_po *po)
 
 struct stid_po * stid_get_poexec (struct stid *s)
 {
-   stid_run (s, nullptr);
-
    // prepare a stream object
    action_streamt actions (s->e->get_trace ());
 
@@ -259,7 +257,7 @@ int stid_test ()
    struct stid *s = stid_init ();
    int r = stid_load_bytecode (s, "input.ll"); 
    printf ("stid_test: result of load %2d\n", r);
-   // stid_run (s, nullptr);
+   stid_run (s, nullptr);
    struct stid_po *po = stid_get_poexec (s);
    printf ("stid_test: exited stid_get_poexec\n");
    r = stid_print_po (po); 
