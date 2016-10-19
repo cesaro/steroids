@@ -7,14 +7,13 @@
 -------------------------------------------------------------------------------
 module Main where
 
-import Foreign.Ptr 
-import Foreign.Storable
 import Foreign.Marshal.Alloc
 import Foreign.Marshal.Array
-
+import Foreign.Ptr 
+import Foreign.Storable
+import Haskroid.DynArr
 import Haskroid.Hapiroid
 import Haskroid.Haskroid
-import Haskroid.DynArr
 
 main = realTest 
 
@@ -151,8 +150,8 @@ realTest = do
   stid <- stidInit
   rLoad <- stidLoadBytecode stid "input.ll"
   print $ "HASKELL: " ++ show  rLoad
-  -- stidRun stid nullPtr
-  -- print $ "HASKELL: RUN COMPLETED"
+  stidRun stid nullPtr
+  print $ "HASKELL: RUN COMPLETED"
   poPtr <- stidGetPoExec stid
   stidPrintSeqPo poPtr 
   print $ "HASKELL: GET PO"
