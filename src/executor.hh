@@ -22,8 +22,8 @@ struct ExecutorConfig
 class Executor
 {
 public :
-   std::vector<const char *> argv;
-   std::vector<const char *> envp;
+   std::vector<const char*> argv;
+   std::vector<const char*> envp;
    int exitcode;
 
    Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c);

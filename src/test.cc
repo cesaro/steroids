@@ -33,6 +33,7 @@
 #include "checker.hh"
 #include "../rt/rt.h"
 #include "../rt/lsd.h"
+#include "steroid/steroid.h"
 
 void ir_write_ll (const llvm::Module *m, const char *filename)
 {
@@ -416,3 +417,4 @@ void test6 ()
    return;
 
 }
+

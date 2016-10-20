@@ -56,14 +56,14 @@ eventt::eventt (unsigned sidx, actiont ac, eventt &p, eventt &m) :
    vclock[_tid] += 2; // the +1 is the redbox events
 }
 
-unsigned eventt::idx (const conft &c)
+unsigned eventt::idx (const conft &c) const
 {
    return (unsigned) (this - &c.events[_tid][0]);
 }
 
-void eventt::print (const conft &c)
+void eventt::print (const conft &c) const
 {
-   printf ("eventt this %18p tid %2d sidx %10d pos %4u ac.type %s |red| %10lu pre_proc %18p pre_mem %18p\n",
+   printf (" eventt this %18p tid %2d sidx %10d pos %4u ac.type %s |red| %10lu pre_proc %18p pre_mem %18p\n",
          this,
          _tid,
          _sidx,
@@ -93,17 +93,11 @@ conft::conft (action_streamt &s) :
 }
 
 // For debug purposes only (FOR NOW)
-void conft::print_original_stream ()
-{
-   _stream.print ();
-}
-
-// For debug purposes only (FOR NOW)
-void conft::print ()
+void conft::print () const
 {
    // iterate throught the actions
    int tid = 0;
-   printf ("Print partial order\n");
+   printf ("== conft begin ==\n");
    for (auto &ths : events)
    {
       printf ("Thread %d, size %zu, first %p, last %p\n", 
@@ -112,11 +106,11 @@ void conft::print ()
          es.print (*this);
       tid++;
    }
-   printf ("Print mutex max\n");
    for (auto &e : mutexmax)
    {
      e.second->print (*this);
    }
+   printf ("== conft end ==\n");
 }
 
 void conft::build ()

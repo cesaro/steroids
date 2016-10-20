@@ -48,7 +48,7 @@ void test1 ()
 void test2 () 
 {
    struct stid_action *a = stid_new_action (STID_WR, 0xFF, 5);
-   int r = stid_print_action (a);
+   int r = stid_action_print (a);
    printf ("ret code %d\n", r);
 }
 
@@ -65,7 +65,7 @@ void test4 ()
 {
    struct stid_action *a = stid_new_action (STID_WR, 0xFF, 5);
    struct stid_event *c = stid_new_event (a, 1, 3, 1);
-   int r = stid_print_event (c, 1, 1);
+   int r = stid_event_print (c, 1, 1);
    printf ("ret code %d\n", r);
 }
 
@@ -124,12 +124,63 @@ void test8 ()
 {
    struct stid_po *po = stid_example_po ();
 
-   stid_print_po (po);
+   stid_po_print (po);
+}
+
+void test9 ()
+{
+   struct stid *s;
+   struct stid_po *po;
+   const char *path = "input.ll";
+   struct stid_replay replay;
+   int ret;
+
+   s = stid_init ();
+   if (s == 0) errx (1, "init failed");
+
+   // load the program
+   ret = stid_load_bytecode (s, path);
+   if (ret != 0) errx (1, "load failed");
+
+   // prepare arguments for the program
+   stid_argv_add (s, "cunf");
+   stid_argv_add (s, "/tmp/dme3.ll_net");
+
+   // prepare some replay
+   da_init (&replay.tab, struct stid_ctsw);
+   da_trunc (&replay.tab, 3, struct stid_ctsw);
+
+   da_i (&replay.tab, 0, struct stid_ctsw).thid = 0;
+   da_i (&replay.tab, 0, struct stid_ctsw).nrev = 3; 
+
+   da_i (&replay.tab, 1, struct stid_ctsw).thid = 2;
+   da_i (&replay.tab, 1, struct stid_ctsw).nrev = 1; 
+
+   da_i (&replay.tab, 2, struct stid_ctsw).thid = 1;
+   da_i (&replay.tab, 2, struct stid_ctsw).nrev = 1; 
+
+   // run, with replay sequence
+   ret = stid_run (s, &replay);
+   if (ret != 0) errx (1, "run failed");
+
+   // print partial order
+   po = stid_po_get (s);
+   if (po == 0) errx (1, "get_po failed");
+
+   // print it
+   stid_po_print (po);
+
+#if 0
+   // run the guest
+   //std::vector<int> replay2 {0, 5, 2, 1, 1, 4, 0, 1, 2, 3, 0, 2, -1};
+   //std::vector<int> replay2 {0, 3,  2, 1,  1, 1,  0, 2, -1};
+   std::vector<int> replay2 {0, 5,  1, 1,  2, 1,  1, 3, -1};
+#endif
 }
 
 int main (int argc, char **argv)
 {
-   //test8 ();
+   //test9 ();
    stid_test ();
    return 0;
 }

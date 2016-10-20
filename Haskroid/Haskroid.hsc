@@ -199,7 +199,7 @@ foreign import ccall unsafe "stid_run"
 foreign import ccall unsafe "stid_get_seqexec"
   stidGetSeqExec :: SteroidRef -> SteroidExecRef -> IO CInt
 
-foreign import ccall unsafe "stid_get_poexec"
+foreign import ccall unsafe "stid_po_get"
   stidGetPoExec :: SteroidRef -> IO SteroidPoRef 
 
 -- Test API
@@ -210,7 +210,7 @@ foreign import ccall unsafe "stid_test"
 foreign import ccall unsafe "stid_new_action"
   stidNewAction :: CInt -> CUInt -> CUInt -> IO SteroidActionRef 
 
-foreign import ccall unsafe "stid_print_action"
+foreign import ccall unsafe "stid_action_print"
   stidPrintAction :: SteroidActionRef -> IO CInt 
 
 -- Context Switches
@@ -224,7 +224,7 @@ foreign import ccall unsafe "stid_print_ctsw"
 foreign import ccall unsafe "stid_new_event"
   stidNewEvent :: SteroidActionRef -> CUInt -> CUInt -> CUInt -> IO SteroidEventRef
 
-foreign import ccall unsafe "stid_print_event"
+foreign import ccall unsafe "stid_event_print"
   stidPrintEvent :: SteroidEventRef -> CUInt -> CUInt -> IO CInt
 
 foreign import ccall unsafe "stid_has_pre_proc"
@@ -247,7 +247,7 @@ stidHasPreMem ref = do
 foreign import ccall unsafe "stid_example_po"
   stidExamplePo :: IO SteroidPoRef
 
-foreign import ccall unsafe "stid_print_po"
+foreign import ccall unsafe "stid_po_print"
   stidPrintSeqPo :: SteroidPoRef -> IO ()
 
 -- Replay

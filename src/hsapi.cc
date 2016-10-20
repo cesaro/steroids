@@ -23,30 +23,6 @@ struct stid_action * stid_new_action (int type, uint64_t addr, uint64_t val)
    return act; 
 }
 
-static inline const char *act_ty_to_str (int a)
-{
-   switch (a)
-   {
-   // threads
-   case STID_CREATE : return "STID_CREATE";
-   case STID_JOIN   : return "STID_JOIN  ";
-   case STID_ENTRY  : return "STID_ENTRY ";
-   case STID_EXIT   : return "STID_EXIT  ";
-   // locks
-   case STID_LOCK   : return "STID_LOCK  ";
-   case STID_UNLOCK : return "STID_UNLOCK";
-   default : return "FAIL";
-   }
-}
-
-int stid_print_action (struct stid_action *act)
-{
-   if (act == 0) return 1;
-   printf ("action: %p type %s addr %#lx val %#lx\n", 
-      act, act_ty_to_str(act->type), act->addr, act->val);
-   return 0;
-}
-
 // Testing steroid context switches
 struct stid_ctsw * stid_new_ctsw (unsigned int thid, unsigned int nrev)
 {
@@ -77,22 +53,6 @@ struct stid_event * stid_new_event (struct stid_action * act, unsigned int tid, 
    e->sidx = sidx;
    return e; 
 } 
-
-int stid_print_event (struct stid_event *e, unsigned int tid, unsigned int idx)
-{
-   if (e == 0) return 1;
-
-   printf ("eventt this %18p sidx %5d tid %2d pos %4u ac.type %s pre_mem { tid %4d idx %4d }\n",
-         e,
-         e->sidx,
-         tid,
-         idx,
-         act_ty_to_str (e->act.type),
-         e->pre_mem.tid,
-         e->pre_mem.idx);
-
-   return 0;
-}
 
 bool stid_has_pre_proc (struct stid_event *e)
 {
@@ -173,31 +133,6 @@ int stid_add_max_lock_po (struct stid_po *po, struct stid_event *e)
   return 0;
 }
 
-int stid_print_po (struct stid_po *po)
-{
-   struct da *p;
-   struct stid_event *e;
-   struct stid_event *e1;
-
-   printf ("Begin Events\n------------------\n");
-
-   for (int tid = 0; tid < po->procs.len; tid++)
-   {
-      p = &da_i (&po->procs, tid, struct da);
-      e = &da_i (p, 0, struct stid_event); 
-      e1 = &da_i (p, p->len-1, struct stid_event); 
-      printf ("Thread %d, size %u, first %p, last %p\n", 
-            tid, p->len, e, e1);
-
-      for (int tlen = 0; tlen < p->len; tlen++)
-      {
-        stid_print_event (e++, tid, tlen);
-      }
-   }
-
-   return 0; 
-}
-
 int stid_print_seq_po (struct stid_po *po)
 {
    // current stream position
@@ -230,7 +165,7 @@ int stid_print_seq_po (struct stid_po *po)
        if (e->sidx == spos)
        {
          rpos = e - proc_ipos[tid];
-         stid_print_event (e, tid, rpos);
+         stid_event_print (e, tid, rpos);
          proc_pos[tid]++;
          spos++;
          fixpoint = false; 

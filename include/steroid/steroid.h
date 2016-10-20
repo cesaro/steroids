@@ -84,17 +84,27 @@ int stid_term (struct stid *s);
 // load an LLVM bytecode file
 int stid_load_bytecode (struct stid *s, const char *path);
 
+// adding arguments to the commandline of the program
+void stid_argv_add (struct stid *s, const char *arg);
+void stid_argv_clear (struct stid *s);
+
 // run the JIT compiled code and generate the action stream
 int stid_run (struct stid *s, struct stid_replay *rep);
 
 // get the (public version of) the action stream
 int stid_get_seqexec (struct stid *s, struct stid_exec *run);
 
-// get the (public version of) the lock partial order
-struct stid_po * stid_get_poexec (struct stid *s);
+// operations on the po execution:
+struct stid_po *stid_po_get (struct stid *s);
+int             stid_po_term (struct stid_po *po);
+int             stid_po_print (const struct stid_po *po);
 
+int stid_event_print (const struct stid_event *e, unsigned tid, unsigned idx);
+int stid_action_print (struct stid_action *act);
+const char *stid_action_type2str (int a);
+
+// testing
 int stid_test ();
-
 int stid_test_checker ();
 
 #ifdef __cplusplus

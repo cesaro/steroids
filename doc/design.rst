@@ -75,11 +75,6 @@ x show we generate events RD|WR for 1 bit ?
   segments, such as .data and .rodata, not .bss !!
 - for those pthread functions that we do not handle, issue a warning in the
   stream
-- repeat execution & diff
-- memory clearing strategy
-- replay
-- printf the list of external references to variables, and check on 2/3 debian
-  packages
 
 
 Notes
@@ -97,7 +92,7 @@ Notes
   and so you freely allow the thread to read/write from them!!!
 - the isalnum(3) macros return a pointer to a table located in the libc, see
   <ctype.h>
+- the protocol to control the replay and free mode is crap! we need to
+  substitute this by a specialized pthreads library
+- improve or remove the memory clearing strategy
 
-- initialize conditional variables
-- write replay support for lock and unlock
-- destroy cond vars at pthread_exit, and exit?

@@ -200,8 +200,6 @@ void  _rt_pthread_exit(void *retval)
 
    // otherwise, log the _THEXIT event and decrement number of threads alive
    TRACE0 (RT_THEXIT);
-   SHOW (TID(me), "d");
-   SHOW (rt->trace.num_blue[TID(me)], "zu");
    rt->trace.num_blue[TID(me)]++;
    __rt_thst.num_ths_alive--;
    me->retval = retval;
@@ -338,7 +336,6 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
    if (*rt->replay.current > 0)
    {
       // replay mode: lock and consume 1
-      DEBUG ("pthread lockkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
       ret = pthread_mutex_lock (m);
    }
    else if (*rt->replay.current == 0)
@@ -348,7 +345,6 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
       ret = _rt_thread_protocol_wait (me, m);
       if (*rt->replay.current != -1)
       {
-         DEBUG ("pthread lockkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
          ret = pthread_mutex_lock (m);
       }
    }
@@ -357,7 +353,6 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
       // free mode: easy
       ASSERT (*rt->replay.current == -1);
       _rt_thread_protocol_yield (me);
-      DEBUG ("pthread lockkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
       ret = pthread_mutex_lock (m);
       _rt_thread_protocol_wait (me, 0);
    }
@@ -722,7 +717,6 @@ void _rt_thread_protocol_yield (struct rt_tcb *t)
    // we need to context-switch because we ran out of events or EOF
    ASSERT (*rt->replay.current <= 0);
 
-   SHOW (*rt->replay.current, "d");
    // if we don't have EOF
    if (*rt->replay.current != -1)
    {
