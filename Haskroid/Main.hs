@@ -108,9 +108,9 @@ testReplay = do
     _ <- pokeArray tab_ rep
     -- da :: DynArrStruct ...
     let da = DynArrStruct 2 tab_
-        rep = SteroidReplayStruct da 
+        rep' = SteroidReplayStruct da 
     ret2 <- alloca (\rep_ptr -> do
-      _ <- poke rep_ptr rep
+      _ <- poke rep_ptr rep'
       stidCheckReplay rep_ptr)
     return ret2) 
   print ret
@@ -143,7 +143,6 @@ testPoset = do
   hs_po <- toSteroidPo hs_po_struct
   let po = toPoset hs_po 
   putStrLn $ show_poset_simple po
-
 
 realTest :: IO ()
 realTest = do

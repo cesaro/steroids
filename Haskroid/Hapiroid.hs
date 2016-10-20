@@ -8,10 +8,12 @@
 -------------------------------------------------------------------------------
 module Haskroid.Hapiroid where
 
+import Foreign.Marshal.Alloc
+import Foreign.Marshal.Array
 import Foreign.Ptr 
 import Foreign.Storable
-import Haskroid.Haskroid
 import Haskroid.DynArr
+import Haskroid.Haskroid
 
 data ActType =
     WR     
@@ -36,7 +38,7 @@ data Action = Act
  , act_addr :: Integer
  , act_val  :: Integer
  }
- deriving Show
+  deriving (Show, Ord, Eq)
 
 data Event = Ev
  {
@@ -47,14 +49,16 @@ data Event = Ev
  , ev_pre_mem_idx :: Integer -- ^ index in thread of mem pre
  , ev_sidx        :: Integer -- ^ index in the stream
  }
- deriving Show
+  deriving (Show, Ord, Eq)
 
 data Poset = Poset
  {
    evs_procs    :: [[Event]] 
  , evs_max_lock :: [Event]
  }
- deriving Show
+  deriving Show
+
+type Replay = [SteroidCTSW]
 
 -- | API
 -- Start and Load an LLVM bytecode file
@@ -77,7 +81,29 @@ terminate ptr = do
 -- Get a partial order in free mode
 run_free :: SteroidRef -> IO Poset 
 run_free stid = do
-  stidRun stid nullPtr
+  rRun <- stidRun stid nullPtr
+  if rRun == 0
+  then do
+    poPtr        <- stidGetPoExec stid
+    hs_po_struct <- peek poPtr
+    hs_po        <- toSteroidPo hs_po_struct
+    return $! toPoset hs_po
+  else error $ "run_free: error code " ++ show rRun
+
+-- Send the replay down and get a new partial order
+replay :: SteroidRef -> Replay -> Int -> IO Poset
+replay stid rep len_rep = do
+  _ <- allocaArray len_rep (\tab_ -> do
+    _ <- pokeArray tab_ rep
+    let da = DynArrStruct (fromIntegral len_rep) tab_ 
+        rep_struct = SteroidReplayStruct da 
+    _ <- alloca (\rep_ptr -> do
+      _ <- poke rep_ptr rep_struct
+      rRun <- stidRun stid rep_ptr
+      if rRun == 0
+      then return ()
+      else error $ "replay: run error code " ++ show rRun)
+    return ())
   poPtr        <- stidGetPoExec stid
   hs_po_struct <- peek poPtr
   hs_po        <- toSteroidPo hs_po_struct
