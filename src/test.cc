@@ -379,7 +379,8 @@ void test6 ()
 
    // run the guest
    //std::vector<int> replay2 {0, 5, 2, 1, 1, 4, 0, 1, 2, 3, 0, 2, -1};
-   std::vector<int> replay2 {0, 3, 2, 1, -1};
+   //std::vector<int> replay2 {0, 3,  2, 1,  1, 1,  0, 2, -1};
+   std::vector<int> replay2 {0, 5,  1, 1,  2, 1,  1, 3, -1};
 
    e.set_replay (replay2.data(), (int) replay2.size());
    e.run ();

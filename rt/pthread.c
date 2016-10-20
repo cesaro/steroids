@@ -169,7 +169,7 @@ int   _rt_pthread_join(pthread_t t, void **retval)
       // we ran out of events, context switch, join, and consume one
       _rt_thread_protocol_yield (me);
       ret = pthread_join (t, (void *) &other);
-      _rt_thread_protocol_wait (me);
+      _rt_thread_protocol_wait (me, 0);
    }
 
    // possibly return with error
@@ -329,7 +329,7 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
    //   In this case we need to just yield(); wait(); lock(), as if we lock()
    //   before wait() the rt scheduler may again wronly choose this thread,
    //   lock(m) and then we enter a deadlock, as the other thread has to procede
-   //   while m is unlocked
+   //   while m is locked
    // - We have 1 or more events to replay (replay.current > 0)
    //   We just lock() and consume one.
    printf ("stid: rt: threading: lock: t%d: still %d events to replay\n",
@@ -337,26 +337,29 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
 
    if (*rt->replay.current > 0)
    {
-      // lock and consume 1
+      // replay mode: lock and consume 1
       DEBUG ("pthread lockkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
       ret = pthread_mutex_lock (m);
    }
    else if (*rt->replay.current == 0)
    {
-      // switch to the other thread, re-acquire cs and lock
+      // replay mode: switch to the other thread, re-acquire cs and lock
       _rt_thread_protocol_yield (me);
-      _rt_thread_protocol_wait (me);
-      DEBUG ("pthread lockkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
-      ret = pthread_mutex_lock (m);
+      ret = _rt_thread_protocol_wait (me, m);
+      if (*rt->replay.current != -1)
+      {
+         DEBUG ("pthread lockkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
+         ret = pthread_mutex_lock (m);
+      }
    }
    else
    {
-      // in free mode
+      // free mode: easy
       ASSERT (*rt->replay.current == -1);
       _rt_thread_protocol_yield (me);
       DEBUG ("pthread lockkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
       ret = pthread_mutex_lock (m);
-      _rt_thread_protocol_wait (me);
+      _rt_thread_protocol_wait (me, 0);
    }
 
    // log the event (only after actually locking m!), consume 1 from replay
@@ -555,7 +558,7 @@ void *_rt_thread_start (void *arg)
    printf ("stid: rt: threading: start: t%d: starting!\n", TID (t));
 
    // start protocol: we wait to get our context switch
-   _rt_thread_protocol_wait (t);
+   _rt_thread_protocol_wait (t, 0);
 
    // generate the THSTART blue action
    if (*rt->replay.current >= 0) *rt->replay.current -= 1;
@@ -600,7 +603,7 @@ void _rt_thread_protocol_wait_first ()
    rt->trace.num_blue[0]++;
 }
 
-void _rt_thread_protocol_wait (struct rt_tcb *t)
+int _rt_thread_protocol_wait (struct rt_tcb *t, pthread_mutex_t *m)
 {
    int ret;
 
@@ -611,6 +614,11 @@ void _rt_thread_protocol_wait (struct rt_tcb *t)
    while (1)
    {
       printf ("stid: rt: threading: proto: t%d: acquired cs lock\n", TID (t));
+
+      // when called from pthread_mutex_lock: avoid deadlock when transitioning
+      // from replay to free mode (to understand the proble, remove this call,
+      // modify in _rt_pthread_mutex_lock, and run main8 from hello.c)
+      if (m && *rt->replay.current == -1) return _rt_thread_protocol_wait2 (t, m);
 
       // we gained exclusive access of the cs mutex, we should continue
       // executing user code iff
@@ -625,7 +633,7 @@ void _rt_thread_protocol_wait (struct rt_tcb *t)
          {
             printf ("stid: rt: threading: ctxsw to same thread, skipping THCTXSW\n");
          }
-         else 
+         else
          {
             TRACE3 (RT_THCTXSW, TID (t));
          }
@@ -642,7 +650,7 @@ void _rt_thread_protocol_wait (struct rt_tcb *t)
                TID (t), *rt->replay.current);
 
          // return to user code
-         return;
+         return 0;
       }
 
       // otherwise this was a spurious wakeup, we need to wait to get our turn
@@ -660,6 +668,51 @@ err_wait :
 err_panic :
    PRINT ("error: t%d: acquiring cs mutex: %s", TID (t), strerror (ret));
    _rt_cend (255);
+   return 0; // unreachable
+}
+
+int _rt_thread_protocol_wait2 (struct rt_tcb *t, pthread_mutex_t *m)
+{
+   int ret, ret2;
+
+   printf ("stid: rt: threading: proto: t%d: "
+         "detected transition replay -> free!!\n", TID(t));
+
+   // unlock on the global mutex
+   printf ("stid: rt: threading: proto: t%d: released cs lock\n", TID (t));
+   ret = pthread_mutex_unlock (&__rt_thst.m);
+   if (ret != 0) goto err_panic;
+
+   // lock on m
+   ret2 = pthread_mutex_lock (m);
+
+   // lock on the global mutex
+   ret = pthread_mutex_lock (&__rt_thst.m);
+   if (ret != 0) goto err_panic;
+   printf ("stid: rt: threading: proto: t%d: acquired cs lock\n", TID (t));
+
+   ASSERT (*rt->replay.current == -1);
+   // did we really do a context switch? If so we issue a THCTXSW action
+   if (__rt_thst.current == t)
+   {
+      printf ("stid: rt: threading: ctxsw to same thread, skipping THCTXSW\n");
+   }
+   else 
+   {
+      TRACE3 (RT_THCTXSW, TID (t));
+   }
+   __rt_thst.current = t;
+
+   printf ("stid: rt: threading: proto: t%d: still %d events to replay\n",
+         TID (t), *rt->replay.current);
+
+   // return to user code
+   return ret2;
+
+err_panic :
+   PRINT ("error: t%d: acquiring cs mutex: %s", TID (t), strerror (ret));
+   _rt_cend (255);
+   return 0; // unreachable
 }
 
 void _rt_thread_protocol_yield (struct rt_tcb *t)
