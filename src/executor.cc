@@ -361,6 +361,9 @@ void Executor::set_replay (int *tab, int size)
 
    rt.replay.size = size;
    memcpy (rt.replay.tab, tab, size * sizeof(int));
+   DEBUG_ ("stid: executor: set-replay: ");
+   for (int i = 0; i < size; i++) DEBUG_ ("%d ", rt.replay.tab[i]);
+   DEBUG ("");
 }
 
 struct rt *Executor::get_runtime ()

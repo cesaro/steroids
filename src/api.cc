@@ -4,6 +4,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <exception>
 
@@ -47,6 +50,15 @@ struct stid
    std::vector<std::string> storage;
 };
 
+static void _ir_write_ll (const llvm::Module *m, const char *filename)
+{
+   int fd = open (filename, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+   ASSERT (fd >= 0);
+   llvm::raw_fd_ostream f (fd, true);
+   f << *m;
+}
+
+
 // constructor and destructor
 struct stid * stid_init ()
 {
@@ -74,6 +86,7 @@ int stid_load_bytecode (struct stid *s, const char *path)
 {
    static bool init = false;
    llvm::SMDiagnostic err;
+   llvm::Module *m;
    std::string errors;
 
    ASSERT (s);
@@ -100,6 +113,7 @@ int stid_load_bytecode (struct stid *s, const char *path)
 
    // parse the .ll file and get a Module out of it
    std::unique_ptr<llvm::Module> mod (llvm::parseIRFile (path, err, context));
+   m = mod.get();
 
    // if errors found, report and terminate
    if (! mod.get ()) {
@@ -133,7 +147,9 @@ int stid_load_bytecode (struct stid *s, const char *path)
    s->e->envp.push_back ("PWD=/usr/bin");
    s->e->envp.push_back (nullptr);
 
-   // store the executor in the structure
+   DEBUG ("stid: load-bytecode: saving instrumented code to /tmp/output.ll");
+   _ir_write_ll (m, "/tmp/output.ll");
+
    DEBUG ("stid: load-bytecode: done!", s, path);
    return 0;
 
@@ -180,6 +196,8 @@ int stid_run (struct stid *s, struct stid_replay *rep)
    {
       for (int i = 0; i < rep->tab.len; i++)
       {
+         SHOW (da_i (&rep->tab, i, struct stid_ctsw).thid, "d");
+         SHOW (da_i (&rep->tab, i, struct stid_ctsw).nrev, "d");
          replay.push_back (da_i (&rep->tab, i, struct stid_ctsw).thid);
          replay.push_back (da_i (&rep->tab, i, struct stid_ctsw).nrev);
       }
@@ -213,7 +231,7 @@ static int _stid_convert_act_type (action_typet t)
      case action_typet::MTXLOCK : return STID_LOCK;
      case action_typet::MTXUNLK : return STID_UNLOCK;
      default :
-       printf ("stid_convert_act_type: conversion failed\n");
+       printf ("_stid_convert_act_type: conversion failed\n");
        ASSERT (0);
        return 1;
    }
@@ -241,7 +259,7 @@ static void _stid_convert_po (const conft &pocc, struct stid_po *po)
       {
          e = &pocc.events[i][j];
          other = e->pre_other ();
-         printf ("stid_convert_po: eventt %18p other %18p\n", e, other);
+         //printf ("stid_convert_po: eventt %18p other %18p\n", e, other);
 
          da_i (p[i], j, struct stid_event).act.type = _stid_convert_act_type (e->act.type);
          da_i (p[i], j, struct stid_event).act.addr = e->act.addr;
@@ -401,6 +419,35 @@ int stid_po_print (const struct stid_po *po)
 
    printf ("== po exec end ==\n");
    return 0; 
+}
+
+int stid_po_term (struct stid_po *po)
+{
+   delete po;
+   return 0;
+}
+
+int stid_cmd (struct stid *s, int cmd, void *arg1, void *arg2, void *arg3)
+{
+   switch (cmd)
+   {
+   case STID_CMD1 :
+   {
+      // print the sequential stream of actions and the replay
+      action_streamt stream (s->e->get_trace ());
+      stream.print ((int) * (int*) arg1);
+      stream.print_replay ();
+      // print the partial order
+      conft pocc (stream);
+      pocc.build ();
+      pocc.print (); 
+      return 0;
+   }
+  
+   default :
+      ASSERT (0);
+   }
+   return 0;
 }
 
 int stid_test ()

@@ -10,8 +10,7 @@ eventt::eventt (int num_ths, unsigned sidx) :
    redbox (),
    vclock (num_ths)
 {
-   printf ("stid: po: eventt: ctor: this %p sidx %u num %d (bot)\n",
-         this, sidx, num_ths);
+   //printf ("stid: po: eventt: ctor: this %p sidx %u num %d (bot)\n", this, sidx, num_ths);
 }
 
 eventt::eventt (unsigned sidx, eventt &creat, unsigned p) :
@@ -22,8 +21,7 @@ eventt::eventt (unsigned sidx, eventt &creat, unsigned p) :
    redbox (),
    vclock (creat.vclock)
 {
-   printf ("stid: po: eventt: ctor: this %p sidx %u creat %p proc %u\n",
-         this, sidx, &creat, p);
+   //printf ("stid: po: eventt: ctor: this %p sidx %u creat %p proc %u\n", this, sidx, &creat, p);
    ASSERT (creat._tid < p);
    ASSERT (vclock[p] == 0); // my clock should be zero so far!
 
@@ -38,8 +36,7 @@ eventt::eventt (unsigned sidx, actiont ac, eventt &p) :
    redbox (),
    vclock (p.vclock)
 {
-   printf ("stid: po: eventt: ctor: this %p sidx %u ac.type %s pre %p\n",
-         this, sidx, actiont_type_str(ac.type), &p);
+   //printf ("stid: po: eventt: ctor: this %p sidx %u ac.type %s pre %p\n", this, sidx, actiont_type_str(ac.type), &p);
    vclock[_tid] += 2; // the +1 is the redbox events
 }
 
@@ -51,8 +48,7 @@ eventt::eventt (unsigned sidx, actiont ac, eventt &p, eventt &m) :
    redbox (),
    vclock (p.vclock, m.vclock) // must come after constructing _pre_other
 {
-   printf ("stid: po: eventt: ctor: this %p sidx %u ac.type %s pre %p other %p\n",
-         this, sidx, actiont_type_str(ac.type), &p, &m);
+   //printf ("stid: po: eventt: ctor: this %p sidx %u ac.type %s pre %p other %p\n", this, sidx, actiont_type_str(ac.type), &p, &m);
    vclock[_tid] += 2; // the +1 is the redbox events
 }
 
@@ -63,11 +59,11 @@ unsigned eventt::idx (const conft &c) const
 
 void eventt::print (const conft &c) const
 {
-   printf (" eventt this %18p tid %2d sidx %10d pos %4u ac.type %s |red| %10lu pre_proc %18p pre_mem %18p\n",
+   printf (" Event %4u this %18p tid %2d sidx %10d ac.type %s |red| %10lu pproc %18p pmem %18p\n",
+         idx (c),
          this,
          _tid,
          _sidx,
-         idx (c),
          actiont_type_str (act.type),
          redbox.size (),
          pre_proc (),

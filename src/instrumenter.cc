@@ -40,8 +40,7 @@ bool Instrumenter::instrument (llvm::Module &m)
    {
       if (is_rt_fun (&f) or f.isDeclaration ()) continue;
 
-      DEBUG ("stid: instrumenter: === at fun %s",
-            f.getName().str().c_str());
+      //DEBUG ("stid: instrumenter: === at fun %s", f.getName().str().c_str());
 
       // instrument the CALL event at the beginning of the entry block
       llvm::IRBuilder<> b (&f.getEntryBlock ().front());
@@ -50,7 +49,7 @@ bool Instrumenter::instrument (llvm::Module &m)
       // visit all instructions and instrument appropriately
       count = 0;
       visit (f);
-      DEBUG ("stid: instrumenter: done, %d instructions instrumented", count);
+      //DEBUG ("stid: instrumenter: done, %d instructions instrumented", count);
    }
 
    // check that we didn't do anything stupid

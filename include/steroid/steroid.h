@@ -29,6 +29,9 @@ extern "C" {
 #define STID_CALL       12
 #define STID_RET        13
 
+// see code
+#define STID_CMD1       0
+
 /* error codes
  * - 0 return code : ok
  * - non-zero return code : error
@@ -106,6 +109,9 @@ const char *stid_action_type2str (int a);
 // testing
 int stid_test ();
 int stid_test_checker ();
+
+// arbitrary commands to the internals of the steroids engine
+int stid_cmd (struct stid *s, int cmd, void *arg1, void *arg2, void *arg3);
 
 #ifdef __cplusplus
 } // extern "C"

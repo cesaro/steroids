@@ -44,6 +44,11 @@ $(TOOLS_TEST_TARGETS) : $(TOOLS_TEST_OBJS) $(TOOLS_TEST_MOBJS) src/libsteroids.a
 	@echo "LD  $@"
 	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS) src/libsteroids.a
 
+$(TOOLS_STID_TARGETS) : $(TOOLS_STID_OBJS) $(TOOLS_STID_MOBJS) src/libsteroids.a
+	@echo "LD  $@"
+	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS) src/libsteroids.a
+
+
 $(RT_TARGETS) : $(RT_OBJS) $(RT_MOBJS)
 	@echo "LD  $@"
 	@llvm-link-$(LLVMVERS) -S -o $@ $^

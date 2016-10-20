@@ -316,7 +316,7 @@ const char *action_stream_itt::str ()
 }
 
 
-void action_streamt::print () const
+void action_streamt::print (int limit) const
 {
    // iterate throught the actions
    unsigned i = 0;
@@ -353,6 +353,11 @@ void action_streamt::print () const
       if (ac.type() == RT_THCTXSW) tid = ac.id();
       printf ("%05u %2d: %s\n", i, tid, ac.str());
       i++;
+      if (limit > 0 and i > limit)
+      {
+         printf ("... (skipping remaining actions until the end)\n");
+         break;
+      }
 #if 0
       // for efficiency purposes ac has type "action_stream_itt" rather than
       // "actiont"

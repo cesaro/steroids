@@ -58,7 +58,7 @@ public:
       { return rt; }
    inline size_t size () const
       { return rt->trace.size; }
-   void print () const;
+   void print (int limit = -1) const;
    std::vector<int> get_replay ();
    void             print_replay ();
 

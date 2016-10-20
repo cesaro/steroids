@@ -412,9 +412,13 @@ void test6 ()
    //s1.diff (s2, action_stream2t::optt::SPOT_FIRST);
    s1.diff (s2, action_stream2t::optt::FULL);
 
+   // build a po and print it
+   conft po (actions);
+   po.build ();
+   po.print ();
+
    fflush (stdout);
    fflush (stderr);
    return;
-
 }
 
