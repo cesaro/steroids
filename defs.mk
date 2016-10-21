@@ -58,7 +58,7 @@ TOOLS_STID_TARGETS:=$(TOOLS_STID_MOBJS:.o=)
 
 
 # ### rt ###
-RT_SRCS:=$(wildcard rt/main.c rt/lsd.c rt/*.s)
+RT_SRCS:=$(wildcard rt/main.c rt/lsd.c rt/verifier.c rt/*.s)
 #RT_SRCS:=$(wildcard rt/*.c rt/*.s)
 RT_MSRCS:=
 RT_OBJS:=$(patsubst %.c,%.ll,$(patsubst %.s,%.ll,$(RT_SRCS)))

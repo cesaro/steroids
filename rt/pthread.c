@@ -121,6 +121,13 @@ int   _rt_pthread_create(pthread_t *tid,
    rt->trace.num_blue[TID(me)]++;
 
    // consume one event in the replay sequence
+   if (*rt->replay.current == 0)
+   {
+      // FIXME - in the future, weaken the assumptions about the replay
+      printf ("stid: rt: threading: unlock: t%d: end of replay, hack +1!\n",
+            TID(me));
+      *rt->replay.current += 1;
+   }
    ASSERT (*rt->replay.current != 0); // -1 for free mode or positive, not zero
    if (*rt->replay.current > 0) *rt->replay.current -= 1;
    return 0;
@@ -381,6 +388,13 @@ int   _rt_pthread_mutex_unlock(pthread_mutex_t *m)
    rt->trace.num_blue[TID(me)]++;
 
    // consume one event in the replay sequence
+   if (*rt->replay.current == 0)
+   {
+      // FIXME - in the future, weaken the assumptions about the replay
+      printf ("stid: rt: threading: unlock: t%d: end of replay, hack +1!\n",
+            TID(me));
+      *rt->replay.current += 1;
+   }
    ASSERT (*rt->replay.current != 0); // -1 for free mode or positive, not zero
    if (*rt->replay.current > 0) *rt->replay.current -= 1;
    return ret;
