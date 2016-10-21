@@ -213,6 +213,13 @@ void  _rt_pthread_exit(void *retval)
    me->flags.alive = 0;
 
    // consume one event in the replay sequence
+   if (*rt->replay.current == 0)
+   {
+      // FIXME - in the future, weaken the assumptions about the replay
+      printf ("stid: rt: threading: unlock: t%d: end of replay, hack +1!\n",
+            TID(me));
+      *rt->replay.current += 1;
+   }
    ASSERT (*rt->replay.current == 1 || *rt->replay.current == -1);
    if (*rt->replay.current == 1) *rt->replay.current = 0;
 
