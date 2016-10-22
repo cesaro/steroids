@@ -96,11 +96,11 @@ int   _rt_pthread_create(pthread_t *tid,
 
    // get space for the stack and tell NPTL about it, setting the attr
    // structure. FIXME - we are not supposed to do this!!
-   ret = _rt_thread_stack_alloc (t, (pthread_attr_t *) attr);
+   ret = __rt_thread_stack_alloc (t, (pthread_attr_t *) attr);
    if (ret) goto err_stack_alloc;
 
    // start the thread
-   ret = pthread_create (tid, attr, _rt_thread_start, t);
+   ret = pthread_create (tid, attr, __rt_thread_start, t);
    if (ret) goto err_create;
    t->tid = *tid;
 
@@ -133,7 +133,7 @@ int   _rt_pthread_create(pthread_t *tid,
    return 0;
 
 err_create:
-   _rt_thread_stack_free (t); // deallocate the stack
+   __rt_thread_stack_free (t); // deallocate the stack
 err_stack_alloc:
    if (need_destroy) pthread_attr_destroy (&attr2); // ignore possible error
 err_attr_init:
@@ -174,9 +174,9 @@ int   _rt_pthread_join(pthread_t t, void **retval)
       ret = pthread_join (t, (void *) &other);
    } else {
       // we ran out of events, context switch, join, and consume one
-      _rt_thread_protocol_yield (me);
+      __rt_thread_protocol_yield (me);
       ret = pthread_join (t, (void *) &other);
-      _rt_thread_protocol_wait (me, 0);
+      __rt_thread_protocol_wait (me, 0);
    }
 
    // possibly return with error
@@ -234,7 +234,7 @@ void  _rt_pthread_exit(void *retval)
    // FIXME - free the stack!!!
 
    // exit protocol: we release the cs mutex
-   _rt_thread_protocol_yield (me);
+   __rt_thread_protocol_yield (me);
 
    // terminate this thread and return retval
    pthread_exit (me);
@@ -355,8 +355,8 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
    else if (*rt->replay.current == 0)
    {
       // replay mode: switch to the other thread, re-acquire cs and lock
-      _rt_thread_protocol_yield (me);
-      ret = _rt_thread_protocol_wait (me, m);
+      __rt_thread_protocol_yield (me);
+      ret = __rt_thread_protocol_wait (me, m);
       if (*rt->replay.current != -1)
       {
          ret = pthread_mutex_lock (m);
@@ -366,9 +366,9 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
    {
       // free mode: easy
       ASSERT (*rt->replay.current == -1);
-      _rt_thread_protocol_yield (me);
+      __rt_thread_protocol_yield (me);
       ret = pthread_mutex_lock (m);
-      _rt_thread_protocol_wait (me, 0);
+      __rt_thread_protocol_wait (me, 0);
    }
 
    // log the event (only after actually locking m!), consume 1 from replay
@@ -520,10 +520,10 @@ void  _rt_thread_init (void)
 
    // initialize main's conditional variable
 
-   _rt_thread_protocol_wait_first ();
+   __rt_thread_protocol_wait_first ();
 }
 
-void  _rt_thread_term (void)
+void  __rt_thread_term (void)
 {
    int ret;
 
@@ -553,7 +553,7 @@ void  _rt_thread_term (void)
    //rt->trace.num_mutex = 0;
 
    // release the cs mutex (no other thread can acquire it)
-   _rt_thread_protocol_yield (__rt_thst.current);
+   __rt_thread_protocol_yield (__rt_thst.current);
 
 
    // destroy the cs mutex
@@ -566,7 +566,7 @@ void  _rt_thread_term (void)
    }
 }
 
-void *_rt_thread_start (void *arg)
+void *__rt_thread_start (void *arg)
 {
    struct rt_tcb *t = (struct rt_tcb *) arg;
    void *ret;
@@ -574,7 +574,7 @@ void *_rt_thread_start (void *arg)
    printf ("stid: rt: threading: start: t%d: starting!\n", TID (t));
 
    // start protocol: we wait to get our context switch
-   _rt_thread_protocol_wait (t, 0);
+   __rt_thread_protocol_wait (t, 0);
 
    // generate the THSTART blue action
    if (*rt->replay.current >= 0) *rt->replay.current -= 1;
@@ -589,7 +589,7 @@ void *_rt_thread_start (void *arg)
    return ret; // unreachable
 }
 
-void _rt_thread_protocol_wait_first ()
+void __rt_thread_protocol_wait_first ()
 {
    int ret;
 
@@ -598,7 +598,7 @@ void _rt_thread_protocol_wait_first ()
    if (ret != 0)
    {
       PRINT ("error: t0: acquiring internal mutex: %s", strerror (ret));
-      _rt_cend (255);
+      __rt_cend (255);
    }
    printf ("stid: rt: threading: proto: t0: acquired cs lock\n");
 
@@ -619,7 +619,7 @@ void _rt_thread_protocol_wait_first ()
    rt->trace.num_blue[0]++;
 }
 
-int _rt_thread_protocol_wait (struct rt_tcb *t, pthread_mutex_t *m)
+int __rt_thread_protocol_wait (struct rt_tcb *t, pthread_mutex_t *m)
 {
    int ret;
 
@@ -634,7 +634,7 @@ int _rt_thread_protocol_wait (struct rt_tcb *t, pthread_mutex_t *m)
       // when called from pthread_mutex_lock: avoid deadlock when transitioning
       // from replay to free mode (to understand the proble, remove this call,
       // modify in _rt_pthread_mutex_lock, and run main8 from hello.c)
-      if (m && *rt->replay.current == -1) return _rt_thread_protocol_wait2 (t, m);
+      if (m && *rt->replay.current == -1) return __rt_thread_protocol_wait2 (t, m);
 
       // we gained exclusive access of the cs mutex, we should continue
       // executing user code iff
@@ -680,14 +680,14 @@ int _rt_thread_protocol_wait (struct rt_tcb *t, pthread_mutex_t *m)
 err_wait :
    PRINT ("error: t%d: waiting on conditional variable: %s",
          TID (t), strerror (ret));
-   _rt_cend (255);
+   __rt_cend (255);
 err_panic :
    PRINT ("error: t%d: acquiring cs mutex: %s", TID (t), strerror (ret));
-   _rt_cend (255);
+   __rt_cend (255);
    return 0; // unreachable
 }
 
-int _rt_thread_protocol_wait2 (struct rt_tcb *t, pthread_mutex_t *m)
+int __rt_thread_protocol_wait2 (struct rt_tcb *t, pthread_mutex_t *m)
 {
    int ret, ret2;
 
@@ -727,11 +727,11 @@ int _rt_thread_protocol_wait2 (struct rt_tcb *t, pthread_mutex_t *m)
 
 err_panic :
    PRINT ("error: t%d: acquiring cs mutex: %s", TID (t), strerror (ret));
-   _rt_cend (255);
+   __rt_cend (255);
    return 0; // unreachable
 }
 
-void _rt_thread_protocol_yield (struct rt_tcb *t)
+void __rt_thread_protocol_yield (struct rt_tcb *t)
 {
    int i, ret;
 
@@ -776,16 +776,16 @@ void _rt_thread_protocol_yield (struct rt_tcb *t)
    if (ret != 0)
    {
       PRINT ("error: t%d: releasing internal mutex: %s", TID (t), strerror (ret));
-      _rt_cend (255);
+      __rt_cend (255);
    }
    return;
 
 err_cond :
    PRINT ("error: t%d: signal for t%d: %s", TID (t), i, strerror (ret));
-   _rt_cend (255);
+   __rt_cend (255);
 }
 
-int _rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr)
+int __rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr)
 {
    int ret;
 
@@ -807,13 +807,13 @@ int _rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr)
    return 0;
 
 err_setstack:
-   _rt_thread_stack_free (t->stackaddr);
+   __rt_thread_stack_free (t->stackaddr);
 err_malloc:
 err_getstack:
    return ret;
 }
 
-void  _rt_thread_stack_free (struct rt_tcb *t)
+void  __rt_thread_stack_free (struct rt_tcb *t)
 {
    _rt_free (t->stackaddr);
 }

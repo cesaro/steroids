@@ -35,9 +35,6 @@ private:
    llvm::Function *store_post;
 
    llvm::Function *allo;
-   llvm::Function *mllo;
-   llvm::Function *rllo;
-   llvm::Function *free;
    llvm::Function *call;
    llvm::Function *ret;
 

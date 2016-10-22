@@ -75,24 +75,21 @@ bool Instrumenter::instrument (llvm::Module &m)
 
 bool Instrumenter::find_rt ()
 {
-   load_pre  = m->getFunction ("_rt_load_pre");
-   load_post = m->getFunction ("_rt_load_post");
-   store_pre  = m->getFunction ("_rt_store_pre");
-   store_post = m->getFunction ("_rt_store_post");
+   load_pre  = m->getFunction ("__rt_load_pre");
+   load_post = m->getFunction ("__rt_load_post");
+   store_pre  = m->getFunction ("__rt_store_pre");
+   store_post = m->getFunction ("__rt_store_post");
 
-   allo = m->getFunction ("_rt_allo");
-   mllo = m->getFunction ("_rt_mllo");
-   rllo = m->getFunction ("_rt_rllo");
-   free = m->getFunction ("_rt_fre");
-   call = m->getFunction ("_rt_call");
-   ret  = m->getFunction ("_rt_ret");
+   allo = m->getFunction ("__rt_allo");
+   call = m->getFunction ("__rt_call");
+   ret  = m->getFunction ("__rt_ret");
 
    return load_pre != nullptr and store_post != nullptr;
 }
 
 bool Instrumenter::is_rt_fun (llvm::Function *f)
 {
-   return f->getName().startswith ("_rt_");
+   return f->getName().startswith ("_rt_") or f->getName().startswith ("__rt_");
    #if 0
          or
          f->getName().equals ("free") or
@@ -161,8 +158,8 @@ void Instrumenter::init_maps ()
       if (not g.hasExternalLinkage()) continue;
       //llvm::outs() << g << "\n";
 
-      llvm::Function *f1 = m->getFunction("_rt_var_load_" + g.getName().str());
-      llvm::Function *f2 = m->getFunction ("_rt_var_store_" + g.getName().str());
+      llvm::Function *f1 = m->getFunction("__rt_var_load_" + g.getName().str());
+      llvm::Function *f2 = m->getFunction ("__rt_var_store_" + g.getName().str());
       if (f1 and f2)
       {
          substmap_loads[&g] = f1;

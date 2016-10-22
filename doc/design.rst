@@ -1,8 +1,15 @@
 
 Design notes
 
+Runtime
+-------
+
+- _rt_XXX functions are public, will hook functions named XXX
+- __rt_* are private, the instrumenter will skip them, but they never substitute
+  a call to _rt_* or something
+
 Instrumentation
-===============
+---------------
 
 - events
 - structure rt
@@ -13,8 +20,10 @@ Instrumentation
   static const uint64_t evend;
 
 - format of the event stream; at least 1 available
-- _rt_storexx instrumented before the store; will stop execution if OOM fault
+- __rt_{store,load}_pre instrumented before the store; will stop execution if OOM fault
   and record one event
+- then the store or the load
+- then a call to __rt_{store,load}_post
 
 
 To do

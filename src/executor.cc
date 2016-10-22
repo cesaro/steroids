@@ -157,7 +157,7 @@ void Executor::initialize_and_instrument_rt ()
    rt.replay.tab[0] = -1; // we start in free mode
    rt.replay.size = 1;
 
-   // function _rt_start will save here the hosts's stack pointer
+   // function __rt_start will save here the hosts's stack pointer
    rt.host_rsp = 0;
 
    // instrument the module to use this->rt as state
@@ -180,7 +180,7 @@ void Executor::initialize_and_instrument_rt ()
    for (auto &p : pairs)
    {
       g = m->getGlobalVariable (p.first, true);
-      if (!g) throw std::runtime_error ("Executor: input missing runtime: xx");
+      if (!g) throw std::runtime_error ("Executor: input missing runtime: mem{start,end} variables missing");
       g->setInitializer (llvm::ConstantInt::get
             (llvm::Type::getInt64Ty (ctx), p.second));
       s.clear();
@@ -218,11 +218,11 @@ void Executor::jit_compile ()
 
    // ask LLVM to JIT the program
    ee->finalizeObject ();
-   ptr = (void *) ee->getFunctionAddress ("_rt_start");
+   ptr = (void *) ee->getFunctionAddress ("__rt_start");
    entry = (int (*) (int, const char* const*, const char* const*)) ptr;
    if (entry == 0)
    {
-      throw std::runtime_error ("Executor: cannot find entry symbol (_rt_start) after JIT compilation");
+      throw std::runtime_error ("Executor: cannot find entry symbol (__rt_start) after JIT compilation");
    }
 
    // allocation of the data segments takes place in finalizeObject(), so we
@@ -231,7 +231,7 @@ void Executor::jit_compile ()
    rt.heap.end = rt.stacks.begin;
    rt.heap.size = rt.heap.end - rt.heap.begin;
 
-   DEBUG ("stid: executor: done, entry function (_rt_start) at %p", entry);
+   DEBUG ("stid: executor: done, entry function (__rt_start) at %p", entry);
 
    //DEBUG ("stid: executor: rt       %18p", &rt);
    //DEBUG ("stid: executor: memstart %18p", rt.mem.begin);

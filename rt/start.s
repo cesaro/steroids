@@ -3,18 +3,16 @@
 .text
 
 # exported symbols
-.globl _rt_start  # void _rt_start (int argc, char **argv)
-.globl _rt_end	   # void _rt_end (void)
-.type  _rt_start, @function
-.type  _rt_end,   @function
+.globl __rt_start  # void __rt_start (int argc, char **argv)
+.globl __rt_end    # void __rt_end (void)
+.type  __rt_start, @function
+.type  __rt_end,   @function
 
-_rt_start :
+__rt_start :
    # at this point the parameters are like this:
    # argc = %edi (32 bits)
    # argv = %rsi (64 bits)
    # env  = %rdx (64 bits)
-
-   #jmp _rt_main
 
    # push calle-save registers to the host's stack
    push %rbx
@@ -30,9 +28,9 @@ _rt_start :
    mov  %rdx, %r15 # env
 
    # save the current stack pointer at rt.host_rsp using the function
-   # _rt_save_host_rsp below (in ah.c)
+   # __rt_save_host_rsp below (in ah.c)
    mov  %rsp, %rdi
-   call _rt_save_host_rsp
+   call __rt_save_host_rsp
 
    # set up a temporary stack starting from the upper limit of the guest memory
    # (gas treats any undefined symbol as external)
@@ -47,18 +45,18 @@ _rt_start :
    mov  %r13, %rdi # argc
    mov  %r14, %rsi # argv
    mov  %r15, %rdx # env
-	call _rt_mainn
+	call __rt_mainn
 
 	# save return value (exit code) and fall through the exit routine _rt_end
    mov  %rax, %rdi
 
-_rt_end :
+__rt_end :
 	# make sure we have a correctly aligned stack; save exit code in rbx
    andq $-16, %rsp
    mov  %rdi, %rbx
    
    # restore the host stack
-   call _rt_get_host_rsp
+   call __rt_get_host_rsp
    mov  %rax, %rsp
 
    # save exit code in %rax and restore calle-save registers from the host's

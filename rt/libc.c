@@ -6,30 +6,30 @@
 
 #define ALIGN16(i) (((uint64_t) (i)) & 0xf ? (((uint64_t) (i)) + 16) & -16ul : (uint64_t) (i))
 
-int _rt_errno = 0;
+static int __rt_errno = 0;
 // unistd.h
 
 static uint64_t __malloc_ptr;
 
-void _rt_libc_init ()
+void __rt_libc_init ()
 {
-   _rt_mm_init ();
-   _rt_thread_init ();
+   __rt_mm_init ();
+   __rt_thread_init ();
 }
 
-void _rt_libc_term ()
+void __rt_libc_term ()
 {
-   _rt_thread_term ();
-   _rt_mm_term ();
+   __rt_thread_term ();
+   __rt_mm_term ();
 }
 
-void _rt_mm_init ()
+void __rt_mm_init ()
 {
    printf ("stid: rt: mm: initializing memory manager\n");
    __malloc_ptr = (uint64_t) rt->heap.begin;
 }
 
-void _rt_mm_term ()
+void __rt_mm_term ()
 {
    printf ("stid: rt: mm: terminating memory manager\n");
 }
@@ -78,15 +78,15 @@ void *_rt_realloc (void *ptr, size_t size)
    return newptr;
 }
 
-void (*_rt_atexit_table[RT_MAX_ATEXIT_FUNS]) (void);
-int _rt_atexit_size = 0;
+void (*__rt_atexit_table[RT_MAX_ATEXIT_FUNS]) (void);
+int __rt_atexit_size = 0;
 
 int _rt_atexit (void (* fun) (void))
 {
    printf ("stid: rt: atexit: fun %p\n", fun);
-   ASSERT (_rt_atexit_size < RT_MAX_ATEXIT_FUNS);
-   _rt_atexit_table[_rt_atexit_size] = fun;
-   _rt_atexit_size++;
+   ASSERT (__rt_atexit_size < RT_MAX_ATEXIT_FUNS);
+   __rt_atexit_table[__rt_atexit_size] = fun;
+   __rt_atexit_size++;
    return 0;
 }
 
@@ -98,7 +98,7 @@ void _rt_exit (int status)
 
    DEBUG ("hereeeeee");
    // call atexit(3) functions
-   for (i = _rt_atexit_size - 1; i >= 0; i--) _rt_atexit_table[i] ();
+   for (i = __rt_atexit_size - 1; i >= 0; i--) __rt_atexit_table[i] ();
    DEBUG ("and heeeeeeeeeereeeeee");
    _rt__exit (status);
 }
@@ -109,7 +109,7 @@ void _rt_abort ()
    // the conditional variable, etc...
    printf ("stid: rt: abort: called!!!!!\n");
    // we return control immediately to the host
-   _rt_cend (253);
+   __rt_cend (253);
 }
 
 void _rt__exit (int status)
@@ -127,7 +127,7 @@ void _rt__exit (int status)
       PRINT ("t%d: called exit: not currently supported by the runtime",
             TID (__rt_thst.current) != 0);
       ASSERT (0);
-      _rt_panic ();
+      __rt_panic ();
    }
 
    // log the EXIT event for the calling thread (will be main at this point)
@@ -147,7 +147,7 @@ void _rt__exit (int status)
    }
 
    // return control to the host
-   _rt_cend (status);
+   __rt_cend (status);
 }
 
 unsigned int _rt_sleep (unsigned int sec)
@@ -155,9 +155,9 @@ unsigned int _rt_sleep (unsigned int sec)
    //struct rt_tcb *me = __rt_thst.current;
    unsigned ret;
 
-   //_rt_thread_protocol_yield (me);
+   //__rt_thread_protocol_yield (me);
    ret = sleep (sec);
-   //_rt_thread_protocol_wait (me);
+   //__rt_thread_protocol_wait (me);
    return ret;
 }
 
@@ -166,108 +166,108 @@ int _rt_usleep (useconds_t us)
    //struct rt_tcb *me = __rt_thst.current;
    unsigned ret;
 
-   //_rt_thread_protocol_yield (me);
+   //__rt_thread_protocol_yield (me);
    ret = usleep (us);
-   //_rt_thread_protocol_wait (me);
+   //__rt_thread_protocol_wait (me);
    return ret;
 }
 
 int *_rt___errno_location ()
 {
-   _rt_errno = *__errno_location (); // in glibc !!
+   __rt_errno = *__errno_location (); // in glibc !!
    printf ("stid: rt: errno_location: called\n");
-   return &_rt_errno;
+   return &__rt_errno;
 }
 
 // stdin
-extern inline FILE *_rt_var_load_stdin () {
+extern inline FILE *__rt_var_load_stdin () {
    return stdin;
 }
 
-extern inline void _rt_var_store_stdin (FILE *f)
+extern inline void __rt_var_store_stdin (FILE *f)
 {
    stdin = f;
 }
 
 // stdout
-extern inline FILE *_rt_var_load_stdout ()
+extern inline FILE *__rt_var_load_stdout ()
 {
    return stdout;
 }
 
-extern inline void _rt_var_store_stdout (FILE *f)
+extern inline void __rt_var_store_stdout (FILE *f)
 {
    stdout = f;
 }
 
 // stderr
-extern inline FILE *_rt_var_load_stderr ()
+extern inline FILE *__rt_var_load_stderr ()
 {
    return stderr;
 }
 
-extern inline void _rt_var_store_stderr (FILE *f)
+extern inline void __rt_var_store_stderr (FILE *f)
 {
    stderr = f;
 }
 
 // optarg
-extern inline char *_rt_var_load_optarg ()
+extern inline char *__rt_var_load_optarg ()
 {
    return optarg;
 }
 
-extern inline void _rt_var_store_optarg (char *c)
+extern inline void __rt_var_store_optarg (char *c)
 {
    optarg = c;
 }
 
 // optind
-extern inline int _rt_var_load_optind ()
+extern inline int __rt_var_load_optind ()
 {
    return optind;
 }
 
-extern inline void _rt_var_store_optind (int i)
+extern inline void __rt_var_store_optind (int i)
 {
    optind = i;
 }
 
 // opterr
-extern inline int _rt_var_load_opterr ()
+extern inline int __rt_var_load_opterr ()
 {
    return opterr;
 }
 
-extern inline void _rt_var_store_opterr (int i)
+extern inline void __rt_var_store_opterr (int i)
 {
    opterr = i;
 }
 
 // optopt
-extern inline int _rt_var_load_optopt ()
+extern inline int __rt_var_load_optopt ()
 {
    return optopt;
 }
 
-extern inline void _rt_var_store_optopt (int i)
+extern inline void __rt_var_store_optopt (int i)
 {
    optopt = i;
 }
 
-extern inline char* _rt_var_load_program_invocation_name ()
+extern inline char* __rt_var_load_program_invocation_name ()
 {
    return program_invocation_name;
 }
-extern inline void _rt_var_store_program_invocation_name (char *n)
+extern inline void __rt_var_store_program_invocation_name (char *n)
 {
    program_invocation_name = n;
 }
-extern inline char* _rt_var_load_program_invocation_short_name ()
+extern inline char* __rt_var_load_program_invocation_short_name ()
 {
    return program_invocation_short_name;
 }
-extern inline void _rt_var_store_program_invocation_short_name (char *n)
+extern inline void __rt_var_store_program_invocation_short_name (char *n)
 {
    program_invocation_short_name = n;
 }

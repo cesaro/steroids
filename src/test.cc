@@ -373,8 +373,7 @@ void test6 ()
    // prepare arguments for the program
    //e.argv.push_back ("sssseq");
    e.argv.push_back ("sssort");
-   e.argv.push_back ("1");
-   e.argv.push_back ("5");
+   e.argv.push_back ("f");
    //e.argv.push_back ("/tmp/dme3.ll_net");
    //e.argv.push_back ("-i");
    e.envp.push_back ("HOME=/home/cesar");
@@ -397,6 +396,7 @@ void test6 ()
    actions.print_replay ();
    std::vector<int> replay = actions.get_replay ();
 
+   printf ("exitinggggggggggggggggg!\n");
    fflush (stdout);
    fflush (stderr);
    return;

@@ -172,14 +172,14 @@ int   _rt_pthread_getcpuclockid(pthread_t, clockid_t *);
 int   _rt_pthread_atfork(void (*)(void), void (*)(void), void(*)(void));
 
 // internal
-void  _rt_thread_init (void);
-void  _rt_thread_term (void);
-void *_rt_thread_start (void *arg);
-int    _rt_thread_protocol_wait (struct rt_tcb *t, pthread_mutex_t *m);
-int    _rt_thread_protocol_wait2 (struct rt_tcb *t, pthread_mutex_t *m);
-void  _rt_thread_protocol_wait_first ();
-void  _rt_thread_protocol_yield (struct rt_tcb *t);
-int   _rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr);
-void  _rt_thread_stack_free (struct rt_tcb *t);
+void  __rt_thread_init (void);
+void  __rt_thread_term (void);
+void *__rt_thread_start (void *arg);
+int   __rt_thread_protocol_wait (struct rt_tcb *t, pthread_mutex_t *m);
+int   __rt_thread_protocol_wait2 (struct rt_tcb *t, pthread_mutex_t *m);
+void  __rt_thread_protocol_wait_first ();
+void  __rt_thread_protocol_yield (struct rt_tcb *t);
+int   __rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr);
+void  __rt_thread_stack_free (struct rt_tcb *t);
 
 #endif

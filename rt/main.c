@@ -14,26 +14,26 @@
 
 // only the event
 #define TRACE0(e) \
-      _rt_debug_trace0 (e); \
+      __rt_debug_trace0 (e); \
       *rt->trace.evptr++   = e;
 // event + address
 #define TRACE1(e,addr) \
-      _rt_debug_trace1 (e, addr); \
+      __rt_debug_trace1 (e, addr); \
       *rt->trace.evptr++   = e; \
       *rt->trace.addrptr++ = (uint64_t) addr;
 // event + address + val
 #define TRACE2(e,addr,val) \
-      _rt_debug_trace2 (e, addr, val); \
+      __rt_debug_trace2 (e, addr, val); \
       *rt->trace.evptr++   = e; \
       *rt->trace.addrptr++ = (uint64_t) addr; \
       *rt->trace.valptr++  = val;
 // event + id
 #define TRACE3(e,id) \
-      _rt_debug_trace3 (e, id); \
+      __rt_debug_trace3 (e, id); \
       *rt->trace.evptr++   = e; \
       *rt->trace.idptr++   = id;
 #define TRACE128(e,addr,val) \
-      _rt_debug_trace128 (e, addr, val); \
+      __rt_debug_trace128 (e, addr, val); \
       *rt->trace.evptr++   = e; \
       *rt->trace.addrptr++ = (uint64_t) addr; \
       memcpy (rt->trace.valptr, &(val), 16); \

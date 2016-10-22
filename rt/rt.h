@@ -82,52 +82,46 @@ extern "C" {
 #define RT_IS_MULTIW_WR(x)    (((x) & RT_ACTION_CLASS_MASK) == RT_ACTION_CLASS_WR64)
 #define RT_MULTIW_COUNT(x)    ((x) & RT_ACTION_ID_MASK)
 
-// these two are in start.s; host should invoke _rt_start
-void _rt_start (int argc, const char * const *argv, const char * const *env);
-void _rt_end (uint32_t exitcode);
+// these two are in start.s; host should invoke __rt_start
+void __rt_start (int argc, const char * const *argv, const char * const *env);
+void __rt_end (uint32_t exitcode);
 
-// called from _rt_start, will call main()
-int _rt_mainn (int argc, const char * const *argv, const char * const *env);
+// called from __rt_start, will call main()
+int __rt_mainn (int argc, const char * const *argv, const char * const *env);
 
 // call this function to exit, with errors or normal exit
-void _rt_cend (uint32_t exitcode);
+void __rt_cend (uint32_t exitcode);
 
 // the user's main function, epic :)
 int main (int argc, char **argv, char **env);
 
 // new instrumentation for load and stores
-void _rt_store_pre  (const void *addr, uint32_t size);
-void _rt_store_post (const void *addr, uint32_t size);
-void _rt_load_pre   (const void *addr, uint32_t size);
-void _rt_load_post  (const void *addr, uint32_t size);
+void __rt_store_pre  (const void *addr, uint32_t size);
+void __rt_store_post (const void *addr, uint32_t size);
+void __rt_load_pre   (const void *addr, uint32_t size);
+void __rt_load_post  (const void *addr, uint32_t size);
 
 // memory management
-void _rt_allo (uint8_t *addr, uint32_t size);
-void _rt_call (uint16_t id);
-void _rt_ret  (uint16_t id);
-void _rt_rllo (uint8_t *old, uint8_t *neww, uint64_t size);
-void _rt_mllo (uint8_t *addr, uint64_t size); // malloc & calloc
-void _rt_fre  (uint8_t *addr);
-
-// others
-void _rt_sig  (uint32_t signal);
-void _rt_ctsw (uint32_t id);
+void __rt_allo (uint8_t *addr, uint32_t size);
+void __rt_call (uint16_t id);
+void __rt_ret  (uint16_t id);
+void __rt_fre  (uint8_t *addr);
 
 // used in start.s to access the "struct rt" in main.c
-void _rt_save_host_rsp (uint64_t rsp);
-uint64_t _rt_get_host_rsp ();
+void __rt_save_host_rsp (uint64_t rsp);
+uint64_t __rt_get_host_rsp ();
 
 // stop execution, print an error and enter an infinite loop
-void _rt_panic ();
+void __rt_panic ();
 
 
 // libc (internal)
-void _rt_libc_init ();
-void _rt_libc_term ();
+void __rt_libc_init ();
+void __rt_libc_term ();
 
 // stdlib.h
-void _rt_mm_init (); // internal
-void _rt_mm_term (); // internal
+void __rt_mm_init (); // internal
+void __rt_mm_term (); // internal
 void *_rt_malloc  (size_t size);
 void  _rt_free    (void *ptr);
 void *_rt_realloc (void *ptr, size_t size);
@@ -205,7 +199,7 @@ struct rt
 // static const uint64_t evend;
 // static struct rt * const rt;
 
-static inline const char *_rt_action_to_str (uint8_t a)
+static inline const char *__rt_action_to_str (uint8_t a)
 {
    static char str[20];
 

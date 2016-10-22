@@ -238,7 +238,7 @@ bool action_stream_itt::has_id ()
 const char *action_stream_itt::str ()
 {
    static char str[128];
-   const char *action = _rt_action_to_str (type ());
+   const char *action = __rt_action_to_str (type ());
    const char *eq = "";
    int a = type ();
 
@@ -543,8 +543,8 @@ idx %-13zu type %-18s type %-18s %s
                   addr %-#18lx addr %-#18lx %s
 )XX",
                i,
-               _rt_action_to_str (stream[i].type),
-               _rt_action_to_str (other.stream[i].type),
+               __rt_action_to_str (stream[i].type),
+               __rt_action_to_str (other.stream[i].type),
                stream[i].type != other.stream[i].type ? "!!" : "",
                stream[i].addr, other.stream[i].addr,
                stream[i].addr != other.stream[i].addr ? "!!" : ""
