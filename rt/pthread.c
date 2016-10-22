@@ -69,7 +69,7 @@ int   _rt_pthread_create(pthread_t *tid,
    int need_destroy = 0;
    struct rt_tcb *me = __rt_thst.current;
 
-   printf ("stid: rt: threading: create: t%d: still %d events to replay\n",
+   _printf ("stid: rt: threading: create: t%d: still %d events to replay\n",
          TID(me), *rt->replay.current);
 
    // get a TCB
@@ -111,7 +111,7 @@ int   _rt_pthread_create(pthread_t *tid,
    __rt_thst.num_ths_alive++;
 
    // log the event
-   printf ("stid: rt: threading: create: t%d: new thread t%d, stack %p size %zu%s\n",
+   _printf ("stid: rt: threading: create: t%d: new thread t%d, stack %p size %zu%s\n",
          TID (me),
          TID (t),
          t->stackaddr,
@@ -166,7 +166,7 @@ int   _rt_pthread_join(pthread_t t, void **retval)
    //   this one until the other one finishes, and the cs lock will remain
    //   available for others
 
-   printf ("stid: rt: threading: join: t%d: still %d events to replay\n",
+   _printf ("stid: rt: threading: join: t%d: still %d events to replay\n",
          TID (me), *rt->replay.current);
    if (*rt->replay.current > 0)
    {
@@ -198,7 +198,7 @@ void  _rt_pthread_exit(void *retval)
    struct rt_tcb *me = __rt_thst.current;
    int ret;
 
-   printf ("stid: rt: threading: t%d: exiting!\n", TID (me));
+   _printf ("stid: rt: threading: t%d: exiting!\n", TID (me));
 
    // if we are the main thread, we exit with status 0
    // FIXME - this is strictly a violation of what POSIX says, we should wait
@@ -385,7 +385,7 @@ int   _rt_pthread_mutex_unlock(pthread_mutex_t *m)
    struct rt_tcb *me = __rt_thst.current;
    int ret;
 
-   printf ("stid: rt: threading: unlock: t%d: still %d events to replay\n",
+   _printf ("stid: rt: threading: unlock: t%d: still %d events to replay\n",
          TID (me), *rt->replay.current);
    // unlock the mutex
    ret = pthread_mutex_unlock (m);

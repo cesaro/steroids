@@ -25,13 +25,13 @@ void __rt_libc_term ()
 
 void __rt_mm_init ()
 {
-   printf ("stid: rt: mm: initializing memory manager\n");
+   //printf ("stid: rt: mm: initializing memory manager\n");
    __malloc_ptr = (uint64_t) rt->heap.begin;
 }
 
 void __rt_mm_term ()
 {
-   printf ("stid: rt: mm: terminating memory manager\n");
+   //printf ("stid: rt: mm: terminating memory manager\n");
 }
 
 void *_rt_calloc  (size_t n, size_t size)

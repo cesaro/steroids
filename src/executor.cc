@@ -259,8 +259,8 @@ void Executor::detex_init ()
 
 void Executor::detex_apply ()
 {
-   DEBUG ("stid: executor: detex: starting");
-   DEBUG ("stid: executor: detex: srand(3) seed %u", detex.rseed);
+   //DEBUG ("stid: executor: detex: starting");
+   //DEBUG ("stid: executor: detex: srand(3) seed %u", detex.rseed);
    srand (detex.rseed);
 
    // if this is the first call, we save the program data segments for tuture
@@ -281,7 +281,7 @@ void Executor::detex_apply ()
    }
 
    // we should clear memory here
-   DEBUG ("stid: executor: detex: clearing memory out...");
+   //DEBUG ("stid: executor: detex: clearing memory out...");
    memset (rt.heap.begin, 0, rt.heap.size);
    memset (rt.stacks.begin, 0, rt.stacks.size);
 
@@ -324,15 +324,15 @@ void Executor::run ()
    }
 
    // run the user program!!
-   DEBUG ("stid: executor: starting guest execution");
-   DEBUG ("stid: executor: ====================================================");
+   //DEBUG ("stid: executor: starting guest execution");
+   //DEBUG ("stid: executor: ====================================================");
    breakme ();
    exitcode = entry (argv.size(), argv.data(), envp.data());
-   DEBUG ("stid: executor: ====================================================");
-   DEBUG ("stid: executor: guest execution terminated");
+   //DEBUG ("stid: executor: ====================================================");
+   //DEBUG ("stid: executor: guest execution terminated");
    DEBUG ("stid: executor: %zu events collected, %d thread created",
          rt.trace.size, rt.trace.num_ths);
-   DEBUG ("stid: executor: exitcode %d", exitcode);
+   //DEBUG ("stid: executor: exitcode %d", exitcode);
    ASSERT (rt.trace.size == (size_t) (rt.trace.evptr - (uint8_t*) rt.trace.ev.begin));
    ASSERT (rt.trace.num_ths >= 1);
    ASSERT (rt.trace.num_ths <= RT_MAX_THREADS);

@@ -26,26 +26,26 @@ static void __rt_debug_header ()
 
 static void __rt_debug_trace0 (uint8_t a)
 {
-   //return;
+   return;
    printf ("stid: rt: %s\n", __rt_action_to_str (a));
 }
 
 static void __rt_debug_trace1 (uint8_t a, const void *addr)
 {
-   //return;
+   return;
    printf ("stid: rt: %s %18p\n", __rt_action_to_str (a), addr);
 }
 
 static void __rt_debug_trace2 (uint8_t a, const void *addr, uint64_t v)
 {
-   //return;
+   return;
    printf ("stid: rt: %s %18p %#18lx %s\n",
          __rt_action_to_str (a), addr, v, __rt_quote (v));
 }
 
 static void __rt_debug_trace3 (uint8_t a, uint16_t v)
 {
-   //return;
+   return;
    printf ("stid: rt: %s                    %#18x %s\n",
          __rt_action_to_str (a), v, __rt_quote (v));
 }
@@ -365,7 +365,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    ASSERT (sizeof (double) == 8)
    ASSERT (sizeof (long double) == 16)
 
-#if 0
+#if 1
    printf ("stid: rt: main: I feel fantastic... I feel the PUMP!\n");
    printf ("stid: rt: main: guest's address space:\n");
    __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
@@ -386,7 +386,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
       printf ("%d %d; ", rt->replay.tab[i], rt->replay.tab[i+1]);
    }
    printf ("-1\n");
-   printf ("stid: rt: main: ======================\n");
+   //printf ("stid: rt: main: ======================\n");
 
    // initialize subsystems (before this there is no guarantee that
    // std{in,out,err} are correctly initialized!!!

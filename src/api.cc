@@ -128,7 +128,7 @@ int stid_load_bytecode (struct stid *s, const char *path)
    // memory
    // FIXME - move this to a proper API for the stid struct
    ExecutorConfig conf;
-   conf.memsize = 512 << 20;
+   conf.memsize = 128 << 20;
    conf.stacksize = 16 << 20;
    conf.tracesize = 16 << 20;
 
@@ -200,8 +200,6 @@ int stid_run (struct stid *s, struct stid_replay *rep)
    {
       for (int i = 0; i < rep->tab.len; i++)
       {
-         SHOW (da_i (&rep->tab, i, struct stid_ctsw).thid, "d");
-         SHOW (da_i (&rep->tab, i, struct stid_ctsw).nrev, "d");
          replay.push_back (da_i (&rep->tab, i, struct stid_ctsw).thid);
          replay.push_back (da_i (&rep->tab, i, struct stid_ctsw).nrev);
       }
