@@ -2,6 +2,9 @@
 #include <vector>
 #include <utility>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
@@ -51,6 +54,16 @@ bool Instrumenter::instrument (llvm::Module &m)
       visit (f);
       //DEBUG ("stid: instrumenter: done, %d instructions instrumented", count);
    }
+
+#if 0
+   DEBUG ("saving...");
+   int fd = open ("cesar.ll", O_WRONLY | O_TRUNC | O_CREAT, 0644);
+   ASSERT (fd >= 0);
+   llvm::raw_fd_ostream f (fd, true);
+   f << m;
+   f.flush();
+   DEBUG ("saved!...");
+#endif
 
    // check that we didn't do anything stupid
    DEBUG ("stid: instrumenter: verifying module after instrumentation ...");
@@ -190,7 +203,7 @@ bool Instrumenter::do_external_load (llvm::LoadInst &i)
 
    call = b.CreateCall(loadfun);
    i.replaceAllUsesWith(call);
-   i.removeFromParent();
+   i.eraseFromParent();
    return true;
 }
 
@@ -252,7 +265,7 @@ bool Instrumenter::do_external_store (llvm::StoreInst &i)
    if (it == substmap_stores.end()) return false;
 
    b.CreateCall(it->second, {i.getValueOperand()});
-   i.removeFromParent();
+   i.eraseFromParent();
    return true;
 }
 

@@ -141,6 +141,9 @@ void main1 (struct opts *opts)
 
    // deallocate the po
    stid_po_term (po);
+
+   fflush (stdout);
+   fflush (stderr);
 }
 
 int main (int argc, const char **argv)

@@ -61,7 +61,7 @@ main ()
    echo "replay '$REPLAY'"
 
    echo Optimizing "$FILE"...
-   opt-3.7 -O3 $FILE > /tmp/program.bc
+   opt-3.7 -strip-debug -O3 $FILE > /tmp/program.bc
    if test $? != 0; then exit $?; fi
    llvm-dis-3.7 /tmp/program.bc
    if test $? != 0; then exit $?; fi

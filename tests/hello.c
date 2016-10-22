@@ -443,6 +443,7 @@ int main8 ()
       printf ("main: pthread_join: ret %d retval %p\n", ret, retval[i]);
    }
 
+   close (1);
    printf ("main: bye bye !\n");
    return 5656;
 }
@@ -512,6 +513,7 @@ int main9 ()
    y = x1 + x2 + 123;
 
    instr (&y, sizeof (long double));
+
    return 0;
 }
 

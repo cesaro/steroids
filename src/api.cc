@@ -128,9 +128,9 @@ int stid_load_bytecode (struct stid *s, const char *path)
    // memory
    // FIXME - move this to a proper API for the stid struct
    ExecutorConfig conf;
-   conf.memsize = 256 << 20; // 256M
-   conf.stacksize = 8 << 20; // 8M
-   conf.tracesize = 16 << 20; // 16M events (x 11 bytes per event)
+   conf.memsize = 512 << 20;
+   conf.stacksize = 16 << 20;
+   conf.tracesize = 16 << 20;
 
    DEBUG ("stid: load-bytecode: creating a bytecode executor...", s, path);
    try {

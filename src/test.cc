@@ -371,8 +371,11 @@ void test6 ()
    DEBUG ("stid: test: module saved to 'out.ll'");
 
    // prepare arguments for the program
-   e.argv.push_back ("cunf");
-   e.argv.push_back ("/tmp/dme3.ll_net");
+   //e.argv.push_back ("sssseq");
+   e.argv.push_back ("sssort");
+   e.argv.push_back ("1");
+   e.argv.push_back ("5");
+   //e.argv.push_back ("/tmp/dme3.ll_net");
    //e.argv.push_back ("-i");
    e.envp.push_back ("HOME=/home/cesar");
    e.envp.push_back ("PWD=/usr/bin");
@@ -381,7 +384,8 @@ void test6 ()
    // run the guest
    //std::vector<int> replay2 {0, 5, 2, 1, 1, 4, 0, 1, 2, 3, 0, 2, -1};
    //std::vector<int> replay2 {0, 3,  2, 1,  1, 1,  0, 2, -1};
-   std::vector<int> replay2 {0, 5,  1, 1,  2, 1,  1, 3, -1};
+   //std::vector<int> replay2 {0, 5,  1, 1,  2, 1,  1, 3, -1};
+   std::vector<int> replay2 {-1};
 
    e.set_replay (replay2.data(), (int) replay2.size());
    e.run ();
@@ -393,6 +397,20 @@ void test6 ()
    actions.print_replay ();
    std::vector<int> replay = actions.get_replay ();
 
+   fflush (stdout);
+   fflush (stderr);
+   return;
+   return;
+   return;
+   return;
+   return;
+   return;
+   return;
+   return;
+   return;
+   return;
+   return;
+   return;
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");

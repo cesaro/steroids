@@ -13,6 +13,7 @@ extern "C" {
 #define RT_MAX_THREADS 128
 #define RT_DEFAULT_STACK_SIZE (8 << 20) // 8M
 #define RT_MAX_OWNED_MUTEXES 64
+#define RT_MAX_ATEXIT_FUNS 64
 
 // event identifiers:
 // - event class: upper 3 bits
@@ -130,11 +131,13 @@ void _rt_mm_term (); // internal
 void *_rt_malloc  (size_t size);
 void  _rt_free    (void *ptr);
 void *_rt_realloc (void *ptr, size_t size);
+int   _rt_atexit (void (* fun) (void));
+void  _rt_exit (int status);
 
 // unistd.h
-void _rt_exit (int status);
+void  _rt__exit (int status);
 unsigned int _rt_sleep (unsigned int secs);
-int _rt_usleep (useconds_t us);
+int   _rt_usleep (useconds_t us);
 
 // errno.h
 int *_rt___errno_location ();

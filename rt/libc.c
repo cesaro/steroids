@@ -78,9 +78,46 @@ void *_rt_realloc (void *ptr, size_t size)
    return newptr;
 }
 
+void (*_rt_atexit_table[RT_MAX_ATEXIT_FUNS]) (void);
+int _rt_atexit_size = 0;
+
+int _rt_atexit (void (* fun) (void))
+{
+   printf ("stid: rt: atexit: fun %p\n", fun);
+   ASSERT (_rt_atexit_size < RT_MAX_ATEXIT_FUNS);
+   _rt_atexit_table[_rt_atexit_size] = fun;
+   _rt_atexit_size++;
+   return 0;
+}
+
 void _rt_exit (int status)
 {
+   int i;
+
+   printf ("stid: rt: exit: status %d\n", status);
+
+   DEBUG ("hereeeeee");
+   // call atexit(3) functions
+   for (i = _rt_atexit_size - 1; i >= 0; i--) _rt_atexit_table[i] ();
+   DEBUG ("and heeeeeeeeeereeeeee");
+   _rt__exit (status);
+}
+
+void _rt_abort ()
+{
+   // FIXME - we should check that we are called from main, we should destroy
+   // the conditional variable, etc...
+   printf ("stid: rt: abort: called!!!!!\n");
+   // we return control immediately to the host
+   _rt_cend (253);
+}
+
+void _rt__exit (int status)
+{
    int ret;
+
+   printf ("stid: rt: _exit: status %d\n", status);
+
    fflush (stdout);
    fflush (stderr);
 
@@ -138,7 +175,7 @@ int _rt_usleep (useconds_t us)
 int *_rt___errno_location ()
 {
    _rt_errno = *__errno_location (); // in glibc !!
-   printf ("stid: rt: errno_location: called !!!!!!!!!!!!!!\n");
+   printf ("stid: rt: errno_location: called\n");
    return &_rt_errno;
 }
 
@@ -216,5 +253,42 @@ extern inline int _rt_var_load_optopt ()
 extern inline void _rt_var_store_optopt (int i)
 {
    optopt = i;
+}
+
+extern inline char* _rt_var_load_program_invocation_name ()
+{
+   return program_invocation_name;
+}
+extern inline void _rt_var_store_program_invocation_name (char *n)
+{
+   program_invocation_name = n;
+}
+extern inline char* _rt_var_load_program_invocation_short_name ()
+{
+   return program_invocation_short_name;
+}
+extern inline void _rt_var_store_program_invocation_short_name (char *n)
+{
+   program_invocation_short_name = n;
+}
+
+int _rt_fclose (FILE *f)
+{
+   printf ("stid: rt: fclose: f %p (%s)\n",
+         f,
+         f == stdout ? "stdout" :
+         f == stdin ? "stdin" :
+         f == stderr ? "stderr" : "?");
+   fflush (stdout);
+   if (f == stdout || f == stdin || f == stderr) return 0; // fake!
+   return fclose (f);
+}
+
+int _rt_close (int fd)
+{
+   printf ("stid: rt: close: fd %d\n", fd);
+   fflush (stdout);
+   if (fd == 0 || fd == 1 || fd == 2) return 0; // fake !
+   return close (fd);
 }
 
