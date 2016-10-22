@@ -61,7 +61,8 @@ data SteroidReplay = SteroidReplay (DynArr SteroidCTSW)
 data SteroidReplayStruct = SteroidReplayStruct
   {
     tab :: DynArrStruct SteroidCTSW
-  } 
+  }
+  deriving Show 
 type SteroidReplayRef = Ptr SteroidReplayStruct
 
 instance Storable SteroidReplayStruct where

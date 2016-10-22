@@ -93,10 +93,12 @@ run_free stid = do
 -- Send the replay down and get a new partial order
 replay :: SteroidRef -> Replay -> Int -> IO Poset
 replay stid rep len_rep = do
+  -- print $ "low_level replay: " ++ show (rep, len_rep)
   _ <- allocaArray len_rep (\tab_ -> do
     _ <- pokeArray tab_ rep
     let da = DynArrStruct (fromIntegral len_rep) tab_ 
-        rep_struct = SteroidReplayStruct da 
+        rep_struct = SteroidReplayStruct da
+    -- print $ "low_level replay: rep_struct " ++ show rep_struct 
     _ <- alloca (\rep_ptr -> do
       _ <- poke rep_ptr rep_struct
       rRun <- stidRun stid rep_ptr

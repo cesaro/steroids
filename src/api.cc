@@ -147,6 +147,10 @@ int stid_load_bytecode (struct stid *s, const char *path)
    s->e->envp.push_back ("PWD=/usr/bin");
    s->e->envp.push_back (nullptr);
 
+   s->e->argv.push_back ("program-name");
+   s->e->argv.push_back ("argv1");
+   s->e->argv.push_back ("argv2");
+
    DEBUG ("stid: load-bytecode: saving instrumented code to /tmp/output.ll");
    _ir_write_ll (m, "/tmp/output.ll");
 
