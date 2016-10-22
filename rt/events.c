@@ -361,11 +361,11 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    ASSERT (rt->replay.tab[rt->replay.size - 1] == -1); // last is EOF
    for (i = 0; i < RT_MAX_THREADS; i++) ASSERT (rt->trace.num_blue[i] == 0);
 
-   // assert here that we did correct assumptions in __rt_{load,store}{f,d,ld}
    ASSERT (sizeof (float) == 4)
    ASSERT (sizeof (double) == 8)
    ASSERT (sizeof (long double) == 16)
 
+#if 0
    printf ("stid: rt: main: I feel fantastic... I feel the PUMP!\n");
    printf ("stid: rt: main: guest's address space:\n");
    __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
@@ -377,6 +377,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    __rt_memreg_print (&rt->trace.addr, "stid: rt: main:  ", ", event trace (64bit addr)\n");
    __rt_memreg_print (&rt->trace.val, "stid: rt: main:  ", ", event trace (64bit val)\n");
    __rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
+#endif
    printf ("stid: rt: main: replay sequence:\nstid: rt: main:  ");
    for (i = 0; rt->replay.tab[i] != -1; i += 2)
    {
@@ -410,18 +411,18 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    }
    myenv[n] = 0;
 
-   printf ("stid: rt: main: myargc %d myargv %p, myenv %p (%d)\n",
+   _printf ("stid: rt: main: myargc %d myargv %p, myenv %p (%d)\n",
          argc, myargv, myenv, n);
    for (i = 0; i < argc; i++)
-      printf ("stid: rt: main: argv[%2i] %16p '%s'\n", i, myargv[i], myargv[i]);
+      _printf ("stid: rt: main: argv[%2i] %16p '%s'\n", i, myargv[i], myargv[i]);
    for (i = 0; i <= n; i++)
-      printf ("stid: rt: main:  env[%2i] %16p '%s'\n", i, myenv[i], myenv[i]);
+      _printf ("stid: rt: main:  env[%2i] %16p '%s'\n", i, myenv[i], myenv[i]);
 
    // call main
-   printf ("stid: rt: main: calling user's main...\n");
+   _printf ("stid: rt: main: calling user's main...\n");
    __rt_debug_header ();
    ret = main (argc, myargv, myenv);
-   printf ("stid: rt: main: returned %d\n", ret);
+   _printf ("stid: rt: main: returned %d\n", ret);
 
    // do the instrumented verison of exit(3)
    _rt_exit (ret);

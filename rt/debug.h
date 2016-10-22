@@ -32,4 +32,6 @@ void breakme (void);
 	PRINT (__FILE__ ":%d: %s: " fmt, __LINE__, __func__, ##args)
 #define SHOW(expr,type)	DEBUG (#expr "='%" type "'", expr)
 
+#define _printf(fmt,args...)
+
 #endif

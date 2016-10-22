@@ -94,12 +94,10 @@ void _rt_exit (int status)
 {
    int i;
 
-   printf ("stid: rt: exit: status %d\n", status);
+   _printf ("stid: rt: exit: status %d\n", status);
 
-   DEBUG ("hereeeeee");
    // call atexit(3) functions
    for (i = __rt_atexit_size - 1; i >= 0; i--) __rt_atexit_table[i] ();
-   DEBUG ("and heeeeeeeeeereeeeee");
    _rt__exit (status);
 }
 
@@ -107,7 +105,7 @@ void _rt_abort ()
 {
    // FIXME - we should check that we are called from main, we should destroy
    // the conditional variable, etc...
-   printf ("stid: rt: abort: called!!!!!\n");
+   _printf ("stid: rt: abort: called!!!!!\n");
    // we return control immediately to the host
    __rt_cend (253);
 }
@@ -116,7 +114,7 @@ void _rt__exit (int status)
 {
    int ret;
 
-   printf ("stid: rt: _exit: status %d\n", status);
+   _printf ("stid: rt: _exit: status %d\n", status);
 
    fflush (stdout);
    fflush (stderr);
@@ -175,7 +173,7 @@ int _rt_usleep (useconds_t us)
 int *_rt___errno_location ()
 {
    __rt_errno = *__errno_location (); // in glibc !!
-   printf ("stid: rt: errno_location: called\n");
+   _printf ("stid: rt: errno_location: called\n");
    return &__rt_errno;
 }
 
