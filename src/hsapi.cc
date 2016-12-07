@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#include <steroid/util/hsapi.h>
+#include <stid/c/util/hsapi.h>
 
 // we export C bindings for this whole file
 extern "C"

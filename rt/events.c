@@ -366,7 +366,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    ASSERT (sizeof (long double) == 16)
 
 #if 1
-   printf ("stid: rt: main: I feel fantastic... I feel the PUMP!\n");
+   printf ("stid: rt: main: I feel fantaastic... I feel the PUMP!\n");
    printf ("stid: rt: main: guest's address space:\n");
    __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
    __rt_memreg_print (&rt->data, "stid: rt: main:  ", ", data (.data, .bss, .rodata, and others)\n");

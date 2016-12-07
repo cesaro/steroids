@@ -1,5 +1,6 @@
 
-#include "action_stream.hh"
+#include "stid/action_stream.hh"
+#include "verbosity.h"
 
 action_stream_itt::action_stream_itt (const action_streamt &s, bool begin) :
    trace (s.rt->trace) // we make a copy, this saves 1 memory access in future operations
@@ -91,7 +92,7 @@ action_stream_itt action_stream_itt::action_stream_itt::operator++ (int)
    return ret;
 }
 
-bool action_stream_itt::has_addr ()
+bool action_stream_itt::has_addr () const
 {
    uint8_t t = type ();
 
@@ -138,7 +139,7 @@ bool action_stream_itt::has_addr ()
    }
 }
 
-bool action_stream_itt::has_val ()
+bool action_stream_itt::has_val () const
 {
    uint8_t t = type ();
 
@@ -172,7 +173,7 @@ bool action_stream_itt::has_val ()
    }
 }
 
-bool action_stream_itt::has_id ()
+bool action_stream_itt::has_id () const
 {
    uint8_t t = type ();
 
@@ -235,7 +236,7 @@ bool action_stream_itt::has_id ()
    // MTX-UNLK 0x1122334411223344
 
 
-const char *action_stream_itt::str ()
+const char *action_stream_itt::str () const
 {
    static char str[128];
    const char *action = __rt_action_to_str (type ());
@@ -578,3 +579,4 @@ idx %-13zu type %-18s type %-18s %s
 
    printf ("== diff end ==\n");
 }
+

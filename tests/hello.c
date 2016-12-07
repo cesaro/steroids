@@ -415,7 +415,7 @@ void *thread8 (void *arg)
    return (void*) (long) 10 + i;
 }
 
-#define NR8 5
+#define NR8 1
 
 int main8 ()
 {

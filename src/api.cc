@@ -29,15 +29,13 @@
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
 
-#undef DEBUG // exported by ExecutionEngine.h
-#include "verbosity.h"
+#include "stid/c/util/hsapi.h"
+#include "stid/c/steroid.h"
+#include "stid/executor.hh"
 
-#include "executor.hh"
+#include "verbosity.h"
 #include "checker.hh"
 #include "test.hh"
-#include <steroid/util/hsapi.h> 
-#include <steroid/steroid.h>
-
 
 // we export C bindings for this whole file
 extern "C"

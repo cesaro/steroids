@@ -1,9 +1,9 @@
 
-#ifndef __ACTION_STREAM_HH_
-#define __ACTION_STREAM_HH_
+#ifndef __STID_ACTION_STREAM_HH_
+#define __STID_ACTION_STREAM_HH_
 
 #include "action.hh"
-#include "../rt/rt.h"
+#include "../../rt/rt.h"
 
 class action_streamt;
 
@@ -20,22 +20,22 @@ public:
    inline action_stream_itt &operator* ()
       { return *this; }
 
-   inline int type ()
+   inline int type () const
       { return *trace.evptr; }
-   inline uint64_t addr ()
+   inline uint64_t addr () const
       { return *trace.addrptr; }
-   inline uint64_t *val ()
+   inline uint64_t *val () const
       { return trace.valptr; }
-   inline unsigned val_size ()
+   inline unsigned val_size () const
       { return RT_IS_MULTIW_RDWR(type()) ? RT_MULTIW_COUNT(type()) : 1; }
-   inline uint16_t id ()
+   inline uint16_t id () const
       { return *trace.idptr; }
 
-   inline bool has_addr ();
-   inline bool has_val ();
-   inline bool has_id ();
+   bool has_addr () const;
+   bool has_val () const;
+   bool has_id () const;
 
-   const char *str ();
+   const char *str () const;
    
 private:
    action_stream_itt (const action_streamt &s, bool begin);

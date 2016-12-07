@@ -19,13 +19,13 @@
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
 
-#undef DEBUG // exported by ExecutionEngine.h
+#include "stid/action_stream.hh"
+#include "stid/executor.hh"
+
 #include "verbosity.h"
 #include "misc.hh"
 #include "../rt/rt.h"
 #include "instrumenter.hh"
-#include "executor.hh"
-#include "action_stream.hh"
 
 uint8_t *MyMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment,
          unsigned SectionID, llvm::StringRef SectionName, bool isReadOnly)
@@ -281,7 +281,7 @@ void Executor::detex_apply ()
    }
 
    // we should clear memory here
-   //DEBUG ("stid: executor: detex: clearing memory out...");
+   DEBUG ("stid: executor: detex: clearing memory out...");
    memset (rt.heap.begin, 0, rt.heap.size);
    memset (rt.stacks.begin, 0, rt.stacks.size);
 
@@ -362,7 +362,11 @@ void Executor::set_replay (int *tab, int size)
    rt.replay.size = size;
    memcpy (rt.replay.tab, tab, size * sizeof(int));
    DEBUG_ ("stid: executor: set-replay: ");
-   for (int i = 0; i < size; i++) DEBUG_ ("%d ", rt.replay.tab[i]);
+   for (int i = 0; i < size; i++)
+   {
+      DEBUG_ ("%d ", rt.replay.tab[i]);
+      if (i % 2 == 1) DEBUG_ (" ");
+   }
    DEBUG ("");
 }
 

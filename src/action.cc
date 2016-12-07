@@ -1,5 +1,5 @@
 
-#include "action.hh"
+#include "stid/action.hh"
 
 const char *actiont_type_str (unsigned t)
 {

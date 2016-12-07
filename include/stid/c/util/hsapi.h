@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include <steroid/steroid.h>
+#include <stid/c/steroid.h>
 
 // testing steroid actions
 struct stid_action * stid_new_action (int, uint64_t, uint64_t);

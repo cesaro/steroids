@@ -42,11 +42,11 @@ src/libsteroids.so : $(LIB_OBJS) $(LIB_MOBJS)
 
 $(TOOLS_TEST_TARGETS) : $(TOOLS_TEST_OBJS) $(TOOLS_TEST_MOBJS) src/libsteroids.a
 	@echo "LD  $@"
-	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS) src/libsteroids.a
+	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 $(TOOLS_STID_TARGETS) : $(TOOLS_STID_OBJS) $(TOOLS_STID_MOBJS) src/libsteroids.a
 	@echo "LD  $@"
-	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS) src/libsteroids.a
+	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 
 $(RT_TARGETS) : $(RT_OBJS) $(RT_MOBJS)

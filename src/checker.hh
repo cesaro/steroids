@@ -7,12 +7,13 @@
 #include <vector>
 #include <cstdint> // uintxx
 
-#include "action_stream.hh"
-#include "action.hh"
 #include "evconf.hh"
 #include "vclock.hh"
 #include "verbosity.h"
 #include "../rt/rt.h"
+
+#include "stid/action.hh"
+#include "stid/action_stream.hh"
 
 #if 0
 /* @TODO: Add a CheckerConfig

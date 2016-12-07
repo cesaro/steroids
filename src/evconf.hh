@@ -4,9 +4,10 @@
 
 #include <vector>
 
-#include "action.hh"
-#include "action_stream.hh"
 #include "vclock.hh"
+
+#include "stid/action.hh"
+#include "stid/action_stream.hh"
 
 class conft;
 

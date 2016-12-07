@@ -1,13 +1,16 @@
 
-#ifndef __EXECUTOR_HH_
-#define __EXECUTOR_HH_
+#ifndef __STID_EXECUTOR_HH_
+#define __STID_EXECUTOR_HH_
 
 #include <memory>
 
+
 #include "llvm/IR/Module.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
+#undef DEBUG // will be (re)defined in ExecutionEngine.h
+#include "llvm/ExecutionEngine/SectionMemoryManager.h"
 
-#include "../rt/rt.h"
+#include "../../rt/rt.h"
 #include "action_stream.hh"
 
 #define ALIGN16(i) (((uint64_t) (i)) & 0xf ? (((uint64_t) (i)) + 16) & -16ul : (uint64_t) (i))

@@ -493,7 +493,7 @@ int   _rt_pthread_getcpuclockid(pthread_t, clockid_t *);
 int   _rt_pthread_atfork(void (*)(void), void (*)(void), void(*)(void));
 
 
-void  _rt_thread_init (void)
+void  __rt_thread_init (void)
 {
    int ret;
 

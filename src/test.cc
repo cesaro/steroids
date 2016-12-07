@@ -26,14 +26,14 @@
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
 
-#undef DEBUG // exported by ExecutionEngine.h
-#include "verbosity.h"
+#include "stid/c/steroid.h"
+#include "stid/executor.hh"
 
-#include "executor.hh"
+#include "verbosity.h"
 #include "checker.hh"
 #include "../rt/rt.h"
 #include "../rt/lsd.h"
-#include "steroid/steroid.h"
+
 
 void ir_write_ll (const llvm::Module *m, const char *filename)
 {
@@ -396,21 +396,7 @@ void test6 ()
    actions.print_replay ();
    std::vector<int> replay = actions.get_replay ();
 
-   printf ("exitinggggggggggggggggg!\n");
-   fflush (stdout);
-   fflush (stderr);
-   return;
-   return;
-   return;
-   return;
-   return;
-   return;
-   return;
-   return;
-   return;
-   return;
-   return;
-   return;
+#if 0
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -429,7 +415,7 @@ void test6 ()
    printf ("\n");
    //s1.diff (s2, action_stream2t::optt::SPOT_FIRST);
    s1.diff (s2, action_stream2t::optt::FULL);
-
+#endif
    // build a po and print it
    conft po (actions);
    po.build ();

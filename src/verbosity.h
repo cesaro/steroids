@@ -5,10 +5,20 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <steroid/config.h>
+#include <stid/c/config.h>
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+// clean state
+#ifdef DEBUG
+#undef DEBUG
+#undef TRACE
+#undef INFO
+#undef PRINT
+#undef BREAK
+#undef ASSERT
 #endif
 
 // the different levels of verbosity in the program

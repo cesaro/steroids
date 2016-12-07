@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#include <steroid/util/da.h>
+#include <stid/c/util/da.h>
 #include <stdint.h>
 
 // memory operations

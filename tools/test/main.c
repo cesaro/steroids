@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <steroid/steroid.h>
-#include <steroid/util/hsapi.h>
+#include <stid/c/steroid.h>
+#include <stid/c/util/hsapi.h>
 
 // Various tests for the API
 

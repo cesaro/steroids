@@ -1,14 +1,13 @@
 
-#ifndef __ACTION_HH_
-#define __ACTION_HH_
+#ifndef __STID_ACTION_HH_
+#define __STID_ACTION_HH_
 
 #include <memory>
 #include <unordered_map>
 #include <vector>
 #include <cstdint> // uintxx
 
-#include "verbosity.h"
-#include "../rt/rt.h"
+#include "../../rt/rt.h"
 
 typedef uint64_t addrt;
 

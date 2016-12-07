@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include <steroid/steroid.h>
+#include <stid/c/steroid.h>
 
 // Various tests for the API
 
