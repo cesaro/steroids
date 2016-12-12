@@ -290,3 +290,11 @@ int _rt_close (int fd)
    return close (fd);
 }
 
+void _rt___assert_fail (const char *__assertion, const char *__file,
+			   unsigned int __line, const char *__function)
+{
+   printf ("stid: rt: assert-fail: called!\n");
+   printf ("%s:%d: Assertion `%s' failed. Aborting.\n",
+         __file, __line, __assertion);
+   _rt_abort ();
+}

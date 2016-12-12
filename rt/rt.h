@@ -193,7 +193,7 @@ struct rt
    uint64_t host_rsp;
 };
 
-// const for fast address checking without memory access, defined in rt.c
+// const for fast address checking without memory access, defined in main.c
 // static const uint64_t memstart;
 // static const uint64_t memend;
 // static const uint64_t evend;
