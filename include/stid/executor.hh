@@ -33,7 +33,7 @@ public :
    ~Executor ();
 
    void           run ();
-   void           set_replay (int *tab, int size);
+   void           set_replay (const int *tab, int size);
    struct rt *    get_runtime ();
    action_streamt get_trace ();
 

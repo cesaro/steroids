@@ -350,7 +350,7 @@ llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)
    return c;
 }
 
-void Executor::set_replay (int *tab, int size)
+void Executor::set_replay (const int *tab, int size)
 {
    if (size > replay_capacity)
    {

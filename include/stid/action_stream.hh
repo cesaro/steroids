@@ -54,7 +54,7 @@ public:
       { return action_stream_itt (*this, false); }
 
    // @TODO : should we have this here, or only get_trace() ??
-   inline const struct rt * get_rt()
+   inline const struct rt * get_rt() const
       { return rt; }
    inline size_t size () const
       { return rt->trace.size; }
