@@ -365,8 +365,8 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    ASSERT (sizeof (double) == 8)
    ASSERT (sizeof (long double) == 16)
 
-#if 1
    printf ("stid: rt: main: I feel fantaastic... I feel the PUMP!\n");
+#if 0
    printf ("stid: rt: main: guest's address space:\n");
    __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
    __rt_memreg_print (&rt->data, "stid: rt: main:  ", ", data (.data, .bss, .rodata, and others)\n");
@@ -420,7 +420,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
 
    // call main
    _printf ("stid: rt: main: calling user's main...\n");
-   __rt_debug_header ();
+   //__rt_debug_header ();
    ret = main (argc, myargv, myenv);
    _printf ("stid: rt: main: returned %d\n", ret);
 
