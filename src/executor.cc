@@ -198,7 +198,7 @@ void Executor::optimize ()
 
 void Executor::restart_trace ()
 {
-   DEBUG ("stid: executor: restarting pointers in the action/replay streams");
+   //DEBUG ("stid: executor: restarting pointers in the action/replay streams");
    rt.trace.evptr = rt.trace.ev.begin;
    rt.trace.addrptr = (uint64_t *) rt.trace.addr.begin;
    rt.trace.idptr = (uint16_t *) rt.trace.id.begin;
@@ -268,27 +268,27 @@ void Executor::detex_apply ()
    // from the first execution
    if (detex.dataseg.size() == 0)
    {
-      DEBUG ("stid: executor: detex: preserving original JITed data segments, %zu B",
-            rt.data.size);
+      //DEBUG ("stid: executor: detex: preserving original JITed data segments, %zu B",
+      //      rt.data.size);
       detex.dataseg.resize (rt.data.size);
       memcpy (detex.dataseg.data(), rt.data.begin, rt.data.size);
       detex.dataseg.shrink_to_fit();
    } else {
-      DEBUG ("stid: executor: detex: restoring JITed data segments, %zu B",
-            detex.dataseg.size());
+      //DEBUG ("stid: executor: detex: restoring JITed data segments, %zu B",
+      //      detex.dataseg.size());
       ASSERT (detex.dataseg.size() == rt.data.size);
       memcpy (rt.data.begin, detex.dataseg.data(), rt.data.size);
    }
 
    // we should clear memory here
-   DEBUG ("stid: executor: detex: clearing memory out...");
+   //DEBUG ("stid: executor: detex: clearing memory out...");
    memset (rt.heap.begin, 0, rt.heap.size);
    memset (rt.stacks.begin, 0, rt.stacks.size);
 
    // restart optget(3)
    optind = 1;
 
-   DEBUG ("stid: executor: detex: done");
+   //DEBUG ("stid: executor: detex: done");
 }
 
 void Executor::run ()
@@ -301,7 +301,7 @@ void Executor::run ()
 
    // make sure that argv and envp members have the right null pointer at the
    // end
-   DEBUG ("stid: executor: checking argv, argp");
+   //DEBUG ("stid: executor: checking argv, argp");
    if (argv.size() == 0)
    {
       std::string s = fmt ("Executor: argv needs to contain at least one argument");
@@ -361,13 +361,13 @@ void Executor::set_replay (const int *tab, int size)
 
    rt.replay.size = size;
    memcpy (rt.replay.tab, tab, size * sizeof(int));
-   DEBUG_ ("stid: executor: set-replay: ");
+   //DEBUG_ ("stid: executor: set-replay: ");
    for (int i = 0; i < size; i++)
    {
-      DEBUG_ ("%d ", rt.replay.tab[i]);
+      //DEBUG_ ("%d ", rt.replay.tab[i]);
       if (i % 2 == 1) DEBUG_ (" ");
    }
-   DEBUG ("");
+   //DEBUG ("");
 }
 
 struct rt *Executor::get_runtime ()

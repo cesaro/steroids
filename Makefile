@@ -24,7 +24,7 @@ compile: $(TARGETS)
 r run: compile input.ll
 	./tools/test/main
 
-input.ll : program.ll rt/rt.ll
+input.ll : program.ll rt/rt.bc
 	llvm-link-$(LLVMVERS) -S $^ -o $@
 
 #program.ll : /tmp/cunf3.ll
@@ -51,7 +51,7 @@ $(TOOLS_STID_TARGETS) : $(TOOLS_STID_OBJS) $(TOOLS_STID_MOBJS) src/libsteroids.a
 
 $(RT_TARGETS) : $(RT_OBJS) $(RT_MOBJS)
 	@echo "LD  $@"
-	@llvm-link-$(LLVMVERS) -S -o $@ $^
+	@llvm-link-$(LLVMVERS) $(if $(findstring .ll, $@), -S, ) -o $@ $^
 
 rt/start.c : rt/start.s
 	./utils/as2c.py < $< > $@

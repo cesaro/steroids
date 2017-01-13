@@ -63,7 +63,7 @@ RT_SRCS:=$(wildcard rt/main.c rt/lsd.c rt/verifier.c rt/*.s)
 RT_MSRCS:=
 RT_OBJS:=$(patsubst %.c,%.ll,$(patsubst %.s,%.ll,$(RT_SRCS)))
 RT_MOBJS:=
-RT_TARGETS:=rt/rt.ll
+RT_TARGETS:=rt/rt.ll rt/rt.bc
 
 #TOOLS_TEST_SRCS:=$(wildcard tools/test/*.c tools/test/*.cc)
 #TOOLS_TEST_MSRCS:=tools/test/main.c
