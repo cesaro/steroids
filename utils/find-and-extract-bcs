@@ -1,0 +1,34 @@
+#!/bin/sh
+
+echo "Finding an extracting .bc files from ."
+
+LIST=/tmp/list
+LIST2=/tmp/full-list
+echo -n > $LIST
+
+for f in $(find)
+do
+   file "$f" 2> /dev/null | grep -q 'ELF .* executable, ' > /dev/null 2> /dev/null
+   if [ $? != 0 ]; then continue; fi
+
+   BC=$f.full.bc
+   rm -f "$BC"
+   extract-bc "$f" -o "$BC" >&2
+   if [ -f $BC ];
+   then
+      echo $BC;
+      echo $PWD/$BC >> $LIST
+   fi
+done
+
+echo ======================================================== >> $LIST2
+echo "Folder: $PWD" >> $LIST2
+echo -n "Date  : " >> $LIST2
+date -R >> $LIST2
+echo >> $LIST2
+cat $LIST >> $LIST2
+echo >> $LIST2
+
+echo Done.
+echo List saved to $LIST ;)
+echo List appended to $LIST2
