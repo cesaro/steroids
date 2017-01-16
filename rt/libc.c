@@ -105,7 +105,12 @@ void _rt_abort ()
 {
    // FIXME - we should check that we are called from main, we should destroy
    // the conditional variable, etc...
-   _printf ("stid: rt: abort: called!!!!!\n");
+   printf ("stid: rt: abort: called from t%d\n", TID (__rt_thst.current));
+   if (TID (__rt_thst.current) != 0)
+   {
+      printf ("stid: rt: abort: call from a thread other than main is not supported\n");
+      ASSERT (0);
+   }
    // we return control immediately to the host
    __rt_cend (253);
 }

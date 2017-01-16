@@ -324,13 +324,13 @@ void Executor::run ()
    }
 
    // run the user program!!
-   TRACE ("stid: executor: starting guest execution");
+   DEBUG ("stid: executor: starting guest execution");
    //DEBUG ("stid: executor: ====================================================");
    breakme ();
    exitcode = entry (argv.size(), argv.data(), envp.data());
    //DEBUG ("stid: executor: ====================================================");
    //DEBUG ("stid: executor: guest execution terminated");
-   TRACE ("stid: executor: %zu events collected, %d thread created",
+   DEBUG ("stid: executor: %zu events collected, %d thread created",
          rt.trace.size, rt.trace.num_ths);
    //DEBUG ("stid: executor: exitcode %d", exitcode);
    ASSERT (rt.trace.size == (size_t) (rt.trace.evptr - (uint8_t*) rt.trace.ev.begin));
