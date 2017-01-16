@@ -92,9 +92,6 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env);
 // call this function to exit, with errors or normal exit
 void __rt_cend (uint32_t exitcode);
 
-// the user's main function, epic :)
-int main (int argc, char **argv, char **env);
-
 // new instrumentation for load and stores
 void __rt_store_pre  (const void *addr, uint32_t size);
 void __rt_store_post (const void *addr, uint32_t size);

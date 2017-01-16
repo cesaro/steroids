@@ -216,7 +216,7 @@ void  _rt_pthread_exit(void *retval)
    if (*rt->replay.current == 0)
    {
       // FIXME - in the future, weaken the assumptions about the replay
-      printf ("stid: rt: threading: unlock: t%d: end of replay, hack +1!\n",
+      _printf ("stid: rt: threading: unlock: t%d: end of replay, hack +1!\n",
             TID(me));
       *rt->replay.current += 1;
    }
@@ -753,7 +753,7 @@ void __rt_thread_protocol_yield (struct rt_tcb *t)
          {
             if (!__rt_thst.tcbs[i].flags.alive) continue;
             if (i == TID (t)) continue;
-            printf ("stid: rt: threading: proto: t%d: signaling t%d\n", TID (t), i);
+            _printf ("stid: rt: threading: proto: t%d: signaling t%d\n", TID (t), i);
             ret = pthread_cond_signal (&__rt_thst.tcbs[i].cond);
             if (ret) goto err_cond;
          }
@@ -764,7 +764,7 @@ void __rt_thread_protocol_yield (struct rt_tcb *t)
          ASSERT (*rt->replay.current < __rt_thst.next);
          ASSERT (__rt_thst.tcbs[*rt->replay.current].flags.alive);
          i = *rt->replay.current;
-         printf ("stid: rt: threading: proto: t%d: signaling to t%d\n", TID (t), i);
+         _printf ("stid: rt: threading: proto: t%d: signaling to t%d\n", TID (t), i);
          ret = pthread_cond_signal (&__rt_thst.tcbs[i].cond);
          if (ret) goto err_cond;
       }

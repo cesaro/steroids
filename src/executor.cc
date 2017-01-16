@@ -38,7 +38,7 @@ uint8_t *MyMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment
 
    //ptr = llvm::SectionMemoryManager::allocateDataSection (Size, Alignment, SectionID, SectionName, isReadOnly);
 
-   DEBUG ("stid: executor: memory manager: allocation request: ptr %16p size %6zd align %d secid %d ro %d secname '%s'",
+   TRACE ("stid: executor: memory manager: allocation request: ptr %16p size %6zd align %d secid %d ro %d secname '%s'",
          ptr,
          Size, Alignment, SectionID, isReadOnly, SectionName.str().c_str());
    return ptr;
@@ -108,7 +108,7 @@ void Executor::malloc_memreg (struct memreg *m, size_t size)
 
 void Executor::initialize_and_instrument_rt ()
 {
-   DEBUG ("stid: executor: allocating guest memory");
+   INFO ("stid: executor: allocating guest memory");
    // allocate the memory space for the guest code (heap + stacks)
    malloc_memreg (&rt.mem, conf.memsize);
    if (rt.mem.begin == 0)
@@ -161,7 +161,7 @@ void Executor::initialize_and_instrument_rt ()
    rt.host_rsp = 0;
 
    // instrument the module to use this->rt as state
-   DEBUG ("stid: executor: instrumenting constant pointers:");
+   INFO ("stid: executor: instrumenting constant pointers:");
    llvm::GlobalVariable *g;
    llvm::Type *t;
    std::string s;
@@ -170,7 +170,7 @@ void Executor::initialize_and_instrument_rt ()
    if (!g or !t) throw std::runtime_error ("Executor: input missing runtime: no struct.rt type found");
    g->setInitializer (ptr_to_llvm (&rt, t));
    print_value (g, s);
-   DEBUG ("stid: executor: - %s", s.c_str());
+   TRACE ("stid: executor: - %s", s.c_str());
 
    // similarly for the other const global variables
    std::vector<std::pair<const char*, uint64_t>> pairs =
@@ -185,7 +185,7 @@ void Executor::initialize_and_instrument_rt ()
             (llvm::Type::getInt64Ty (ctx), p.second));
       s.clear();
       print_value (g, s);
-      DEBUG ("stid: executor: - %s", s.c_str());
+      TRACE ("stid: executor: - %s", s.c_str());
    }
 }
 
@@ -214,7 +214,7 @@ void Executor::restart_trace ()
 void Executor::jit_compile ()
 {
    void *ptr;
-   DEBUG ("stid: executor: jit compiling ...");
+   INFO ("stid: executor: jit compiling ...");
 
    // ask LLVM to JIT the program
    ee->finalizeObject ();
@@ -231,7 +231,7 @@ void Executor::jit_compile ()
    rt.heap.end = rt.stacks.begin;
    rt.heap.size = rt.heap.end - rt.heap.begin;
 
-   DEBUG ("stid: executor: done, entry function (__rt_start) at %p", entry);
+   INFO ("stid: executor: done, entry function (__rt_start) at %p", entry);
 
    //DEBUG ("stid: executor: rt       %18p", &rt);
    //DEBUG ("stid: executor: memstart %18p", rt.mem.begin);
@@ -243,12 +243,12 @@ void Executor::instrument_events ()
 {
    // instrument the code
    Instrumenter i;
-   DEBUG ("stid: executor: instrumenting source...");
+   INFO ("stid: executor: instrumenting source...");
    if (not i.instrument (*m))
    {
       throw std::runtime_error ("Executor: rt missing in input module");
    }
-   DEBUG ("stid: executor: done");
+   INFO ("stid: executor: done");
 } 
 
 void Executor::detex_init ()
@@ -324,13 +324,13 @@ void Executor::run ()
    }
 
    // run the user program!!
-   //DEBUG ("stid: executor: starting guest execution");
+   TRACE ("stid: executor: starting guest execution");
    //DEBUG ("stid: executor: ====================================================");
    breakme ();
    exitcode = entry (argv.size(), argv.data(), envp.data());
    //DEBUG ("stid: executor: ====================================================");
    //DEBUG ("stid: executor: guest execution terminated");
-   DEBUG ("stid: executor: %zu events collected, %d thread created",
+   TRACE ("stid: executor: %zu events collected, %d thread created",
          rt.trace.size, rt.trace.num_ths);
    //DEBUG ("stid: executor: exitcode %d", exitcode);
    ASSERT (rt.trace.size == (size_t) (rt.trace.evptr - (uint8_t*) rt.trace.ev.begin));
@@ -361,13 +361,15 @@ void Executor::set_replay (const int *tab, int size)
 
    rt.replay.size = size;
    memcpy (rt.replay.tab, tab, size * sizeof(int));
-   //DEBUG_ ("stid: executor: set-replay: ");
+#if 0
+   DEBUG_ ("stid: executor: set-replay: ");
    for (int i = 0; i < size; i++)
    {
-      //DEBUG_ ("%d ", rt.replay.tab[i]);
+      DEBUG_ ("%d ", rt.replay.tab[i]);
       if (i % 2 == 1) DEBUG_ (" ");
    }
-   //DEBUG ("");
+   DEBUG ("");
+#endif
 }
 
 struct rt *Executor::get_runtime ()

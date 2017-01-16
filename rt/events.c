@@ -20,6 +20,7 @@ static const char *__rt_quote (uint64_t v)
 
 static void __rt_debug_header ()
 {
+   return;
    printf ("stid: rt: what                  addr              value comments\n");
    printf ("stid: rt: ======= ================== ================== ======================\n");
 }
@@ -365,8 +366,8 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    ASSERT (sizeof (double) == 8)
    ASSERT (sizeof (long double) == 16)
 
-   printf ("stid: rt: main: I feel fantaastic... I feel the PUMP!\n");
 #if 0
+   printf ("stid: rt: main: I feel fantaastic... I feel the PUMP!\n");
    printf ("stid: rt: main: guest's address space:\n");
    __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
    __rt_memreg_print (&rt->data, "stid: rt: main:  ", ", data (.data, .bss, .rodata, and others)\n");
@@ -377,7 +378,6 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    __rt_memreg_print (&rt->trace.addr, "stid: rt: main:  ", ", event trace (64bit addr)\n");
    __rt_memreg_print (&rt->trace.val, "stid: rt: main:  ", ", event trace (64bit val)\n");
    __rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
-#endif
    printf ("stid: rt: main: replay sequence:\nstid: rt: main:  ");
    for (i = 0; rt->replay.tab[i] != -1; i += 2)
    {
@@ -386,6 +386,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
       printf ("%d %d; ", rt->replay.tab[i], rt->replay.tab[i+1]);
    }
    printf ("-1\n");
+#endif
    //printf ("stid: rt: main: ======================\n");
 
    // initialize subsystems (before this there is no guarantee that
@@ -411,18 +412,19 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    }
    myenv[n] = 0;
 
-   _printf ("stid: rt: main: myargc %d myargv %p, myenv %p (%d)\n",
+#if 0
+   printf ("stid: rt: main: myargc %d myargv %p, myenv %p (%d)\n",
          argc, myargv, myenv, n);
    for (i = 0; i < argc; i++)
-      _printf ("stid: rt: main: argv[%2i] %16p '%s'\n", i, myargv[i], myargv[i]);
+      printf ("stid: rt: main: argv[%2i] %16p '%s'\n", i, myargv[i], myargv[i]);
    for (i = 0; i <= n; i++)
-      _printf ("stid: rt: main:  env[%2i] %16p '%s'\n", i, myenv[i], myenv[i]);
-
+      printf ("stid: rt: main:  env[%2i] %16p '%s'\n", i, myenv[i], myenv[i]);
    // call main
-   _printf ("stid: rt: main: calling user's main...\n");
-   //__rt_debug_header ();
+   printf ("stid: rt: main: calling user's main...\n");
+#endif
+   __rt_debug_header ();
    ret = main (argc, myargv, myenv);
-   _printf ("stid: rt: main: returned %d\n", ret);
+   //printf ("stid: rt: main: returned %d\n", ret);
 
    // do the instrumented verison of exit(3)
    _rt_exit (ret);

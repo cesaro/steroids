@@ -58,6 +58,11 @@ static const uint64_t evend;
 
 void breakme () {}
 
+// the user's main function, epic :)
+// this should be in rt/rt.h, but will break compilation of other projects, as
+// it becomes visible; see README.md for comments
+int main (int argc, char **argv, char **env);
+
 #if 0
 // we need to redefine the errno macro for us, since instrumentation will not
 // happen inside of the _rt_* functions
