@@ -366,8 +366,8 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    ASSERT (sizeof (double) == 8)
    ASSERT (sizeof (long double) == 16)
 
+   _printf ("stid: rt: main: I feel fantaastic... I feel the PUMP!\n");
 #if 0
-   printf ("stid: rt: main: I feel fantaastic... I feel the PUMP!\n");
    printf ("stid: rt: main: guest's address space:\n");
    __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
    __rt_memreg_print (&rt->data, "stid: rt: main:  ", ", data (.data, .bss, .rodata, and others)\n");
@@ -378,16 +378,16 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    __rt_memreg_print (&rt->trace.addr, "stid: rt: main:  ", ", event trace (64bit addr)\n");
    __rt_memreg_print (&rt->trace.val, "stid: rt: main:  ", ", event trace (64bit val)\n");
    __rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
-   printf ("stid: rt: main: replay sequence:\nstid: rt: main:  ");
+#endif
+   _printf ("stid: rt: main: replay sequence:\nstid: rt: main:  ");
    for (i = 0; rt->replay.tab[i] != -1; i += 2)
    {
       if (i % 20 == 0 && i)
-         printf ("\nstid: rt: main:  ");
-      printf ("%d %d; ", rt->replay.tab[i], rt->replay.tab[i+1]);
+         _printf ("\nstid: rt: main:  ");
+      _printf ("%d %d; ", rt->replay.tab[i], rt->replay.tab[i+1]);
    }
-   printf ("-1\n");
-#endif
-   //printf ("stid: rt: main: ======================\n");
+   _printf ("-1\n");
+   _printf ("stid: rt: main: ======================\n");
 
    // initialize subsystems (before this there is no guarantee that
    // std{in,out,err} are correctly initialized!!!
@@ -424,7 +424,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
 #endif
    __rt_debug_header ();
    ret = main (argc, myargv, myenv);
-   //printf ("stid: rt: main: returned %d\n", ret);
+   _printf ("stid: rt: main: returned %d\n", ret);
 
    // do the instrumented verison of exit(3)
    _rt_exit (ret);

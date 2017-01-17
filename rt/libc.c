@@ -108,7 +108,7 @@ void _rt_abort ()
    printf ("stid: rt: abort: called from t%d\n", TID (__rt_thst.current));
    if (TID (__rt_thst.current) != 0)
    {
-      printf ("stid: rt: abort: call from a thread other than main is not supported\n");
+      printf ("stid: rt: abort: not supported, this is a limitation of steroids.\n");
       ASSERT (0);
    }
    // we return control immediately to the host

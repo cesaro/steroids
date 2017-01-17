@@ -5,12 +5,11 @@
 
 void __VERIFIER_error()
 {
-ERROR:
-   printf ("VERIFIER_error executed!!!!\n");
+   printf ("stid: rt: __VERIFIER_error executed: ignoring and continuing program\n");
    fflush (stdout);
    fflush (stderr);
-   abort();
-   goto ERROR;
+   //abort();
+   //while (1);
 }
 
 void __attribute__((weak)) __VERIFIER_assert(int expr)
@@ -20,6 +19,7 @@ void __attribute__((weak)) __VERIFIER_assert(int expr)
 
 void __VERIFIER_assume(int expression)
 {
+   printf ("stid: rt: __VERIFIER_assume (%d) got called\n", expression);
    if (!expression)
    {
       while (1);
