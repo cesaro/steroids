@@ -109,13 +109,22 @@ void Executor::malloc_memreg (struct memreg *m, size_t size)
 void Executor::initialize_and_instrument_rt ()
 {
    INFO ("stid: executor: allocating guest memory");
+
+   // the stacks should fit into the main memory
+   if (conf.stacksize >= conf.memsize)
+   {
+      std::string s = fmt ("stid: executor: requested stack size (%lu) is larger "
+            "than requested memory size (%lu)",
+            conf.stacksize, conf.memsize);
+      throw std::runtime_error (s.c_str());
+   }
+
    // allocate the memory space for the guest code (heap + stacks)
    malloc_memreg (&rt.mem, conf.memsize);
    if (rt.mem.begin == 0)
-      throw std::runtime_error ("malloc: cannot prepare memory for code execution");
+      throw std::runtime_error ("stid: executor: unable to malloc guest memory,"
+            " malloc failed");
 
-   // the stacks should fit into the main memory
-   ASSERT (conf.stacksize < conf.memsize);
    // stacks are located at the end of the memory
    rt.stacks.size = conf.stacksize;
    rt.stacks.end = rt.mem.end;
@@ -131,22 +140,22 @@ void Executor::initialize_and_instrument_rt ()
    // allocate memory for the event stream, ids (uint8_t)
    malloc_memreg (&rt.trace.ev, conf.tracesize);
    if (rt.trace.ev.begin == 0)
-      throw std::runtime_error ("malloc: cannot allocate memory for log trace");
+      throw std::runtime_error ("stid: executor: unable to allocate memory for log trace");
 
    // addr operands
    malloc_memreg (&rt.trace.addr, conf.tracesize * sizeof (uint64_t));
    if (rt.trace.addr.begin == 0)
-      throw std::runtime_error ("malloc: cannot allocate memory for log trace");
+      throw std::runtime_error ("stid: executor: unable to allocate memory for log trace");
 
    // id operands
    malloc_memreg (&rt.trace.id, conf.tracesize * sizeof (uint16_t));
    if (rt.trace.id.begin == 0)
-      throw std::runtime_error ("malloc: cannot allocate memory for log trace");
+      throw std::runtime_error ("stid: executor: unable to allocate memory for log trace");
 
    // val operands
    malloc_memreg (&rt.trace.val, conf.tracesize * sizeof (uint64_t));
    if (rt.trace.val.begin == 0)
-      throw std::runtime_error ("malloc: cannot allocate memory for log trace");
+      throw std::runtime_error ("stid: executor: unable to allocate memory for log trace");
 
    // restart the pointers in the trace
    restart_trace ();
@@ -191,9 +200,9 @@ void Executor::initialize_and_instrument_rt ()
 
 void Executor::optimize ()
 {
-   // call the LLVM optimizer here
-   DEBUG ("stid: executor: optimizing code...");
-   DEBUG ("stid: executor: done");
+   // FIXME call the LLVM optimizer here
+   //DEBUG ("stid: executor: optimizing code...");
+   //DEBUG ("stid: executor: done");
 }
 
 void Executor::restart_trace ()
@@ -222,7 +231,7 @@ void Executor::jit_compile ()
    entry = (int (*) (int, const char* const*, const char* const*)) ptr;
    if (entry == 0)
    {
-      throw std::runtime_error ("Executor: cannot find entry symbol (__rt_start) after JIT compilation");
+      throw std::runtime_error ("stid: executor: unable to find entry symbol (__rt_start) after JIT compilation");
    }
 
    // allocation of the data segments takes place in finalizeObject(), so we
@@ -246,10 +255,10 @@ void Executor::instrument_events ()
    INFO ("stid: executor: instrumenting source...");
    if (not i.instrument (*m))
    {
-      throw std::runtime_error ("Executor: rt missing in input module");
+      throw std::runtime_error ("stid: executor: rt missing in input module");
    }
    INFO ("stid: executor: done");
-} 
+}
 
 void Executor::detex_init ()
 {
@@ -304,22 +313,22 @@ void Executor::run ()
    //DEBUG ("stid: executor: checking argv, argp");
    if (argv.size() == 0)
    {
-      std::string s = fmt ("Executor: argv needs to contain at least one argument");
+      std::string s = fmt ("stid: executor: argv needs to contain at least one argument");
       throw std::runtime_error (s);
    }
    if (argv[0] == 0)
    {
-      std::string s = fmt ("Executor: argv[0] cannot be a null pointer");
+      std::string s = fmt ("stid: executor: argv[0] cannot be a null pointer");
       throw std::runtime_error (s);
    }
    if (envp.size() == 0)
    {
-      std::string s = fmt ("Executor: envp needs to contain at least one entry");
+      std::string s = fmt ("stid: executor: envp needs to contain at least one entry");
       throw std::runtime_error (s);
    }
    if (envp.back() != 0)
    {
-      std::string s = fmt ("Executor: envp: last entry should be a null pointer");
+      std::string s = fmt ("stid: executor: envp: last entry should be a null pointer");
       throw std::runtime_error (s);
    }
 
@@ -330,9 +339,8 @@ void Executor::run ()
    exitcode = entry (argv.size(), argv.data(), envp.data());
    //DEBUG ("stid: executor: ====================================================");
    //DEBUG ("stid: executor: guest execution terminated");
-   DEBUG ("stid: executor: %zu events collected, %d thread created",
-         rt.trace.size, rt.trace.num_ths);
-   //DEBUG ("stid: executor: exitcode %d", exitcode);
+   DEBUG ("stid: executor: %zu events collected, %d thread created, exitcode %d",
+         rt.trace.size, rt.trace.num_ths, exitcode);
    ASSERT (rt.trace.size == (size_t) (rt.trace.evptr - (uint8_t*) rt.trace.ev.begin));
    ASSERT (rt.trace.num_ths >= 1);
    ASSERT (rt.trace.num_ths <= RT_MAX_THREADS);

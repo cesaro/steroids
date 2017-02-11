@@ -15,10 +15,20 @@
 
 #define ALIGN16(i) (((uint64_t) (i)) & 0xf ? (((uint64_t) (i)) + 16) & -16ul : (uint64_t) (i))
 
+/// This structure holds information necessary to initialize the memory area
+/// used to hold the guest code.
 struct ExecutorConfig
 {
+   /// Size of the whole memory area used to hold the guest program, including
+   /// the jitted code, data, bss, heap, and stacks of each thread.
    uint64_t memsize;
+   /// Size of the stack of each thread. The stack of the main guest thread is
+   /// allocated on the highest portion of the memory area allocated for the
+   /// guest. The stack of every other thread is allocated by the runtime
+   /// using malloc(3), they are thus in the guest's heap.
    uint64_t stacksize;
+   /// Maximum number of actions that runtime will log during one execution of
+   /// the guest.
    uint64_t tracesize;;
 };
 
