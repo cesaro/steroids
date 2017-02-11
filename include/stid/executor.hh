@@ -16,7 +16,7 @@
 #define ALIGN16(i) (((uint64_t) (i)) & 0xf ? (((uint64_t) (i)) + 16) & -16ul : (uint64_t) (i))
 
 /// This structure holds information necessary to initialize the memory area
-/// used to hold the guest code.
+/// used to hold the guest program
 struct ExecutorConfig
 {
    /// Size of the whole memory area used to hold the guest program, including

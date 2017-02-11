@@ -463,7 +463,7 @@ uint64_t __rt_get_host_rsp ()
 
 void __rt_panic ()
 {
-   PRINT ("panic!!!!!");
-   while (1);
+   PRINT ("panic, aborting!");
+   abort ();
 }
 

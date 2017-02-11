@@ -434,12 +434,55 @@ int   _rt_pthread_condattr_setclock(pthread_condattr_t *, clockid_t);
 int   _rt_pthread_condattr_setpshared(pthread_condattr_t *, int);
 
 // conditional variables
-int   _rt_pthread_cond_broadcast(pthread_cond_t *);
-int   _rt_pthread_cond_destroy(pthread_cond_t *);
-int   _rt_pthread_cond_init(pthread_cond_t *restrict, const pthread_condattr_t *restrict);
-int   _rt_pthread_cond_signal(pthread_cond_t *);
-int   _rt_pthread_cond_timedwait(pthread_cond_t *restrict, pthread_mutex_t *restrict, const struct timespec *restrict);
-int   _rt_pthread_cond_wait(pthread_cond_t *restrict, pthread_mutex_t *restrict);
+int   _rt_pthread_cond_broadcast(pthread_cond_t *cond)
+{
+   (void) cond;
+   PRINT ("unsupported function pthread_cond_broadcast was called!");
+   __rt_panic ();
+   return 0;
+}
+int   _rt_pthread_cond_destroy(pthread_cond_t *cond)
+{
+   (void) cond;
+   PRINT ("unsupported function pthread_cond_destroy was called!");
+   __rt_panic ();
+   return 0;
+}
+int   _rt_pthread_cond_init(pthread_cond_t *restrict cond,
+      const pthread_condattr_t *restrict attr)
+{
+   (void) cond;
+   (void) attr;
+   PRINT ("unsupported function pthread_cond_init was called!");
+   __rt_panic ();
+   return 0;
+}
+int   _rt_pthread_cond_signal(pthread_cond_t *cond)
+{
+   (void) cond;
+   PRINT ("unsupported function pthread_cond_signal was called!");
+   __rt_panic ();
+   return 0;
+}
+int   _rt_pthread_cond_timedwait(pthread_cond_t *restrict cond,
+            pthread_mutex_t *restrict attr, const struct timespec *restrict tm)
+{
+   (void) cond;
+   (void) attr;
+   (void) tm;
+   PRINT ("unsupported function pthread_cond_timedwait was called!");
+   __rt_panic ();
+   return 0;
+}
+int   _rt_pthread_cond_wait(pthread_cond_t *restrict cond,
+         pthread_mutex_t *restrict m)
+{
+   (void) cond;
+   (void) m;
+   PRINT ("unsupported function pthread_cond_wait was called!");
+   __rt_panic ();
+   return 0;
+}
 
 // attributes for read-write locks
 int   _rt_pthread_rwlockattr_destroy(pthread_rwlockattr_t *);

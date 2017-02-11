@@ -124,6 +124,7 @@ void  _rt_free    (void *ptr);
 void *_rt_realloc (void *ptr, size_t size);
 int   _rt_atexit (void (* fun) (void));
 void  _rt_exit (int status);
+void _rt_abort ();
 
 // unistd.h
 void  _rt__exit (int status);
