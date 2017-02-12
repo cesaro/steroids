@@ -6,7 +6,7 @@
 #define CONFIG_MAX_VERB_LEVEL 3
 
 /* test and debug */
-#define CONFIG_DEBUG
-
+//#define CONFIG_DEBUG
+#undef CONFIG_DEBUG
 
 #endif

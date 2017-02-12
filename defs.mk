@@ -24,19 +24,21 @@ LLVMLIBS=$(shell llvm-config-$(LLVMVERS) --libs all) -lz -lpthread -lffi -lncurs
 # traditional variables
 #CFLAGS:=-Wall -Wextra -std=c11 -pg
 #CFLAGS:=-Wall -Wextra -std=c11 -g
-CFLAGS:=-Wall -std=c11 -g -fPIC
+CFLAGS:=-Wall -std=c11 -g -fPIC -O3
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -pg
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -g
-CXXFLAGS:=-Wall -std=c++11 -g -fPIC
+CXXFLAGS:=-Wall -std=c++11 -g -fPIC -O3
 #CPPFLAGS:=-I src/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -D NDEBUG
 CPPFLAGS:=-I src/ -I include/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS $(LLVMCXXFLAGS)
 #LDFLAGS:=-dead_strip -static
 LDFLAGS:=$(LLVMLDFLAGS) -L src
 LDLIBS=$(LLVMLIBS)
 
+R=$(PWD)
+
 # ### library ###
-LIB_SRCS:=$(wildcard src/*.c src/*.cc src/*/*.c src/*/*.cc src/*/*/*.c src/*/*/*.cc)
+LIB_SRCS:=$(wildcard $(R)/src/*.c $(R)/src/*.cc $(R)/src/*/*.c $(R)/src/*/*.cc $(R)/src/*/*/*.c $(R)/src/*/*/*.cc)
 LIB_MSRCS:=
 LIB_OBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(LIB_SRCS)))
 LIB_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(LIB_MSRCS)))
