@@ -56,6 +56,13 @@ static const uint64_t memstart;
 static const uint64_t memend;
 static const uint64_t evend;
 
+uint64_t __rt_force_memstart_present ()
+{
+   // since this function is public, the compiler cannot remove memstart from
+   // the object file
+   return memstart + memend + evend;
+}
+
 void breakme () {}
 
 // the user's main function, epic :)
