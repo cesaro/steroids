@@ -106,6 +106,17 @@ void Executor::malloc_memreg (struct memreg *m, size_t size)
    m->end = m->begin + m->size;
 }
 
+void Executor::print_memreg (struct memreg *m, const char *prefix, const char *suffix)
+{
+   printf ("%s%p - %p, %4zu%s%s",
+      prefix,
+      m->begin,
+      m->end,
+      UNITS_SIZE (m->size),
+      UNITS_UNIT (m->size),
+      suffix);
+}
+
 void Executor::initialize_and_instrument_rt ()
 {
    INFO ("stid: executor: allocating guest memory");
@@ -246,6 +257,18 @@ void Executor::jit_compile ()
    //DEBUG ("stid: executor: memstart %18p", rt.mem.begin);
    //DEBUG ("stid: executor: memend   %18p", rt.mem.end);
    //DEBUG ("stid: executor: evend    %18p", rt.trace.ev.end);
+
+   TRACE ("stid: executor: guest's address space:");
+   print_memreg (&rt.mem, "stid: executor:  ", ", total guest memory\n");
+   print_memreg (&rt.data, "stid: executor:  ", ", data (.data, .bss, .rodata, and others)\n");
+   print_memreg (&rt.heap, "stid: executor:  ", ", heap\n");
+   print_memreg (&rt.stacks, "stid: executor:  ", ", stack (main thread)\n");
+
+   TRACE ("stid: executor: event trace buffer:");
+   print_memreg (&rt.trace.ev, "stid: executor:  ", ", event trace (8bit event ids)\n");
+   print_memreg (&rt.trace.addr, "stid: executor:  ", ", event trace (64bit addr)\n");
+   print_memreg (&rt.trace.val, "stid: executor:  ", ", event trace (64bit val)\n");
+   print_memreg (&rt.trace.id, "stid: executor:  ", ", event trace (16bit call ids)\n");
 }
 
 void Executor::instrument_events ()

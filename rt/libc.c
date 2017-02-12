@@ -9,7 +9,9 @@
 static int __rt_errno = 0;
 // unistd.h
 
-static uint64_t __malloc_ptr;
+static pthread_mutex_t mutex_malloc = PTHREAD_MUTEX_INITIALIZER;
+
+static uint8_t *__malloc_ptr;
 
 void __rt_libc_init ()
 {
@@ -26,7 +28,7 @@ void __rt_libc_term ()
 void __rt_mm_init ()
 {
    //printf ("stid: rt: mm: initializing memory manager\n");
-   __malloc_ptr = (uint64_t) rt->heap.begin;
+   __malloc_ptr = rt->heap.begin;
 }
 
 void __rt_mm_term ()
@@ -42,11 +44,23 @@ void *_rt_calloc  (size_t n, size_t size)
 void *_rt_malloc  (size_t size)
 {
    void *ptr;
-   ptr = (void*) __malloc_ptr;
-   __malloc_ptr = ALIGN16 (__malloc_ptr + size);
+
+   // get a free memory area, if any memory is left in the heap
+   pthread_mutex_lock (&mutex_malloc);
+   ptr = __malloc_ptr;
+   __malloc_ptr = (uint8_t*) ALIGN16 (__malloc_ptr + size);
+   if (__malloc_ptr > rt->heap.end)
+   {
+      __malloc_ptr = ptr;
+      ptr = 0;
+      PRINT ("out of memory: __malloc_ptr %p size %lu, returning null",
+            __malloc_ptr, size);
+   }
+   pthread_mutex_unlock (&mutex_malloc);
+
    //printf ("stid: rt: malloc: ret %p size %zu\n", ptr, size);
    TRACE2 (RT_MALLOC, ptr, size);
-   memset (ptr, 0, size); // necessary for repeatable execution!!!!
+   if (ptr) memset (ptr, 0, size); // necessary for repeatable execution!!!!
    return ptr;
 }
 

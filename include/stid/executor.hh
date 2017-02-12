@@ -64,6 +64,7 @@ private :
    void detex_init ();
    void detex_apply ();
    void malloc_memreg (struct memreg *m, size_t size);
+   void print_memreg (struct memreg *m, const char *prefix, const char *suffix);
    llvm::Constant *ptr_to_llvm (void *ptr, llvm::Type *t);
 
    struct
