@@ -49,7 +49,7 @@ static void _rt_lsd_assert (struct lsd * l)
    }
 }
 #else
-#define _lsd_assert(l)
+#define _rt_lsd_assert(l)
 #endif
 
 void _rt_lsd_init (struct lsd * l)
