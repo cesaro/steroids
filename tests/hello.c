@@ -430,8 +430,6 @@ int main8 ()
       printf ("main: pthread_create: ret %d\n", ret);
    }
 
-   pthread_cond_signal (0);
-
    // lock, unlock
    ret = pthread_mutex_lock (&m8);
    printf ("main: mutex_lock %d!\n", ret);

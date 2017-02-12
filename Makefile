@@ -108,9 +108,25 @@ distclean : clean
 	@rm -Rf dist/
 	@echo Mr. Proper done.
 
-dist : all
+dist : compile
 	rm -Rf dist/
-	# ...
+	mkdir dist
+	mkdir dist/bin
+	mkdir dist/lib
+	mkdir dist/lib/stid
+	cp tools/stid/main dist/bin/stid
+	cp src/*.a dist/lib/stid
+	cp src/*.so dist/lib/stid
+
+PREFIX = ~/x/local
+
+install : dist
+	cd dist; cp -Rv * $(PREFIX)
+
+uninstall :
+	cd $(PREFIX)
+	rm bin/stid
+	rm -R lib/stid
 
 -include $(DEPS)
 
