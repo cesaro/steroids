@@ -379,11 +379,10 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    __rt_memreg_print (&rt->trace.val, "stid: rt: main:  ", ", event trace (64bit val)\n");
    __rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
 #endif
-   _printf ("stid: rt: main: replay sequence:\nstid: rt: main:  ");
+   _printf ("stid: rt: main: replay seq: ");
    for (i = 0; rt->replay.tab[i] != -1; i += 2)
    {
-      if (i % 20 == 0 && i)
-         _printf ("\nstid: rt: main:  ");
+      //if (i % 20 == 0 && i) printf ("\nstid: rt: main:  ");
       _printf ("%d %d; ", rt->replay.tab[i], rt->replay.tab[i+1]);
    }
    _printf ("-1\n");

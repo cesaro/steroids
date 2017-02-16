@@ -90,13 +90,6 @@ bool Instrumenter::find_rt ()
 bool Instrumenter::is_rt_fun (llvm::Function *f)
 {
    return f->getName().startswith ("_rt_") or f->getName().startswith ("__rt_");
-   #if 0
-         or
-         f->getName().equals ("free") or
-         f->getName().equals ("malloc") or
-         f->getName().equals ("realloc") or
-         f->getName().equals ("calloc");
-         #endif
 }
 
 void Instrumenter::reset (llvm::Module &m)

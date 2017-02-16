@@ -38,7 +38,7 @@ LDLIBS=$(LLVMLIBS)
 R=$(PWD)
 
 # ### library ###
-LIB_SRCS:=$(wildcard $(R)/src/*.c $(R)/src/*.cc $(R)/src/*/*.c $(R)/src/*/*.cc $(R)/src/*/*/*.c $(R)/src/*/*/*.cc)
+LIB_SRCS:=$(wildcard $R/src/*.c $R/src/*.cc $R/src/*/*.c $R/src/*/*.cc $R/src/*/*/*.c $R/src/*/*/*.cc)
 LIB_MSRCS:=
 LIB_OBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(LIB_SRCS)))
 LIB_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(LIB_MSRCS)))
