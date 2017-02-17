@@ -61,7 +61,7 @@ bool stid_has_pre_proc (struct stid_event *e)
 
 bool stid_has_pre_mem (struct stid_event *e)
 {
-  return e->pre_mem.tid == -1;
+  return e->pre_mem.tid == (unsigned) -1;
 }
 
 // Testing replay
@@ -136,7 +136,7 @@ int stid_add_max_lock_po (struct stid_po *po, struct stid_event *e)
 int stid_print_seq_po (struct stid_po *po)
 {
    // current stream position
-   int spos = 0;
+   unsigned spos = 0;
    bool end_stream = false;
    bool fixpoint;
    int rpos = 0;
@@ -251,7 +251,7 @@ struct stid_po * stid_example_po ()
    da_i (p1, 1, struct stid_event).act.type = STID_LOCK;
    da_i (p1, 1, struct stid_event).act.addr = 0xffffff00;
    da_i (p1, 1, struct stid_event).act.val = 0; // irrelevant
-   da_i (p1, 1, struct stid_event).pre_mem.tid = -1; // beginning of this address total order
+   da_i (p1, 1, struct stid_event).pre_mem.tid = (unsigned) -1; // beginning of this address total order
    da_i (p1, 1, struct stid_event).sidx = 3;
 
    // p1, event 2, unlock
@@ -272,13 +272,13 @@ struct stid_po * stid_example_po ()
    da_i (&po->max_lock, 0, struct stid_event).act.type = STID_ENTRY;
    da_i (&po->max_lock, 0, struct stid_event).act.addr = 0; // irrelevant
    da_i (&po->max_lock, 0, struct stid_event).act.val = 0; // irrelevant
-   da_i (&po->max_lock, 0, struct stid_event).pre_mem.tid = -1; // no pre_memdecessor other than in the thread (this is main!)
+   da_i (&po->max_lock, 0, struct stid_event).pre_mem.tid = (unsigned) -1; // no pre_memdecessor other than in the thread (this is main!)
    da_i (&po->max_lock, 0, struct stid_event).sidx = 0;
 
    da_i (&po->max_lock, 1, struct stid_event).act.type = STID_ENTRY;
    da_i (&po->max_lock, 1, struct stid_event).act.addr = 0; // irrelevant
    da_i (&po->max_lock, 1, struct stid_event).act.val = 0; // irrelevant
-   da_i (&po->max_lock, 1, struct stid_event).pre_mem.tid = -1; // no pre_memdecessor other than in the thread (this is main!)
+   da_i (&po->max_lock, 1, struct stid_event).pre_mem.tid = (unsigned) -1; // no pre_memdecessor other than in the thread (this is main!)
    da_i (&po->max_lock, 1, struct stid_event).sidx = 0;
  
    return po;

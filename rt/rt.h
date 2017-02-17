@@ -119,6 +119,7 @@ void __rt_libc_term ();
 // stdlib.h
 void __rt_mm_init (); // internal
 void __rt_mm_term (); // internal
+void *_rt_malloc_uninitialized (size_t size); // internal
 void *_rt_malloc  (size_t size);
 void  _rt_free    (void *ptr);
 void *_rt_realloc (void *ptr, size_t size);

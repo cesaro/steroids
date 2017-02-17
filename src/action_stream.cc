@@ -320,7 +320,7 @@ const char *action_stream_itt::str () const
 void action_streamt::print (int limit) const
 {
    // iterate throught the actions
-   unsigned i = 0;
+   int i = 0;
    int tid = 0;
 
    printf ("== action stream begin ==\n");
@@ -378,13 +378,15 @@ void action_streamt::print (int limit) const
 
 std::vector<int> action_streamt::get_replay ()
 {
-   int i;
+   unsigned i;
    int count = 0;
    int tid = 0;
    std::vector<int> replay;
    int sawfirst[RT_MAX_THREADS];
    int blue[RT_MAX_THREADS];
    int lastexit = 0;
+
+   (void) lastexit; // for ASSERT
 
    // clean the sawfirst array
    ASSERT (rt->trace.num_ths <= RT_MAX_THREADS);
@@ -463,7 +465,7 @@ void action_streamt::print_replay ()
 void action_streamt::print_replay (std::vector<int> replay)
 {
    printf ("== replay begin ==\n");
-   for (int i = 0; i < replay.size(); i += 2)
+   for (unsigned i = 0; i < replay.size(); i += 2)
    {
       if (replay[i] == -1)
       {

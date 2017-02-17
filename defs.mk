@@ -24,11 +24,13 @@ LLVMLIBS=$(shell llvm-config-$(LLVMVERS) --libs all) -lz -lpthread -lffi -lncurs
 # traditional variables
 #CFLAGS:=-Wall -Wextra -std=c11 -pg
 #CFLAGS:=-Wall -Wextra -std=c11 -g
-CFLAGS:=-Wall -std=c11 -g -fPIC -O3
+#CFLAGS:=-Wall -std=c11 -g -fPIC -O3
+CFLAGS:=-Wall -std=c11 -fPIC -O3 -g
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -pg
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -g
-CXXFLAGS:=-Wall -std=c++11 -g -fPIC -O3
+#CXXFLAGS:=-Wall -std=c++11 -g -fPIC -O3
+CXXFLAGS:=-Wall -std=c++11 -fPIC -O3 -g
 #CPPFLAGS:=-I src/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -D NDEBUG
 CPPFLAGS:=-I src/ -I include/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS $(LLVMCXXFLAGS)
 #LDFLAGS:=-dead_strip -static
@@ -135,21 +137,23 @@ YACC:=bison
 	@echo "DOT $<"
 	@dot -T jpg < $< > $@
 
-CFLAGS_:=-Wall -Wextra -std=c11 -pthread -g
+CC_=clang-3.7
+CXX_=clang++-3.7
+CFLAGS_:=-Wall -Wextra -std=c11 -pthread
 CXXFLAGS_:=-Wall -Wextra -std=c++11 -pthread
 
 %.ll : %.c
 	@echo "CC  $< (c -> ll)"
-	$(CC) $(CFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
+	$(CC_) $(CFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
 %.bc : %.c
 	@echo "CC  $< (c -> bc)"
-	@$(CC) $(CFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
+	@$(CC_) $(CFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
 %.ll : %.cc
 	@echo "CXX $< (cc -> ll)"
-	$(CXX) $(CXXFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
+	$(CXX_) $(CXXFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
 %.bc : %.cc
 	@echo "CXX $< (cc -> bc)"
-	@$(CXX) $(CXXFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
+	@$(CXX_) $(CXXFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
 %.bc : %.ll
 	@echo "AS  $<"
 	@llvm-as-$(LLVMVERS) $< -o $@

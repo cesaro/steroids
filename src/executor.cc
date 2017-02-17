@@ -318,8 +318,8 @@ void Executor::detex_apply ()
 
    // we should clear memory here
    //DEBUG ("stid: executor: detex: clearing memory out...");
-   /*   memset (rt.heap.begin, 0, rt.heap.size);
-	memset (rt.stacks.begin, 0, rt.stacks.size);*/
+   //memset (rt.heap.begin, 0, rt.heap.size);
+	//memset (rt.stacks.begin, 0, rt.stacks.size);
    
    // restart optget(3)
    optind = 1;

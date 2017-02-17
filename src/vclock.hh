@@ -13,7 +13,7 @@ public:
       tab (new int[size])
    {
       // for (int i = 0; i < size; ++i) ASSERT (tab[i] == 0);
-      for (int i = 0; i < size; ++i) tab[i] = 0;
+      for (unsigned i = 0; i < size; ++i) tab[i] = 0;
    }
   
    // copy constructor 
@@ -21,7 +21,7 @@ public:
       size (v.size),
       tab (new int[size])
    {
-      for (int i = 0; i < size; ++i) tab[i] = v.tab[i];
+      for (unsigned i = 0; i < size; ++i) tab[i] = v.tab[i];
    }
    
    // this = max(v1,v2)
@@ -30,7 +30,7 @@ public:
       tab (new int[size])
    {
       ASSERT (v1.size == v2.size);
-      for (int i = 0; i < size; ++i) tab[i] = std::max (v1.tab[i], v2.tab[i]);
+      for (unsigned i = 0; i < size; ++i) tab[i] = std::max (v1.tab[i], v2.tab[i]);
    }
 
    bool operator== (const vclockt &other) const;

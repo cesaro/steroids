@@ -33,6 +33,7 @@ const char *actiont_type_str (action_typet t)
    case action_typet::MTXLOCK   : return "MTX-LOCK";
    case action_typet::MTXUNLK   : return "MTX-UNLK";
    }
+   return 0;
 }
 
 void actiont::pretty_print ()

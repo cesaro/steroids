@@ -41,7 +41,7 @@ void *_rt_calloc  (size_t n, size_t size)
    return _rt_malloc (n * size);
 }
 
-void *_rt_malloc  (size_t size)
+void *_rt_malloc_uninitialized  (size_t size)
 {
    void *ptr;
 
@@ -60,6 +60,13 @@ void *_rt_malloc  (size_t size)
 
    //printf ("stid: rt: malloc: ret %p size %zu\n", ptr, size);
    TRACE2 (RT_MALLOC, ptr, size);
+   return ptr;
+}
+
+void *_rt_malloc  (size_t size)
+{
+   void *ptr;
+   ptr = _rt_malloc_uninitialized (size);
    if (ptr) memset (ptr, 0, size); // necessary for repeatable execution!!!!
    return ptr;
 }

@@ -122,6 +122,7 @@ void conft::build ()
  
    // safety check
    bool is_next_global = false;
+   (void) is_next_global; // assert
 
    // store the create event per thread
    std::vector<eventt*> createvs(num_ths);
@@ -340,7 +341,7 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
            // min 5 max 31
            ac.type = action_typet::RD64;
            ac.addr = act.addr ();
-           for (int i = 0; i < act.val_size (); i++)
+           for (unsigned i = 0; i < act.val_size (); i++)
            {
              ac.val = *act.val ();
              b_ev.redbox.push_back (ac);
@@ -352,7 +353,7 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
            // min 5 max 31
            ac.type = action_typet::WR64;
            ac.addr = act.addr ();
-           for (int i = 0; i < act.val_size (); i++)
+           for (unsigned i = 0; i < act.val_size (); i++)
            {
              ac.val = *act.val ();
              b_ev.redbox.push_back (ac);

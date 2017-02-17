@@ -60,7 +60,9 @@ uint64_t __rt_force_memstart_present ()
 {
    // since this function is public, the compiler cannot remove memstart from
    // the object file
-   return memstart + memend + evend;
+   // nor it will remove struct rt (at least in theory :/)
+   struct rt r;
+   return memstart + memend + evend + (uint64_t) &r;
 }
 
 void breakme () {}

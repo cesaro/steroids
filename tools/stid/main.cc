@@ -98,7 +98,7 @@ void replay2replay (std::vector<int> &rep1, struct stid_replay &rep2)
    da_init (&rep2.tab, struct stid_ctsw);
    da_trunc (&rep2.tab, rep1.size() / 2, struct stid_ctsw);
 
-   for (int i = 0; i < rep1.size() - 1; i += 2)
+   for (unsigned i = 0; i < rep1.size() - 1; i += 2)
    {
       assert (i + 1 < rep1.size());
       cs = &da_i(&rep2.tab, i/2, struct stid_ctsw);

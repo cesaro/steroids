@@ -841,7 +841,7 @@ int __rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr)
    if (t->stacksize == 0) t->stacksize = RT_DEFAULT_STACK_SIZE;
 
    // FIXME - malloc
-   t->stackaddr = _rt_malloc (t->stacksize);
+   t->stackaddr = _rt_malloc_uninitialized (t->stacksize);
    if (! t->stackaddr) goto err_malloc;
 
    // tell NPTL about this stack configuration
