@@ -147,6 +147,7 @@ int   _rt_pthread_detach(pthread_t t)
 {
    // main needs to JOIN for them, we do not support this for the time begin
    (void) t;
+   PRINT ("pthread_detach called and we do not have support for it");
    return EINVAL;
 }
 
@@ -159,12 +160,12 @@ int   _rt_pthread_join(pthread_t t, void **retval)
 
    // There are two situations of intererest for this function:
    // - We have 1 or more events to replay (replay.current > 0)
-   //   We just lock() and consume one.
+   //   We just join() and consume one.
    // - We have 0 events to replay (replay.current == 0) or free mode (-1)
-   //   In this case we need to yield(); lock(); wait(); if the scheduler
+   //   In this case we need to yield(); join(); wait(); if the scheduler
    //   picks this thread before the joined one finishes, then it will block
    //   this one until the other one finishes, and the cs lock will remain
-   //   available for others
+   //   unavailable for others, creating a deadlock
 
    _printf ("stid: rt: threading: join: t%d: still %d events to replay\n",
          TID (me), *rt->replay.current);
@@ -326,6 +327,7 @@ int   _rt_pthread_mutex_consistent(pthread_mutex_t *m)
    (void) m;
    return EINVAL;
 }
+
 int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
 {
    struct rt_tcb *me = __rt_thst.current;
@@ -679,8 +681,8 @@ int __rt_thread_protocol_wait (struct rt_tcb *t, pthread_mutex_t *m)
       // modify in _rt_pthread_mutex_lock, and run main8 from hello.c)
       if (m && *rt->replay.current == -1) return __rt_thread_protocol_wait2 (t, m);
 
-      // we gained exclusive access of the cs mutex, we should continue
-      // executing user code iff
+      // we gained exclusive access of the cs mutex, rt->replay.current points
+      // to a tid, NOT A COUNT; we should continue executing user code iff
       // - either we are in free mode (replay == -1)
       // - or the replay says that we need to execute now
       ASSERT (-1 <= *rt->replay.current)
@@ -698,8 +700,8 @@ int __rt_thread_protocol_wait (struct rt_tcb *t, pthread_mutex_t *m)
          }
          __rt_thst.current = t;
 
-         // if we don't have EOF in the replay, advance the counter and get nr
-         // of blue events
+         // if we don't have EOF in the replay, advance the pointer, so that it
+         // points to the count of blue events
          if (*rt->replay.current != -1)
          {
             rt->replay.current++;

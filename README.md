@@ -22,3 +22,4 @@ x hacer printf de stream desde el host
 x testear que todo esto funciona
 - move the public stuff of rt/rt.h to a new header and leave in rt/rt.h only the
   internal stuff
+- CONFIG\_DEBUG in rt/ needs to be a compilation option of steroids
