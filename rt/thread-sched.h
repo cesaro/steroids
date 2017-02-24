@@ -55,12 +55,31 @@ void __rt_thread_sleepset_init ();
 void __rt_thread_sleepset_awake (pthread_mutex_t *m);
 
 
-// the replay count can be "too short" only on the last context switch, on the
-// previous context switches the number of events to replay needs to be exactly
-// what the code consumes
+// the replay count, as generated from DPU or other tools will often be "too
+// short" meaning that the event on which the count becomes zero doesn't need to
+// be a context-switch point (lock or join). For instance, conside the following
+// configuration, and assume that you need to replay the event e, which makes
+// part of some alternative:
+//
+// t1      t2
+// ------- --------
+// start
+// |
+// lock x
+// |
+// unlock x
+// |    \
+// end   \
+//        lock x
+//        |
+//        unlock x (e)
+//
+// To replay that DPU will generate will be [t1 3; t2 2], which asks to stop t1
+// just after the "unlock x". The event "end" is not a context-switch point, so
+// steroids is unable to context switch there. Instead we continue executing
+// until the next context switch point happens, and do the context switch there.
+// The additional events that we introduce are necessary local (??).
 #define REPLAY_CONSUME_ONE() \
-   ASSERT (rt->replay.current == rt->replay.tab + rt->replay.size - 2 || \
-         *rt->replay.current > 0 || *rt->replay.current == -1); \
-   if (*rt->replay.current > 0) *rt->replay.current -= 1;
+   if (*rt->replay.current > 0) *rt->replay.current -= 1
 
 #endif
