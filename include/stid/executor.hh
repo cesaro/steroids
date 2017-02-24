@@ -22,11 +22,11 @@ struct ExecutorConfig
    /// Size of the whole memory area used to hold the guest program, including
    /// the jitted code, data, bss, heap, and stacks of each thread.
    uint64_t memsize;
-   /// Size of the stack of each thread. The stack of the main guest thread is
+   /// Default size for the stack of each thread. The stack of the main guest thread is
    /// allocated on the highest portion of the memory area allocated for the
    /// guest. The stack of every other thread is allocated by the runtime
    /// using malloc(3), they are thus in the guest's heap.
-   uint64_t stacksize;
+   uint64_t defaultstacksize;
    /// Maximum number of actions that runtime will log during one execution of
    /// the guest.
    uint64_t tracesize;;
@@ -44,15 +44,18 @@ public :
 
    void           run ();
    void           set_replay (const int *tab, int size);
+   void           add_sleepset (unsigned tid, void *addr);
+   void           clear_sleepset ();
    struct rt *    get_runtime ();
    action_streamt get_trace ();
 
-private :
-   struct rt                     rt;
-   ExecutorConfig                conf;
-   llvm::LLVMContext             &ctx;
-   llvm::Module                  *m;
-   llvm::ExecutionEngine         *ee;
+protected :
+   struct rt rt;
+   std::vector<unsigned> sleepsetidx;
+   ExecutorConfig conf;
+   llvm::LLVMContext &ctx;
+   llvm::Module *m;
+   llvm::ExecutionEngine *ee;
    int replay_capacity;
    int (*entry) (int, const char* const*, const char* const*);
 

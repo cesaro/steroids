@@ -113,8 +113,11 @@ void test1 ()
    }
 
    printf ("functions in the module:\n");
+#ifdef VERB_LEVEL_DEBUG
    for (auto & f : m->functions())
-      DEBUG ("- m %p fun %p decl %d name %s", m, &f, f.isDeclaration(), f.getName().str().c_str());
+      DEBUG ("- m %p fun %p decl %d name %s",
+            m, &f, f.isDeclaration(), f.getName().str().c_str());
+#endif
    fflush (stdout);
    llvm::outs().flush();
    llvm::errs().flush();
@@ -173,8 +176,11 @@ void test3 ()
    }
 
    printf ("functions in the module:\n");
+#ifdef VERB_LEVEL_DEBUG
    for (auto & f : *m)
-      DEBUG ("- m %p fun %p decl %d name %s", m, &f, f.isDeclaration(), f.getName().str().c_str());
+      DEBUG ("- m %p fun %p decl %d name %s",
+            m, &f, f.isDeclaration(), f.getName().str().c_str());
+#endif
    fflush (stdout);
    printf ("globals in the module:\n");
    for (auto & g : m->globals()) llvm::errs() << "- g " << &g << " dump " << g << "\n";
@@ -184,7 +190,7 @@ void test3 ()
    // memory
    ExecutorConfig conf;
    conf.memsize = 1 << 30; // 1G
-   conf.stacksize = 16 << 20; // 16M
+   conf.defaultstacksize = 16 << 20; // 16M
    conf.tracesize = 8 << 20; // 8M events (x 11 bytes per event)
    Executor e (std::move (mod), conf);
 
@@ -289,7 +295,7 @@ void test5 ()
    // memory
    ExecutorConfig conf;
    conf.memsize = 512 << 20; // 512M
-   conf.stacksize = 16 << 20; // 16M
+   conf.defaultstacksize = 16 << 20; // 16M
    conf.tracesize = 16 << 20; // 16M events (x 11 bytes per event)
    Executor e (std::move (mod), conf);
 
@@ -362,7 +368,7 @@ void test6 ()
    // memory
    ExecutorConfig conf;
    conf.memsize = 512 << 20; // 512M
-   conf.stacksize = 16 << 20; // 16M
+   conf.defaultstacksize = 16 << 20; // 16M
    conf.tracesize = 16 << 20; // 16M events (x max 17 bytes per event)
    Executor e (std::move (mod), conf);
 
@@ -381,12 +387,12 @@ void test6 ()
    e.envp.push_back (nullptr);
 
    // run the guest
-   //std::vector<int> replay2 {0, 5, 2, 1, 1, 4, 0, 1, 2, 3, 0, 2, -1};
-   //std::vector<int> replay2 {0, 3,  2, 1,  1, 1,  0, 2, -1};
-   //std::vector<int> replay2 {0, 5,  1, 1,  2, 1,  1, 3, -1};
+   //std::vector<int> replay2 {0, 9, 2, 1, 3, 1, -1};
+   //std::vector<int> replay2 {0, 9, -1};
    std::vector<int> replay2 {-1};
 
    e.set_replay (replay2.data(), (int) replay2.size());
+   //e.add_sleepset (0, (void*) 0x125);
    e.run ();
    action_streamt actions (e.get_trace ());
    action_stream2t s1 (actions);

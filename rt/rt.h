@@ -12,7 +12,6 @@ extern "C" {
 // configuration
 #define RT_MAX_THREADS 128
 #define RT_DEFAULT_STACK_SIZE (8 << 20) // 8M
-#define RT_MAX_OWNED_MUTEXES 64
 #define RT_MAX_ATEXIT_FUNS 64
 
 // event identifiers:
@@ -171,6 +170,8 @@ struct reptrace
    int size;
    // pointer to the current event count in the array above
    int *current;
+   // sleep set, index i is != NULL iff thread i is sleeping on that mutex
+   pthread_mutex_t* sleepset[RT_MAX_THREADS];
 };
 
 // this stores the entire state of the runtime
@@ -182,7 +183,7 @@ struct rt
    // subregions inside of "mem"
    struct memreg data;
    struct memreg heap;
-   struct memreg stacks;
+   struct memreg t0stack;
 
    // event trace
    struct eventrace trace;
@@ -190,6 +191,9 @@ struct rt
 
    // stack pointer of the host upon entry on guest code
    uint64_t host_rsp;
+
+   // default stack size for a thread
+   size_t default_thread_stack_size;
 };
 
 // const for fast address checking without memory access, defined in main.c

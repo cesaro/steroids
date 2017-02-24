@@ -82,6 +82,7 @@ int main (int argc, char **argv, char **env);
 #endif
 
 #include "events.c"
+#include "thread-sched.c"
 #include "pthread.c"
 #include "libc.c"
 #include "buddy.c"

@@ -67,7 +67,7 @@ void *_rt_malloc  (size_t size)
 {
    void *ptr;
    ptr = _rt_malloc_uninitialized (size);
-   if (ptr) memset (ptr, 0, size); // necessary for repeatable execution!!!!
+   if (ptr) memset (ptr, 0, size);
    return ptr;
 }
 
@@ -94,6 +94,8 @@ void *_rt_realloc (void *ptr, size_t size)
 
    // this is strictly not safe, as size could be larger than the size of the
    // area pointed by ptr and then the memory areas could overlap
+   PRINT ("warning: performing unsafe realloc: ptr %p newptr %p size %lu",
+         ptr, newptr, size);
    memcpy (newptr, ptr, size);
    _rt_free (ptr);
    return newptr;
@@ -126,8 +128,8 @@ void _rt_abort ()
 {
    // FIXME - we should check that we are called from main, we should destroy
    // the conditional variable, etc...
-   printf ("stid: rt: abort: called from t%d\n", TID (__rt_thst.current));
-   if (TID (__rt_thst.current) != 0)
+   printf ("stid: rt: abort: called from t%d\n", TID (__state.current));
+   if (TID (__state.current) != 0)
    {
       printf ("stid: rt: abort: not supported, this is a limitation of steroids.\n");
       ASSERT (0);
@@ -146,10 +148,10 @@ void _rt__exit (int status)
    fflush (stderr);
 
    // we do not support exiting from another thread != main
-   if (TID (__rt_thst.current) != 0)
+   if (TID (__state.current) != 0)
    {
       PRINT ("t%d: called exit: not currently supported by the runtime",
-            TID (__rt_thst.current) != 0);
+            TID (__state.current) != 0);
       ASSERT (0);
       __rt_panic ();
    }
@@ -163,7 +165,7 @@ void _rt__exit (int status)
    if (*rt->replay.current == 1) *rt->replay.current = 0;
 
    // destroy conditional variable
-   ret = pthread_cond_destroy (&__rt_thst.tcbs[0].cond);
+   ret = pthread_cond_destroy (&__state.tcbs[0].cond);
    if (ret)
    {
       PRINT ("t0: cond var: errors while destroying: %s; ignoring",
@@ -176,24 +178,26 @@ void _rt__exit (int status)
 
 unsigned int _rt_sleep (unsigned int sec)
 {
-   //struct rt_tcb *me = __rt_thst.current;
-   unsigned ret;
-
-   //__rt_thread_protocol_yield (me);
-   ret = sleep (sec);
-   //__rt_thread_protocol_wait (me);
-   return ret;
+#if 1
+   PRINT ("t%d: sleep: sec %u, returning EINTR immediately",
+         TID (__state.current), sec);
+   return EINTR;
+#else
+   // could we choose another thread to schedule here?
+   return sleep (sec);
+#endif
 }
 
 int _rt_usleep (useconds_t us)
 {
-   //struct rt_tcb *me = __rt_thst.current;
-   unsigned ret;
-
-   //__rt_thread_protocol_yield (me);
-   ret = usleep (us);
-   //__rt_thread_protocol_wait (me);
-   return ret;
+#if 1
+   PRINT ("t%d: usleep: usec %u, returning EINTR immediately",
+         TID (__state.current), us);
+   return EINTR;
+#else
+   // could we choose another thread to schedule here?
+   return usleep (us);
+#endif
 }
 
 int *_rt___errno_location ()
@@ -298,21 +302,26 @@ extern inline void __rt_var_store_program_invocation_short_name (char *n)
 
 int _rt_fclose (FILE *f)
 {
-   printf ("stid: rt: fclose: f %p (%s)\n",
-         f,
+   const char *n =
          f == stdout ? "stdout" :
          f == stdin ? "stdin" :
-         f == stderr ? "stderr" : "?");
-   fflush (stdout);
-   if (f == stdout || f == stdin || f == stderr) return 0; // fake!
+         f == stderr ? "stderr" : "?";
+   if (f == stdout || f == stdin || f == stderr)
+   {
+      PRINT ("f %p (%s): refraining to close %s, but returning success\n",
+            f, n, n);
+      return 0; // fake!
+   }
    return fclose (f);
 }
 
 int _rt_close (int fd)
 {
-   printf ("stid: rt: close: fd %d\n", fd);
-   fflush (stdout);
-   if (fd == 0 || fd == 1 || fd == 2) return 0; // fake !
+   if (fd == 0 || fd == 1 || fd == 2)
+   {
+      PRINT ("fd %d: refraining to close %d, but returning success\n", fd, fd);
+      return 0; // fake !
+   }
    return close (fd);
 }
 

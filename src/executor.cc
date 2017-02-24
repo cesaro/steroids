@@ -45,6 +45,7 @@ uint8_t *MyMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment
 }
 
 Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
+   sleepsetidx (),
    conf (c),
    ctx (mod->getContext ()),
    m (mod.get()),
@@ -60,6 +61,9 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    rt.trace.addr.begin = 0;
    rt.trace.id.begin = 0;
    rt.trace.val.begin = 0;
+
+   // reserve capacity in sleepsetidx
+   sleepsetidx.reserve (RT_MAX_THREADS);
 
    // create a memory manager for the JIT engine (the builder owns the object)
    std::unique_ptr<llvm::RTDyldMemoryManager> mm (new MyMemoryManager (rt));
@@ -119,27 +123,31 @@ void Executor::print_memreg (struct memreg *m, const char *prefix, const char *s
 
 void Executor::initialize_and_instrument_rt ()
 {
+   unsigned i;
+
    INFO ("stid: executor: allocating guest memory");
 
-   // the stacks should fit into the main memory
-   if (conf.stacksize >= conf.memsize)
+   // main's stack should fit into the main memory
+   if (conf.defaultstacksize >= conf.memsize)
    {
       std::string s = fmt ("stid: executor: requested stack size (%lu) is larger "
             "than requested memory size (%lu)",
-            conf.stacksize, conf.memsize);
+            conf.defaultstacksize, conf.memsize);
       throw std::runtime_error (s.c_str());
    }
+   rt.default_thread_stack_size = conf.defaultstacksize;
 
-   // allocate the memory space for the guest code (heap + stacks)
+   // allocate the memory space for the guest code (data, rodata, bss, heap,
+   // main stack, ...)
    malloc_memreg (&rt.mem, conf.memsize);
    if (rt.mem.begin == 0)
       throw std::runtime_error ("stid: executor: unable to malloc guest memory,"
             " malloc failed");
 
-   // stacks are located at the end of the memory
-   rt.stacks.size = conf.stacksize;
-   rt.stacks.end = rt.mem.end;
-   rt.stacks.begin = rt.stacks.end - rt.stacks.size;
+   // the main stack is located at the end of the memory
+   rt.t0stack.size = conf.defaultstacksize;
+   rt.t0stack.end = rt.mem.end;
+   rt.t0stack.begin = rt.t0stack.end - rt.t0stack.size;
 
    // the data segment will be initialized when the JIT engine calls our
    // MyMemoryManager, which in turn grows this section to place the .data,
@@ -176,6 +184,7 @@ void Executor::initialize_and_instrument_rt ()
    rt.replay.tab = new int[replay_capacity];
    rt.replay.tab[0] = -1; // we start in free mode
    rt.replay.size = 1;
+   for (i = 0; i < RT_MAX_THREADS; i++) rt.replay.sleepset[i] = 0;
 
    // function __rt_start will save here the hosts's stack pointer
    rt.host_rsp = 0;
@@ -248,10 +257,21 @@ void Executor::jit_compile ()
    // allocation of the data segments takes place in finalizeObject(), so we
    // need to now correct (define) the heap memory region in rt
    rt.heap.begin = (uint8_t *) ALIGN16 (rt.data.end);
-   rt.heap.end = rt.stacks.begin;
+   rt.heap.end = rt.t0stack.begin;
    rt.heap.size = rt.heap.end - rt.heap.begin;
 
-   INFO ("stid: executor: done, entry function (__rt_start) at %p", entry);
+   INFO ("stid: executor: done: %zu%s total memory, "
+         "%zu%s data, %zu%s heap, %zu%s default stack size",
+         UNITS_SIZE (rt.mem.size),
+         UNITS_UNIT (rt.mem.size),
+         UNITS_SIZE (rt.data.size),
+         UNITS_UNIT (rt.data.size),
+         UNITS_SIZE (rt.heap.size),
+         UNITS_UNIT (rt.heap.size),
+         UNITS_SIZE (rt.default_thread_stack_size),
+         UNITS_UNIT (rt.default_thread_stack_size));
+
+   TRACE ("stid: executor: entry function (__rt_start) at %p", entry);
 
    //DEBUG ("stid: executor: rt       %18p", &rt);
    //DEBUG ("stid: executor: memstart %18p", rt.mem.begin);
@@ -263,7 +283,7 @@ void Executor::jit_compile ()
       print_memreg (&rt.mem, "stid: executor:  ", ", total guest memory\n");
       print_memreg (&rt.data, "stid: executor:  ", ", data (.data, .bss, .rodata, and others)\n");
       print_memreg (&rt.heap, "stid: executor:  ", ", heap\n");
-      print_memreg (&rt.stacks, "stid: executor:  ", ", stack (main thread)\n");
+      print_memreg (&rt.t0stack, "stid: executor:  ", ", stack (main thread)\n");
    }
 
    TRACE ("stid: executor: event trace buffer:");
@@ -319,7 +339,7 @@ void Executor::detex_apply ()
    // we should clear memory here
    //DEBUG ("stid: executor: detex: clearing memory out...");
    //memset (rt.heap.begin, 0, rt.heap.size);
-	//memset (rt.stacks.begin, 0, rt.stacks.size);
+	//memset (rt.t0stack.begin, 0, rt.t0stack.size);
    
    // restart optget(3)
    optind = 1;
@@ -405,6 +425,18 @@ void Executor::set_replay (const int *tab, int size)
    }
    DEBUG ("");
 #endif
+}
+
+void Executor::add_sleepset (unsigned tid, void *addr)
+{
+   ASSERT (tid < RT_MAX_THREADS);
+   sleepsetidx.push_back (tid);
+   rt.replay.sleepset[tid] = (pthread_mutex_t *) addr;
+}
+
+void Executor::clear_sleepset ()
+{
+   for (auto i : sleepsetidx) rt.replay.sleepset[i] = 0;
 }
 
 struct rt *Executor::get_runtime ()

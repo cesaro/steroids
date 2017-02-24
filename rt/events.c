@@ -372,7 +372,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
    __rt_memreg_print (&rt->data, "stid: rt: main:  ", ", data (.data, .bss, .rodata, and others)\n");
    __rt_memreg_print (&rt->heap, "stid: rt: main:  ", ", heap\n");
-   __rt_memreg_print (&rt->stacks, "stid: rt: main:  ", ", stacks\n");
+   __rt_memreg_print (&rt->t0stack, "stid: rt: main:  ", ", main stack\n");
    printf ("stid: rt: main: event trace buffer:\n");
    __rt_memreg_print (&rt->trace.ev, "stid: rt: main:  ", ", event trace (8bit event ids)\n");
    __rt_memreg_print (&rt->trace.addr, "stid: rt: main:  ", ", event trace (64bit addr)\n");
@@ -381,12 +381,13 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
 #endif
    _printf ("stid: rt: main: replay seq: ");
    for (i = 0; rt->replay.tab[i] != -1; i += 2)
-   {
-      //if (i % 20 == 0 && i) printf ("\nstid: rt: main:  ");
       _printf ("%d %d; ", rt->replay.tab[i], rt->replay.tab[i+1]);
-   }
    _printf ("-1\n");
-   _printf ("stid: rt: main: ======================\n");
+   _printf ("stid: rt: main: sleepset: ");
+   for (i = 0; i < RT_MAX_THREADS; i++)
+      if (rt->replay.sleepset[i])
+         _printf ("%d (%p); ", i, rt->replay.sleepset[i]);
+   _printf ("\nstid: rt: main: ======================\n");
 
    // initialize subsystems (before this there is no guarantee that
    // std{in,out,err} are correctly initialized!!!
@@ -423,7 +424,6 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
 #endif
    __rt_debug_header ();
    ret = main (argc, myargv, myenv);
-   _printf ("stid: rt: main: returned %d\n", ret);
 
    // do the instrumented verison of exit(3)
    _rt_exit (ret);

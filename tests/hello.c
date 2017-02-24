@@ -393,6 +393,7 @@ int main7 ()
 }
 
 pthread_mutex_t m8 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t m88;
 
 void *thread8 (void *arg)
 {
@@ -403,7 +404,7 @@ void *thread8 (void *arg)
    printf ("thread%d: starting! arg %p\n", i, arg);
    ms = 100 + random () % 500;
    printf ("thread%d: sleeping %dms ...!\n", i, ms);
-   //usleep (ms * 1000);
+   usleep (ms * 1000);
 
    // lock, unlock
    ret = pthread_mutex_lock (&m8);
@@ -415,7 +416,7 @@ void *thread8 (void *arg)
    return (void*) (long) 10 + i;
 }
 
-#define NR8 1
+#define NR8 2
 
 int main8 ()
 {

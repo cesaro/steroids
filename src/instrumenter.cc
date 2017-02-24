@@ -171,6 +171,7 @@ void Instrumenter::init_maps ()
    }
 
    // print function ids
+#ifdef VERB_LEVEL_DEBUG
    for (auto &p : funids)
    {
       DEBUG ("stid: instrumenter: init maps: funids: id %#5x %s %s",
@@ -178,6 +179,7 @@ void Instrumenter::init_maps ()
             p.first->isDeclaration() ? "decl" : "fun ",
             p.first->getName().str().c_str());
    }
+#endif
 }
 
 bool Instrumenter::do_external_load (llvm::LoadInst &i)

@@ -9,39 +9,6 @@
 // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/pthread.h.html
 
 #include <pthread.h>
-#include "lsd.h"
-
-// Thread Control Block
-struct rt_tcb
-{
-   // flags, see below
-   struct {
-      unsigned alive : 1;
-      unsigned detached : 1;
-   } flags;
-   // handle for the NPTL library
-   pthread_t tid;
-   // conditional variable, for the WAIT protocol when in replay mode
-   pthread_cond_t cond;
-
-   // the arguments of pthread_create and return value of the thread
-   void *(*start)(void *);
-   void *arg;
-   void *retval;
-
-   // location of the stack
-   void  *stackaddr;
-   size_t stacksize;
-
-   // the list of mutexes currently owned by the thread
-   pthread_mutex_t *ownedmut[RT_MAX_OWNED_MUTEXES];
-   unsigned ownedmut_size;
-};
-
-struct rt_mut
-{
-   struct lsd node;
-};
 
 // thread attributes
 int   _rt_pthread_attr_init(pthread_attr_t *);
@@ -172,13 +139,7 @@ int   _rt_pthread_getcpuclockid(pthread_t, clockid_t *);
 int   _rt_pthread_atfork(void (*)(void), void (*)(void), void(*)(void));
 
 // internal
-void  __rt_thread_init (void);
-void  __rt_thread_term (void);
-void *__rt_thread_start (void *arg);
-int   __rt_thread_protocol_wait (struct rt_tcb *t, pthread_mutex_t *m);
-int   __rt_thread_protocol_wait2 (struct rt_tcb *t, pthread_mutex_t *m);
-void  __rt_thread_protocol_wait_first ();
-void  __rt_thread_protocol_yield (struct rt_tcb *t);
+struct rt_tcb;
 int   __rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr);
 void  __rt_thread_stack_free (struct rt_tcb *t);
 
