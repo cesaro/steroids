@@ -125,7 +125,7 @@ void Executor::initialize_and_instrument_rt ()
 {
    unsigned i;
 
-   INFO ("stid: executor: allocating guest memory");
+   TRACE ("stid: executor: allocating guest memory");
 
    // main's stack should fit into the main memory
    if (conf.defaultstacksize >= conf.memsize)
@@ -190,7 +190,7 @@ void Executor::initialize_and_instrument_rt ()
    rt.host_rsp = 0;
 
    // instrument the module to use this->rt as state
-   INFO ("stid: executor: instrumenting constant pointers:");
+   TRACE ("stid: executor: instrumenting constant pointers:");
    llvm::GlobalVariable *g;
    llvm::Type *t;
    std::string s;
@@ -243,7 +243,7 @@ void Executor::restart_trace ()
 void Executor::jit_compile ()
 {
    void *ptr;
-   INFO ("stid: executor: jit compiling ...");
+   TRACE ("stid: executor: jit compiling ...");
 
    // ask LLVM to JIT the program
    ee->finalizeObject ();
@@ -260,7 +260,7 @@ void Executor::jit_compile ()
    rt.heap.end = rt.t0stack.begin;
    rt.heap.size = rt.heap.end - rt.heap.begin;
 
-   INFO ("stid: executor: done: %zu%s total memory, "
+   INFO ("stid: executor: ready: %zu%s total memory, "
          "%zu%s data, %zu%s heap, %zu%s default stack size",
          UNITS_SIZE (rt.mem.size),
          UNITS_UNIT (rt.mem.size),
@@ -299,12 +299,12 @@ void Executor::instrument_events ()
 {
    // instrument the code
    Instrumenter i;
-   INFO ("stid: executor: instrumenting source...");
+   TRACE ("stid: executor: instrumenting source...");
    if (not i.instrument (*m))
    {
       throw std::runtime_error ("stid: executor: rt missing in input module");
    }
-   INFO ("stid: executor: done");
+   TRACE ("stid: executor: done");
 }
 
 void Executor::detex_init ()
