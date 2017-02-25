@@ -91,11 +91,12 @@ struct rt_tcb* __rt_thread_sched_find_any ()
    int ret;
    struct rt_tcb *t;
 
-   i = TID (__state.current);
-   //i = 0;
+   // choose a thread to start the round of checks for executability
+   //i = TID (__state.current);
+   i = 0;
 
    // we scan all tcbs to search for one that is ready to execute, stating from
-   // __state.current
+   // thread i
    for (j = 0; j < __state.next; j++)
    {
       if (__rt_thread_sched_update (__state.tcbs + i))
