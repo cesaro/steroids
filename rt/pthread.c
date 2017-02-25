@@ -64,6 +64,7 @@ int   _rt_pthread_create(pthread_t *tid,
 
    // initialize the TCB
    t->flags.alive = 1;
+   t->flags.needsjoin = 0;
    t->flags.detached = 0;
    t->state = SCHED_RUNNABLE;
    // wait_join and wait_mutex do not need to be initialized
@@ -154,8 +155,13 @@ int   _rt_pthread_join(pthread_t t, void **retval)
    __rt_thread_protocol_yield ();
 
    // when we are scheduled again we can join without blocking
+   ASSERT (other->flags.alive == 0);
+   ASSERT (other->flags.needsjoin == 1);
    ret = pthread_join (other->tid, 0);
    if (ret) return ret;
+
+   // mark that we already joined for this thread
+   other->flags.needsjoin = 0;
 
    // log event, and consume one from the replay sequence
    TRACE3 (RT_THJOIN, TID (other));
@@ -171,15 +177,37 @@ void  _rt_pthread_exit(void *retval)
 {
    struct rt_tcb *me = __state.current;
    int ret;
+   unsigned i;
 
    _printf ("stid: rt: threading: t%d: "
-         "pthread_exit (retval=%p); replay %d\n",
-         TID (me), retval, *rt->replay.current);
+         "pthread_exit (retval=%p); replay %d, alive %d\n",
+         TID (me), retval, *rt->replay.current, __state.num_ths_alive);
 
-   // if we are the main thread, we exit with status 0
-   // FIXME - this is strictly a violation of what POSIX says, we should wait
-   // for the others, but the current implementation does not support that
-   if (TID (me) == 0) _rt_exit (0);
+   // if we are the main thread, either we exit with status 0 (if no other
+   // thread is alive) or we wait for the other threads to finish, join for the
+   // NPTL threads, and then exit with status 0
+   if (TID (me) == 0)
+   {
+      if (__state.num_ths_alive >= 2)
+      {
+         // wait for all threads to finish
+         me->state = SCHED_WAIT_ALLEXIT;
+         __rt_thread_protocol_yield ();
+         ASSERT (__state.num_ths_alive == 1); // only me!
+
+         // NPTL join (releasea resources, otherwise I get segfaults...)
+         for (i = 0; i < __state.next; i++)
+         {
+            if (__state.tcbs[i].flags.needsjoin)
+            {
+               _printf ("stid: rt: threading: t%d: joining for t%d\n", TID (me), i);
+               if (pthread_join (__state.tcbs[i].tid, 0))
+                  PRINT ("t%d: exit: errors while joinng for t%d; ignoring", TID(me), i);
+            }
+         }
+      }
+      _rt_exit (0);
+   }
 
    // otherwise, log the _THEXIT event and decrement number of threads alive
    TRACE0 (RT_THEXIT);
@@ -187,6 +215,7 @@ void  _rt_pthread_exit(void *retval)
    __state.num_ths_alive--;
    me->retval = retval;
    me->flags.alive = 0;
+   me->flags.needsjoin = 1;
 
    // consume one event in the replay sequence
    REPLAY_CONSUME_ONE ();
@@ -206,8 +235,8 @@ void  _rt_pthread_exit(void *retval)
    // thread is not alive and will come back without locking again the cs mutex
    __rt_thread_protocol_yield ();
 
-   // terminate this thread and return retval
-   pthread_exit (me);
+   // terminate this thread
+   pthread_exit (0);
 }
 
 pthread_t _rt_pthread_self (void)

@@ -393,7 +393,6 @@ int main7 ()
 }
 
 pthread_mutex_t m8 = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t m88;
 
 void *thread8 (void *arg)
 {
@@ -518,10 +517,47 @@ int main9 ()
    return 0;
 }
 
+
+pthread_mutex_t m10 = PTHREAD_MUTEX_INITIALIZER;
+
+void *thread10 (void *arg)
+{
+   int i;
+
+   (void) arg;
+
+   for (i = 0; i < 3; i++)
+   {
+      pthread_mutex_lock (&m10);
+      printf ("t: in critical section!!!!!\n");
+      pthread_mutex_unlock (&m10);
+   }
+
+   return NULL;
+}
+
+int main10 ()
+{
+   pthread_t t;
+   int ret;
+
+   /* create threads */
+   ret = pthread_create (&t, NULL, thread10, NULL);
+   ret = pthread_create (&t, NULL, thread10, NULL);
+   printf ("m: create: ret %d\n", ret);
+   assert (ret == 0);
+
+   sleep (1);
+
+   pthread_exit (0);
+
+   return 0;
+}
+
 //int main (int argc, char **argv)
 int main ()
 {
    //return main9 ();
-   return main8 ();
+   return main10 ();
 }
 

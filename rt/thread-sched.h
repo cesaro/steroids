@@ -9,8 +9,9 @@ struct rt_tcb
 {
    /// flags, see below
    struct {
-      unsigned alive : 1;    /// true iff the thread has been created and did not exit
-      unsigned detached : 1; /// not used?
+      unsigned alive : 1;     /// true iff the thread has been created and did not exit
+      unsigned needsjoin : 1; /// true iff the thread has been alive but no thread joined for him so far
+      unsigned detached : 1;  /// not used?
    } flags;
 
    /// scheduling state
@@ -18,7 +19,8 @@ struct rt_tcb
       SCHED_RUNNABLE,      /// thread can now run
       SCHED_WAIT_MUTEX,    /// thread is waiting for a mutex to become available
       SCHED_WAIT_JOIN,     /// thread is waiting for another thread to exit
-      SCHED_WAIT_SS        /// thread is sleepset blocked
+      SCHED_WAIT_SS,       /// thread is sleepset blocked
+      SCHED_WAIT_ALLEXIT   /// thread is waiting for all other threads to finish (only main thread)
    } state;
 
    /// when in SCHED_WAIT_JOIN, the thread is waiting for this thread

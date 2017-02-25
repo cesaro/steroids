@@ -387,7 +387,6 @@ void test6 ()
    e.envp.push_back (nullptr);
 
    // run the guest
-   //std::vector<int> replay2 {0, 9, 2, 1, 3, 1, -1};
    //std::vector<int> replay2 {0, 9, -1};
    std::vector<int> replay2 {-1};
 

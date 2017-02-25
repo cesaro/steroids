@@ -434,8 +434,6 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
 
 void __rt_cend (uint32_t exitcode)
 {
-   (void) exitcode;
-
    // termination functions for different subsystems
    __rt_libc_term ();
 

@@ -53,8 +53,8 @@ int __rt_thread_sched_update (struct rt_tcb *t)
          __rt_thread_sleepset_awake (t->wait_mutex);
          // change the thread state
          t->state = SCHED_RUNNABLE;
-         //_printf ("stid: rt: threading: sched: update: t%d, "
-         //      "WAIT_MUTEX(%p) -> RUNNABLE\n", TID (t), t->wait_mutex);
+         _printf ("stid: rt: threading: sched: update: t%d, "
+               "WAIT_MUTEX(%p) -> RUNNABLE\n", TID (t), t->wait_mutex);
          return 1;
       }
       ASSERT (ret == EBUSY); // could also be other errors ...
@@ -66,8 +66,8 @@ int __rt_thread_sched_update (struct rt_tcb *t)
       if (! t->wait_join->flags.alive)
       {
          t->state = SCHED_RUNNABLE;
-         //_printf ("stid: rt: threading: sched: update: t%d, "
-         //      "WAIT_JOIN(t%d) -> RUNNABLE\n", TID (t), TID (t->wait_join));
+         _printf ("stid: rt: threading: sched: update: t%d, "
+               "WAIT_JOIN(t%d) -> RUNNABLE\n", TID (t), TID (t->wait_join));
          return 1;
       }
       return 0;
@@ -76,6 +76,20 @@ int __rt_thread_sched_update (struct rt_tcb *t)
       // the only way to wake him up is when some other thread locks on
       // t->wait_mutex, and that will turn this thread from SCHED_WAIT_SS into
       // SCHED_WAIT_MUTEX
+      return 0;
+
+   case SCHED_WAIT_ALLEXIT :
+      // only the main thread can be in this state, it gets here only if it
+      // executes pthread_exit() and there is at least one other thread alive;
+      // it becomes runnable only when all other threads are dead
+      ASSERT (TID(t) == 0);
+      if (__state.num_ths_alive == 1)
+      {
+         t->state = SCHED_RUNNABLE;
+         _printf ("stid: rt: threading: sched: update: t%d, "
+               "WAIT_ALLEXIT -> RUNNABLE\n", TID (t));
+         return 1;
+      }
       return 0;
    }
 }
@@ -251,6 +265,7 @@ void  __rt_thread_init (void)
    __state.num_ths_alive = 1;
    __state.sleepset.size = 0;
    __state.tcbs[0].flags.alive = 1;
+   __state.tcbs[0].flags.needsjoin = 0;
    __state.tcbs[0].flags.detached = 0;
    __state.tcbs[0].stackaddr = 0;
    __state.tcbs[0].stacksize = 0;
@@ -380,30 +395,24 @@ void __rt_thread_protocol_wait (struct rt_tcb *me)
    // lock on the global mutex
    ret = pthread_mutex_lock (&__state.m);
    if (ret != 0) goto err_panic;
-   //_printf ("stid: rt: threading: proto: t%d: acquired cs lock\n", TID (me));
+   _printf ("stid: rt: threading: proto: t%d: acquired cs lock\n", TID (me));
 
    // if I am not the next thread to execute, then this was a spurious lock and
    // I wait until it's my turn
    if (__state.current != me)
    {
-      //_printf ("stid: rt: threading: proto: t%d: "
-      //      "spurious acquisition (next is t%d), waiting\n",
-      //      TID (me), TID (__state.current));
+      _printf ("stid: rt: threading: proto: t%d: "
+            "spurious acquisition (next is t%d), waiting\n",
+            TID (me), TID (__state.current));
       ret = pthread_cond_wait (&me->cond, &__state.m);
       if (ret != 0) goto err_wait;
-      //_printf ("stid: rt: threading: proto: t%d: "
-      //      "acquired cs lock after cond_wait\n", TID (me));
+      _printf ("stid: rt: threading: proto: t%d: "
+            "acquired cs lock after cond_wait\n", TID (me));
    }
 
    // now I should be the next thread to run
    ASSERT (__state.current == me);
    return;
-
-#if 0
-   // move ths comment to the schedulig code
-         _printf ("stid: rt: threading: proto: t%d: still %d events to replay\n",
-               TID (t), *rt->replay.current);
-#endif
 
 err_wait :
    PRINT ("error: t%d: waiting on conditional variable: %s",
@@ -436,7 +445,7 @@ void __rt_thread_protocol_yield ()
    // otherwise we need to context switch to thread t
    TRACE3 (RT_THCTXSW, TID (t));
    __state.current = t;
-   //_printf ("stid: rt: threading: proto: t%d: signaling to t%d\n", TID (me), TID(t));
+   _printf ("stid: rt: threading: proto: t%d: signaling to t%d\n", TID (me), TID(t));
    ret = pthread_cond_signal (&t->cond);
    if (ret)
    {
