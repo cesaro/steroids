@@ -76,7 +76,7 @@ void __rt_thread_sleepset_awake (pthread_mutex_t *m);
 //        |
 //        unlock x (e)
 //
-// To replay that DPU will generate will be [t1 3; t2 2], which asks to stop t1
+// To replay that DPU will generate the sequence [t1 3; t2 2], which asks to stop t1
 // just after the "unlock x". The event "end" is not a context-switch point, so
 // steroids is unable to context switch there. Instead we continue executing
 // until the next context switch point happens, and do the context switch there.

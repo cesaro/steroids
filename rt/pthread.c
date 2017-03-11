@@ -188,22 +188,24 @@ void  _rt_pthread_exit(void *retval)
    // NPTL threads, and then exit with status 0
    if (TID (me) == 0)
    {
+      // wait for all threads to finish
       if (__state.num_ths_alive >= 2)
       {
-         // wait for all threads to finish
          me->state = SCHED_WAIT_ALLEXIT;
          __rt_thread_protocol_yield ();
-         ASSERT (__state.num_ths_alive == 1); // only me!
+      }
+      ASSERT (__state.num_ths_alive == 1); // only me!
 
-         // NPTL join (releasea resources, otherwise I get segfaults...)
-         for (i = 0; i < __state.next; i++)
+      // NPTL join (release resources, otherwise I get segfaults...)
+      _printf ("stid: rt: threading: t%d: scanning all threads to join (next %d)\n", TID (me), __state.next);
+      for (i = 0; i < __state.next; i++)
+      {
+         _printf ("stid: rt: threading: t%d: checking tid %d, needsjoin %d\n", TID(me), i, __state.tcbs[i].flags.needsjoin);
+         if (__state.tcbs[i].flags.needsjoin)
          {
-            if (__state.tcbs[i].flags.needsjoin)
-            {
-               _printf ("stid: rt: threading: t%d: joining for t%d\n", TID (me), i);
-               if (pthread_join (__state.tcbs[i].tid, 0))
-                  PRINT ("t%d: exit: errors while joinng for t%d; ignoring", TID(me), i);
-            }
+            _printf ("stid: rt: threading: t%d: joining for t%d\n", TID (me), i);
+            if (pthread_join (__state.tcbs[i].tid, 0))
+               PRINT ("t%d: exit: errors while joinng for t%d; ignoring", TID(me), i);
          }
       }
       _rt_exit (0);

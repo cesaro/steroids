@@ -296,6 +296,8 @@ void  __rt_thread_term (void)
       PRINT ("error: thread %d called exit() but this runtime "
             "only supports calls to exit() from the main thread",
             TID (__state.current));
+      fflush (stdout);
+      fflush (stderr);
       exit (1);
    }
 
@@ -305,6 +307,8 @@ void  __rt_thread_term (void)
       PRINT ("error: main thread called exit() but %d other threads are still alive;"
             " this is not currently supported by the runtime",
             __state.num_ths_alive - 1);
+      fflush (stdout);
+      fflush (stderr);
       exit (1);
    }
 

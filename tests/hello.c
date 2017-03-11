@@ -526,7 +526,7 @@ void *thread10 (void *arg)
 
    (void) arg;
 
-   for (i = 0; i < 3; i++)
+   for (i = 0; i < 5; i++)
    {
       pthread_mutex_lock (&m10);
       printf ("t: in critical section!!!!!\n");
@@ -543,14 +543,14 @@ int main10 ()
 
    /* create threads */
    ret = pthread_create (&t, NULL, thread10, NULL);
-   ret = pthread_create (&t, NULL, thread10, NULL);
+   //ret = pthread_create (&t, NULL, thread10, NULL);
    printf ("m: create: ret %d\n", ret);
    assert (ret == 0);
 
+   thread10 (0);
    sleep (1);
 
    pthread_exit (0);
-
    return 0;
 }
 
