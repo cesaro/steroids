@@ -387,10 +387,40 @@ void test6 ()
    e.envp.push_back (nullptr);
 
    // run the guest
-   //std::vector<int> replay2 {0, 9, -1};
-   std::vector<int> replay2 {-1};
+#if 0
+   std::vector<struct replayevent> replay2 = {
+      {0, 1},  // #0 st
+      {0, 3},  // #0 c#1 c#2 l
+      {1, 1},  // #1 st
+      {0, 2},  // #0 u l
+      {0, 1},  // #0 u
+      {1, 2},  // #1 l u
+      {2, 3},  // #0 st, l, u
+      {-1, -1} // free mode
+   };
+#endif
+#if 0
+   std::vector<struct replayevent> replay2 = {
+      {0, 1},  // #0 st
+      {0, 8},  // #0 c#1 c#2 l,u x 3 , but no exit
+      {1, 2},  // #1 s l
+      // {0, 1}, -> error, cannot schedule the #0 exit
+      {-1, -1} // free mode
+   };
+#endif
+#if 1
+   std::vector<struct replayevent> replay2 = {
+      {0, 1},  // #0 st
+      {0, 1},  // #0 c#1
+      {1, 1 + 2 * 3}, // #1 st, lu x 3, stop before the exit
+      {0, 1},  // #0 c#2
+      {2, 1},
+      {-1, -1} // free mode
+   };
+#endif
+   //std::vector<struct replayevent> replay2 = {{-1, -1}};
 
-   e.set_replay (replay2.data(), (int) replay2.size());
+   e.set_replay (replay2.data(), replay2.size());
    //e.add_sleepset (0, (void*) 0x125);
    e.run ();
    action_streamt actions (e.get_trace ());
@@ -399,7 +429,7 @@ void test6 ()
    // print the stream and the replay
    actions.print ();
    actions.print_replay ();
-   std::vector<int> replay = actions.get_replay ();
+   std::vector<struct replayevent> replay = actions.get_replay ();
 
 #if 0
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -423,7 +453,7 @@ void test6 ()
 #endif
    // build a po and print it
    conft po (actions);
-   po.build ();
+   //po.build ();
    po.print ();
 
    fflush (stdout);

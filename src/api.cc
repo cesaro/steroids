@@ -203,7 +203,13 @@ int stid_run (struct stid *s, struct stid_replay *rep)
       }
       replay.push_back (-1);
    }
-   s->e->set_replay (replay.data(), replay.size());
+
+   // The C API to set the replay is now broken following the changes performed
+   // on the replay data structure, we need to updated it.
+   printf ("FIXME - The API to set replays is now broken!!!\n");
+   exit (1);
+   //s->e->set_replay (replay.data(), replay.size());
+
    DEBUG ("stid: run: running the guest ...");
 
    // run the guest

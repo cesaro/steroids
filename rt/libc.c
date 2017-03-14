@@ -161,8 +161,8 @@ void _rt__exit (int status)
    rt->trace.num_blue[0]++;
 
    // consume one event (the last) from the replay sequence
-   ASSERT (*rt->replay.current == 1 || *rt->replay.current == -1);
-   if (*rt->replay.current == 1) *rt->replay.current = 0;
+   ASSERT (rt->replay.current->count == 1 || rt->replay.current->count == -1);
+   if (rt->replay.current->count == 1) rt->replay.current->count = 0;
 
    // destroy conditional variable
    ret = pthread_cond_destroy (&__state.tcbs[0].cond);

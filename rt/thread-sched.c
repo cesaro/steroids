@@ -15,14 +15,19 @@ struct {
    /// number of threads currently alive
    int num_ths_alive;
 
+   /// the list of all threads currently blocked in the sleep set
    struct {
       struct rt_tcb* tab[RT_MAX_THREADS];
       unsigned size;
    } sleepset;
-   
+
+   /// mapping tids in the replay to threads in the runtime
+   struct rt_tcb *tidmap[RT_MAX_THREADS];
+   /// the the tid of the next thread that will be created in the replay
+   unsigned next_tid;
 } __state;
 
-#define TID(t) ((int) ((t) - __state.tcbs))
+#define TID(t) ((unsigned) ((t) - __state.tcbs))
 
 int __rt_thread_sched_update (struct rt_tcb *t)
 {
@@ -156,12 +161,12 @@ struct rt_tcb* __rt_thread_sched_find_next ()
    struct rt_tcb *t;
 
    // if we are in free mode, any thread works
-   if (*rt->replay.current == -1)
+   if (rt->replay.current->tid == -1)
       return __rt_thread_sched_find_any ();
 
    // if we are replaying and we can play again the current thread, the
    // scheduler should agree with that
-   if (*rt->replay.current >= 1)
+   if (rt->replay.current->count >= 1)
    {
       ret = __rt_thread_sched_update (__state.current);
       ASSERT (ret); (void) ret;
@@ -170,10 +175,11 @@ struct rt_tcb* __rt_thread_sched_find_next ()
 
    // otherwise we are replaying but we ran out of events to replay in this
    // thread, so we need to context switch to another thread of the replay or
-   // switch into free mode.
-   ASSERT (*rt->replay.current == 0);
-   rt->replay.current++; // it now points to a TID, or -1
-   if (*rt->replay.current == -1)
+   // switch into free mode; the replay should never ask us to play a THCREAT
+   // now
+   ASSERT (rt->replay.current->count == 0);
+   rt->replay.current++;
+   if (rt->replay.current->tid == -1)
    {
       _printf ("stid: rt: threading: sched: find-next: transition to FREEMODE\n");
       // if we switch to free mode, we initialize the structure __state.sleepset
@@ -181,15 +187,17 @@ struct rt_tcb* __rt_thread_sched_find_next ()
       __rt_thread_sleepset_init ();
       return __rt_thread_sched_find_any ();
    }
-   // otherwise we have to replay the thread that the replay asks us to replay
-   ASSERT (*rt->replay.current >= 0 && *rt->replay.current < RT_MAX_THREADS);
-   t = __state.tcbs + *rt->replay.current;
-   // we increment the replay current pointer so that it points to a number of
-   // events to replay, and not a TID
-   rt->replay.current++;
+
+   // otherwise we have to replay the thread that the replay asks us to replay;
+   // we use the tidmap to map the tids in the backend to tids in this runtime
+   ASSERT (rt->replay.current->tid >= 0 && (unsigned) rt->replay.current->tid < __state.next_tid);
+   ASSERT (rt->replay.current->count >= 1);
+   t = __state.tidmap[rt->replay.current->tid];
+   ASSERT (t);
+   ASSERT (t->flags.alive);
    _printf ("stid: rt: threading: sched: find-next: "
-         "replaying context switch to t%d (and then %d events)\n",
-         TID(t), *rt->replay.current);
+         "replaying context switch to t%d (r%u), and then %d events\n",
+         TID(t), rt->replay.current->tid, rt->replay.current->count);
    // the scheduler should to agree to run this thread now
    ret = __rt_thread_sched_update (t);
    ASSERT (ret);
@@ -207,14 +215,14 @@ void __rt_thread_sleepset_init ()
    {
       if (rt->replay.sleepset[i])
       {
-         // if index i of the replay.sleepset is a pointer to a mutex, then
-         // thread i needs to be right now waiting for that mutex; we make the
-         // thread sleep and push it into the set of sleeping threads, function
-         // __rt_thread_sleepset_awake will look for it later when another
-         // thread locks on the mutex
-         t = __state.tcbs + i;
+         // if the entry at index i in replay.sleepset is a non-null pointer to
+         // a mutex, then thread __state.tidmap[i] needs to be right now waiting
+         // for that mutex; we make the thread sleep and push it into the set of
+         // sleeping threads, function __rt_thread_sleepset_awake will look for
+         // it later when another thread locks on the mutex
+         t = __state.tidmap[i];
          ASSERT (t->state == SCHED_WAIT_MUTEX);
-         //ASSERT (t->wait_mutex == rt->replay.sleepset[i]);
+         ASSERT (t->wait_mutex == rt->replay.sleepset[i]);
          _printf ("stid: rt: threading: sched: sleepset-init: t%d, "
                "WAIT_MUTEX -> WAIT_SS(%p)\n", TID (t), t->wait_mutex);
          t->state = SCHED_WAIT_SS;
@@ -257,6 +265,9 @@ void __rt_thread_sleepset_awake (pthread_mutex_t *m)
 void  __rt_thread_init (void)
 {
    int ret;
+#ifdef CONFIG_DEBUG
+   int i;
+#endif
 
    // whoever calls this function becomes the main thread (tid = 0)
    _printf ("stid: rt: threading: initializing the multithreading library\n");
@@ -270,6 +281,16 @@ void  __rt_thread_init (void)
    __state.tcbs[0].stackaddr = 0;
    __state.tcbs[0].stacksize = 0;
 
+   // clear the tidmap, this will allow to catch defects in the replay sequence
+   // in __rt_thread_sched_find_next (precisely, a ctxsw to an non-existent
+   // thread)
+#ifdef CONFIG_DEBUG
+   for (i = 0; i < RT_MAX_THREADS; i++) __state.tidmap[i] = 0;
+#endif
+   // tid 0 is always the main thread
+   __state.tidmap[0] = __state.tcbs + 0;
+   __state.next_tid = 1;
+
    // initialize the cs mutex
    ret = pthread_mutex_init (&__state.m, 0);
    if (ret)
@@ -279,6 +300,12 @@ void  __rt_thread_init (void)
    }
 
    // initialize main's conditional variable
+   ret = pthread_cond_init (&__state.tcbs[0].cond, 0);
+   if (ret)
+   {
+      PRINT ("t0: error: initializing t0 conditional variable: %s; ignoring",
+            strerror (ret));
+   }
 
    __rt_thread_protocol_wait_first ();
 }
@@ -369,16 +396,8 @@ void __rt_thread_protocol_wait_first ()
    }
    //_printf ("stid: rt: threading: proto: t0: acquired cs lock\n");
 
-   // the replay pointer shall either point to the end (-1) or to the TID of the
-   // main thread; advance it and consume the THSTART event of main
-   ASSERT (rt->replay.current == rt->replay.tab);
-   ASSERT (*rt->replay.current == 0 || *rt->replay.current == -1);
-   if (*rt->replay.current == 0)
-   {
-      rt->replay.current++; // now points to nr of blue events
-      ASSERT (*rt->replay.current >= 1);
-      REPLAY_CONSUME_ONE ();
-   }
+   // consume the THSTART event of main
+   REPLAY_CONSUME_ONE ();
 
    // increase my number of blue events
    rt->trace.num_blue[0]++;

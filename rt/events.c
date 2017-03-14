@@ -344,7 +344,7 @@ void __rt_memreg_print (struct memreg *m, const char *prefix, const char *suffix
 int __rt_mainn (int argc, const char * const *argv, const char * const *env)
 {
    int ret;
-   int i, n;
+   unsigned i, n;
    const char * const *v;
 
    // assert that global const variables equal corresponding ones in the rt
@@ -357,16 +357,24 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    ASSERT ((void *) rt->trace.addrptr == rt->trace.addr.begin);
    ASSERT ((void *) rt->trace.idptr == rt->trace.id.begin);
    ASSERT ((void *) rt->trace.valptr == rt->trace.val.begin);
+   // at least one action in the replay
+   ASSERT (rt->replay.size >= 1);
+   // replay[0] is free mode or main thread
+   ASSERT (rt->replay.tab[0].tid == -1 || rt->replay.tab[0].tid == 0);
+   // last is a switch to free mode
+   ASSERT (rt->replay.tab[rt->replay.size - 1].tid == -1);
+   ASSERT (rt->replay.tab[rt->replay.size - 1].count == -1);
+   // replay.current points to the beginning
    ASSERT (rt->replay.current == rt->replay.tab);
-   ASSERT (rt->replay.tab[0] == 0 || rt->replay.tab[0] == -1); // main or EOF
-   ASSERT (rt->replay.tab[rt->replay.size - 1] == -1); // last is EOF
    for (i = 0; i < RT_MAX_THREADS; i++) ASSERT (rt->trace.num_blue[i] == 0);
 
-   ASSERT (sizeof (float) == 4)
-   ASSERT (sizeof (double) == 8)
-   ASSERT (sizeof (long double) == 16)
+   ASSERT (sizeof (float) == 4);
+   ASSERT (sizeof (double) == 8);
+   ASSERT (sizeof (long double) == 16);
 
+   // our little tribute to how everything started ... ;)
    _printf ("stid: rt: main: I feel fantaastic... I feel the PUMP!\n");
+
 #if 0
    printf ("stid: rt: main: guest's address space:\n");
    __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
@@ -380,9 +388,21 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    __rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
 #endif
    _printf ("stid: rt: main: replay seq: ");
-   for (i = 0; rt->replay.tab[i] != -1; i += 2)
-      _printf ("%d %d; ", rt->replay.tab[i], rt->replay.tab[i+1]);
-   _printf ("-1\n");
+   for (i = 0; i < rt->replay.size; i++)
+   {
+      if (i) _printf ("; ");
+      if (rt->replay.tab[i].tid == -1)
+      {
+         _printf ("-1\n");
+      }
+      else
+      {
+         // every context switch requests to replay at least 1 event
+         ASSERT (rt->replay.tab[i].tid >= 0);
+         ASSERT (rt->replay.tab[i].count >= 1);
+         _printf ("%u %u", rt->replay.tab[i].tid, rt->replay.tab[i].count);
+      }
+   }
    _printf ("stid: rt: main: sleepset: ");
    for (i = 0; i < RT_MAX_THREADS; i++)
       if (rt->replay.sleepset[i])
@@ -400,7 +420,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    // copy arguments into our stack and heap
    char *myargv[argc];
    char *myenv[n+1];
-   for (i = 0; i < argc; i++)
+   for (i = 0; i < (unsigned) argc; i++)
    {
       myargv[i] = _rt_malloc (strlen (argv[i]) + 1);
       strcpy (myargv[i], argv[i]);

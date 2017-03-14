@@ -327,18 +327,6 @@ void action_streamt::print (int limit) const
    printf ("size %zu, num_ths %d, replay len %d\n",
       rt->trace.size, rt->trace.num_ths, rt->replay.size);
 
-   printf ("intended replay:\n");
-   for (i = 0; i < rt->replay.size; i += 2)
-   {
-      if (rt->replay.tab[i] == -1)
-      {
-         printf ("%05u -1: end of replay\n\n", i);
-         continue;
-      }
-      ASSERT (i + 1 < rt->replay.size);
-      printf ("%05u %2d: %d\n", i, rt->replay.tab[i], rt->replay.tab[i+1]);
-   }
-
    printf ("expected number of blue events per thread:\n");
    ASSERT (rt->trace.num_ths <= RT_MAX_THREADS);
    for (i = 0; i < rt->trace.num_ths; i++)
@@ -376,12 +364,11 @@ void action_streamt::print (int limit) const
    printf ("== action stream end ==\n");
 }
 
-std::vector<int> action_streamt::get_replay ()
+std::vector<struct replayevent> action_streamt::get_replay ()
 {
    unsigned i;
-   int count = 0;
-   int tid = 0;
-   std::vector<int> replay;
+   std::vector<struct replayevent> replay;
+   struct replayevent ctx;
    int sawfirst[RT_MAX_THREADS];
    int blue[RT_MAX_THREADS];
    int lastexit = 0;
@@ -393,9 +380,9 @@ std::vector<int> action_streamt::get_replay ()
    for (i = 0; i < RT_MAX_THREADS; i++) sawfirst[i] = 0;
 
    // first action is always from the main thread
-   count = 1;
    sawfirst[0] = 1;
-   replay.push_back (0); // tid
+   ctx.tid = 0;
+   ctx.count = 1;
 
    for (auto &ac : *this)
    {
@@ -405,21 +392,20 @@ std::vector<int> action_streamt::get_replay ()
       switch (ac.type())
       {
       case RT_THCTXSW :
-         if (ac.id() == tid) continue;
+         if (ac.id() == ctx.tid) continue;
          lastexit = 0;
-         replay.push_back (count); // count
-         tid = ac.id();
-         ASSERT (tid < rt->trace.num_ths);
-         if (sawfirst[tid])
+         replay.push_back (ctx);
+         ctx.tid = ac.id();
+         ASSERT (ctx.tid < rt->trace.num_ths);
+         if (sawfirst[ctx.tid])
          {
-            count = 0;
+            ctx.count = 0;
          }
          else
          {
-            sawfirst[tid] = 1;
-            count = 1;
+            sawfirst[ctx.tid] = 1;
+            ctx.count = 1;
          }
-         replay.push_back (tid); // tid
          break;
 
       case RT_THCREAT :
@@ -427,12 +413,12 @@ std::vector<int> action_streamt::get_replay ()
       case RT_MTXLOCK :
       case RT_MTXUNLK :
          lastexit = 0;
-         count++;
+         ctx.count++;
          break;
 
       case RT_THEXIT  :
          lastexit = 1;
-         count++;
+         ctx.count++;
          break;
 
       default :
@@ -440,17 +426,16 @@ std::vector<int> action_streamt::get_replay ()
          break;
       }
    }
-   replay.push_back (count); // count for last context switch
-   replay.push_back (-1); // end of replay, free mode!
+   replay.push_back (ctx); // last context switch
+   replay.push_back ({-1, -1}); // end of replay, free mode!
 
    // in this replay, the number of blue events per thread should equal that
    // reported by the runtime; assert it
    for (i = 0; i < RT_MAX_THREADS; i++) blue[i] = 0;
-   for (i = 0; i < replay.size(); i += 2)
+   for (i = 0; i < replay.size(); i++)
    {
-      if (replay[i] == -1) break;
-      ASSERT (i + 1 < replay.size());
-      blue[replay[i]] += replay[i+1];
+      if (replay[i].tid == -1) continue;
+      blue[replay[i].tid] += replay[i].count;
    }
    for (i = 0; i < RT_MAX_THREADS; i++)
       ASSERT (blue[i] == rt->trace.num_blue[i]);
@@ -462,18 +447,16 @@ void action_streamt::print_replay ()
    print_replay (get_replay ());
 }
 
-void action_streamt::print_replay (std::vector<int> replay)
+void action_streamt::print_replay (std::vector<struct replayevent> replay)
 {
+   unsigned i;
    printf ("== replay begin ==\n");
-   for (unsigned i = 0; i < replay.size(); i += 2)
+   for (i = 0; i < replay.size(); i++)
    {
-      if (replay[i] == -1)
-      {
+      if (replay[i].tid == -1)
          printf ("%05u %2d: end of replay\n", i, -1);
-         continue;
-      }
-      ASSERT (i + 1 < replay.size());
-      printf ("%05u %2d: %d\n", i, replay[i], replay[i+1]);
+      else
+         printf ("%05u %2d: %d\n", i, replay[i].tid, replay[i].count);
    }
    printf ("== replay end ==\n");
 }

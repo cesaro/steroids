@@ -181,8 +181,9 @@ void Executor::initialize_and_instrument_rt ()
 
    // our initial replay sequence is just the vector [-1]
    ASSERT (replay_capacity >= 1);
-   rt.replay.tab = new int[replay_capacity];
-   rt.replay.tab[0] = -1; // we start in free mode
+   rt.replay.tab = new struct replayevent[replay_capacity];
+   rt.replay.tab[0].tid = -1; // we start in free mode
+   rt.replay.tab[0].count = -1;
    rt.replay.size = 1;
    for (i = 0; i < RT_MAX_THREADS; i++) rt.replay.sleepset[i] = 0;
 
@@ -405,26 +406,17 @@ llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)
    return c;
 }
 
-void Executor::set_replay (const int *tab, int size)
+void Executor::set_replay (const struct replayevent *tab, int size)
 {
    if (size > replay_capacity)
    {
       replay_capacity = size * 1.5;
       delete rt.replay.tab;
-      rt.replay.tab = new int[replay_capacity];
+      rt.replay.tab = new struct replayevent[replay_capacity];
    }
 
    rt.replay.size = size;
-   memcpy (rt.replay.tab, tab, size * sizeof(int));
-#if 0
-   DEBUG_ ("stid: executor: set-replay: ");
-   for (int i = 0; i < size; i++)
-   {
-      DEBUG_ ("%d ", rt.replay.tab[i]);
-      if (i % 2 == 1) DEBUG_ (" ");
-   }
-   DEBUG ("");
-#endif
+   memcpy (rt.replay.tab, tab, size * sizeof(struct replayevent));
 }
 
 void Executor::add_sleepset (unsigned tid, void *addr)

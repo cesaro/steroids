@@ -114,6 +114,16 @@ void conft::build ()
    eventt *ev;
    actiont ac;
 
+   //
+   // FIXME
+   // This method is broken, recent updates to the replay mechanism have made
+   // possible to request the runtime to context switch before threading
+   // primitives that traditionally were not context switch points
+   // (pthread_exit, pthread_creat, pthread_unlock, for instance). As a result I
+   // sometimes see assertion violations in this function. This code needs to be
+   // revised.
+   //
+
    // position in the stream
    int sidx = 0;
 

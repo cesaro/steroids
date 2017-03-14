@@ -56,9 +56,13 @@ int   _rt_pthread_create(pthread_t *tid,
 
    _printf ("stid: rt: threading: t%d: "
          "pthread_create (tid=%p, attr=%p, start=%p, arg=%p); replay %d\n",
-         TID (me), tid, attr, start, arg, *rt->replay.current);
+         TID (me), tid, attr, start, arg, rt->replay.current->count);
 
-   // get a TCB
+   // yield the cpu and come back only if we are in free mode or we can replay
+   // this event
+   __rt_thread_protocol_yield ();
+
+   // find an available TCB
    if (__state.next >= RT_MAX_THREADS) return ENOMEM;
    t = __state.tcbs + __state.next++;
 
@@ -105,10 +109,14 @@ int   _rt_pthread_create(pthread_t *tid,
          UNITS_SIZE (t->stacksize),
          UNITS_UNIT (t->stacksize));
    TRACE3 (RT_THCREAT, TID (t));
+   REPLAY_CONSUME_ONE ();
    rt->trace.num_blue[TID(me)]++;
 
-   // consume one event in the replay sequence
-   REPLAY_CONSUME_ONE ();
+   // update the tidmap
+   _printf ("stid: rt: threading: t%d: tidmap: adding r%u -> t%d\n",
+            TID (me), __state.next_tid, TID(t));
+   __state.tidmap[__state.next_tid] = t;
+   __state.next_tid++;
 
    // we use the pthread_t variable to store a pointer to our tcb
    ASSERT (sizeof (pthread_t) >= sizeof (struct rt_tcb*));
@@ -143,7 +151,7 @@ int   _rt_pthread_join(pthread_t t, void **retval)
 
    _printf ("stid: rt: threading: t%d: "
          "pthread_join (other=t%d, retval=%p); replay %d\n",
-         TID (me), TID(other), retval, *rt->replay.current);
+         TID (me), TID(other), retval, rt->replay.current->count);
 
    // validate arguments
    if (other < __state.tcbs || other > __state.tcbs + RT_MAX_THREADS)
@@ -168,7 +176,7 @@ int   _rt_pthread_join(pthread_t t, void **retval)
    REPLAY_CONSUME_ONE ();
    rt->trace.num_blue[TID(me)]++;
 
-   // write the retval if user interested
+   // write the retval if the user is interested
    if (retval) *retval = other->retval;
    return 0;
 }
@@ -181,7 +189,11 @@ void  _rt_pthread_exit(void *retval)
 
    _printf ("stid: rt: threading: t%d: "
          "pthread_exit (retval=%p); replay %d, alive %d\n",
-         TID (me), retval, *rt->replay.current, __state.num_ths_alive);
+         TID (me), retval, rt->replay.current->count, __state.num_ths_alive);
+
+   // yield the cpu and come back only if we are in free mode or we can replay
+   // this event
+   __rt_thread_protocol_yield ();
 
    // if we are the main thread, either we exit with status 0 (if no other
    // thread is alive) or we wait for the other threads to finish, join for the
@@ -211,7 +223,7 @@ void  _rt_pthread_exit(void *retval)
       _rt_exit (0);
    }
 
-   // otherwise, log the _THEXIT event and decrement number of threads alive
+   // log the _THEXIT event and decrement number of threads alive
    TRACE0 (RT_THEXIT);
    rt->trace.num_blue[TID(me)]++;
    __state.num_ths_alive--;
@@ -221,7 +233,7 @@ void  _rt_pthread_exit(void *retval)
 
    // consume one event in the replay sequence
    REPLAY_CONSUME_ONE ();
-   ASSERT (*rt->replay.current == -1 || *rt->replay.current == 0);
+   ASSERT (rt->replay.current->tid == -1 || rt->replay.current->count == 0);
 
    // destroy my conditional variable
    ret = pthread_cond_destroy (&me->cond); // ignore error
@@ -343,7 +355,7 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
 {
    _printf ("stid: rt: threading: t%d: "
          "pthread_mutex_lock (m=%p); replay %d\n",
-         TID (__state.current), m, *rt->replay.current);
+         TID (__state.current), m, rt->replay.current->count);
 
    struct rt_tcb *me = __state.current;
    int ret;
@@ -356,7 +368,7 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
    // locking now is non-blocking, return possible errors
    ret = pthread_mutex_lock (m);
    if (ret) return ret;
-   
+
    // log the event (only after actually locking m!), consume 1 from replay
    TRACE1 (RT_MTXLOCK, m);
    REPLAY_CONSUME_ONE ();
@@ -369,10 +381,14 @@ int   _rt_pthread_mutex_unlock(pthread_mutex_t *m)
 {
    _printf ("stid: rt: threading: t%d: "
          "pthread_mutex_unlock (m=%p); replay %d\n",
-         TID (__state.current), m, *rt->replay.current);
+         TID (__state.current), m, rt->replay.current->count);
 
    struct rt_tcb *me = __state.current;
    int ret;
+
+   // yield the cpu and come back only if we are in free mode or we can replay
+   // this event
+   __rt_thread_protocol_yield ();
 
    // unlock the mutex
    ret = pthread_mutex_unlock (m);

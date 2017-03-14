@@ -43,7 +43,7 @@ public :
    ~Executor ();
 
    void           run ();
-   void           set_replay (const int *tab, int size);
+   void           set_replay (const struct replayevent *tab, int size);
    void           add_sleepset (unsigned tid, void *addr);
    void           clear_sleepset ();
    struct rt *    get_runtime ();

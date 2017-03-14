@@ -10,8 +10,7 @@ extern "C" {
 #endif
 
 // configuration
-#define RT_MAX_THREADS 128
-#define RT_DEFAULT_STACK_SIZE (8 << 20) // 8M
+#define RT_MAX_THREADS 64
 #define RT_MAX_ATEXIT_FUNS 64
 
 // event identifiers:
@@ -162,14 +161,20 @@ struct eventrace {
    size_t num_blue[RT_MAX_THREADS];
 };
 
+struct replayevent
+{
+   int tid;    // tid to context switch or -1 for free mode
+   int count;  // # of events to replay; -1 for free mode
+};
+
 struct reptrace
 {
-   // points to an array of integers [tid1,nr,tid2,nr,tid3,nr...,-1]
-   int *tab;
+   // points to an array of structs replayevent
+   struct replayevent *tab;
    // size of the array above
-   int size;
-   // pointer to the current event count in the array above
-   int *current;
+   unsigned size;
+   // pointer to the current event in the array above
+   struct replayevent *current;
    // sleep set, index i is != NULL iff thread i is sleeping on that mutex
    pthread_mutex_t* sleepset[RT_MAX_THREADS];
 };

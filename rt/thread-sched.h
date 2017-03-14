@@ -82,6 +82,7 @@ void __rt_thread_sleepset_awake (pthread_mutex_t *m);
 // until the next context switch point happens, and do the context switch there.
 // The additional events that we introduce are necessary local (??).
 #define REPLAY_CONSUME_ONE() \
-   if (*rt->replay.current > 0) *rt->replay.current -= 1
+   ASSERT (rt->replay.current->count == -1 || rt->replay.current->count > 0); \
+   if (rt->replay.current->count > 0) rt->replay.current->count -= 1
 
 #endif
