@@ -38,7 +38,7 @@ __rt_start :
    # offset of the instruction pointer, could it be because we are asking to
    # compile the entire library with -fPIC?
    # FIXME - there is a bug hidden here, fix it
-   movq memend(%rip), %rax
+   call __rt_get_memend
    andq $-16, %rax
    mov  %rax, %rsp
 

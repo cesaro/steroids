@@ -478,6 +478,11 @@ uint64_t __rt_get_host_rsp ()
    return rt->host_rsp;
 }
 
+uint64_t __rt_get_memend ()
+{
+   return memend;
+}
+
 void __rt_panic ()
 {
    PRINT ("panic, aborting!");

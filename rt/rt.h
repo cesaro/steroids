@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 // configuration
-#define RT_MAX_THREADS 64
+#define RT_MAX_THREADS 128
 #define RT_MAX_ATEXIT_FUNS 64
 
 // event identifiers:
@@ -105,6 +105,7 @@ void __rt_fre  (uint8_t *addr);
 // used in start.s to access the "struct rt" in main.c
 void __rt_save_host_rsp (uint64_t rsp);
 uint64_t __rt_get_host_rsp ();
+uint64_t __rt_get_memend ();
 
 // stop execution, print an error and enter an infinite loop
 void __rt_panic ();
