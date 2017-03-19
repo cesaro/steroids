@@ -30,6 +30,8 @@ struct ExecutorConfig
    /// Maximum number of actions that runtime will log during one execution of
    /// the guest.
    uint64_t tracesize;;
+   // Set to 0, 1, 2, or 3 to optimize as "opt -Oxx" would do
+   unsigned optlevel;
 };
 
 class Executor

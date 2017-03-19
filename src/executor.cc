@@ -3,6 +3,9 @@
 #include <utility>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
@@ -10,6 +13,7 @@
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Support/SourceMgr.h"
@@ -18,6 +22,9 @@
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/IPO.h"
 
 #include "stid/action_stream.hh"
 #include "stid/executor.hh"
@@ -26,6 +33,15 @@
 #include "misc.hh"
 #include "../rt/rt.h"
 #include "instrumenter.hh"
+
+static void dump_ll (const llvm::Module *m, const char *filename)
+{
+   int fd = open (filename, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+   ASSERT (fd >= 0);
+   llvm::raw_fd_ostream f (fd, true);
+   f << *m;
+}
+
 
 uint8_t *MyMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment,
          unsigned SectionID, llvm::StringRef SectionName, bool isReadOnly)
@@ -221,9 +237,56 @@ void Executor::initialize_and_instrument_rt ()
 
 void Executor::optimize ()
 {
-   // FIXME call the LLVM optimizer here
-   //DEBUG ("stid: executor: optimizing code...");
-   //DEBUG ("stid: executor: done");
+   // This function optimizes the LLVM just before jitting it, after
+   // instrumentation has been made. Instrumentation should have opened many
+   // oportunities for optimization. The code is inspired by that of opt(1), see
+   // https://github.com/llvm-mirror/llvm/blob/master/tools/opt/opt.cpp
+
+   if (conf.optlevel == 0)
+   {
+      DEBUG ("stid: executor: skipping optimization");
+      return;
+   }
+   DEBUG ("stid: executor: optimizing, optlevel %u", conf.optlevel);
+   //dump_ll (m, "before.ll");
+
+   // a module pass manager and a function pass manager, they will store the
+   // sequence of optimization passes that we run; we will insert the
+   // optimization passes using a PassManagerBuilder
+   llvm::legacy::PassManager pm;
+   llvm::legacy::FunctionPassManager fpm (m);
+
+#if 0
+   fpm.add (llvm::createInstructionCombiningPass ());
+   fpm.add (llvm::createReassociatePass ());
+   fpm.add (llvm::createGVNPass ());
+   fpm.add (llvm::createCFGSimplificationPass ());
+#endif
+
+   // create a builder, and set it up
+   unsigned sizelevel = 0; // no -Os
+   llvm::PassManagerBuilder builder;
+   builder.OptLevel = conf.optlevel;
+   builder.SizeLevel = sizelevel;
+   builder.Inliner = llvm::createFunctionInliningPass (conf.optlevel, sizelevel);
+
+   // fill the pass managers with the standard compiler optimizations
+   builder.populateFunctionPassManager (fpm);
+   builder.populateModulePassManager (pm);
+
+   // run the function pass manager
+   fpm.doInitialization ();
+   for (llvm::Function &f : *m)
+   {
+      fpm.run (f);
+   }
+   fpm.doFinalization ();
+
+   // run the module pass manger
+   pm.run (*m);
+
+   //dump_ll (m, "after.ll");
+   DEBUG ("stid: executor: done");
 }
 
 void Executor::restart_trace ()

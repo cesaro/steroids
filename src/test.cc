@@ -370,6 +370,7 @@ void test6 ()
    conf.memsize = 512 << 20; // 512M
    conf.defaultstacksize = 16 << 20; // 16M
    conf.tracesize = 16 << 20; // 16M events (x max 17 bytes per event)
+   conf.optlevel = 3;
    Executor e (std::move (mod), conf);
 
    // write instrumented code to file, for debugging purposes

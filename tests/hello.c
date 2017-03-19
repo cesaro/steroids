@@ -14,6 +14,7 @@
 #include <sys/resource.h>
 #include <sys/resource.h>
 
+#if 0
 long long l = 123; // 8 bytes
 float f = 3.1415;
 double g = 3.14151627;
@@ -577,25 +578,56 @@ int main11 ()
    int ret;
 
    /* create threads */
-   ret = pthread_create (&t, NULL, thread11, (long) 1);
+   ret = pthread_create (&t, NULL, thread11, (void*) 1);
    printf ("m: create: ret %d\n", ret);
    assert (ret == 0);
-   ret = pthread_create (&t, NULL, thread11, (long) 2);
+   ret = pthread_create (&t, NULL, thread11, (void*) 2);
    printf ("m: create: ret %d\n", ret);
    assert (ret == 0);
 
    thread11 (0);
-   sleep (1);
+   //sleep (1);
 
    pthread_exit (0);
    return 0;
 }
 
-//int main (int argc, char **argv)
-int main ()
+int main12 (int argc, char **argv)
+{
+   int x[5] = {0, 1, 2, 3, 4};
+
+   (void) argv;
+
+   if (argc)
+   {
+      x[2] += 10;
+   }
+   else
+   {
+      x[3] += 20;
+   }
+
+   printf ("x[2] %d x[3] %d\n", x[2], x[3]);
+   return 0;
+}
+#endif
+
+int main13 (int argc, char **argv)
+{
+   (void) argv;
+
+   //int *p = (int*) 11223344;
+   int *p = (int*) argv;
+
+   *p = argc + 10;
+   return argc;
+}
+
+int main (int argc, char **argv)
+//int main ()
 {
    //return main9 ();
    //return main10 ();
-   return main11 ();
+   return main13 (argc, argv);
 }
 

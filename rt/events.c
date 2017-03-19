@@ -347,6 +347,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    unsigned i, n;
    const char * const *v;
 
+
    // assert that global const variables equal corresponding ones in the rt
    // structure
    ASSERT ((uint64_t) rt->mem.begin == memstart);
