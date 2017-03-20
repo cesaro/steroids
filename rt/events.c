@@ -79,7 +79,7 @@ static void __rt_debug_rdwr (uint8_t a, const void *addr, uint32_t size)
 
 static inline void __rt_check_oom (const void *ptr, uint32_t size)
 {
-   return; // FIXME -- disabling here !!!
+   return; // FIXME - we currently disable this
    // if the memory access is offlimits, we terminate execution
    if ((uint64_t) ptr < memstart || size + (uint64_t) ptr >= memend)
    {
@@ -282,6 +282,7 @@ void __rt_storeld (long double *addr, long double v)
 //
 void __rt_store_pre (const void *addr, uint32_t size)
 {
+   return; // FIXME - we currently disable this
    uint8_t a = __rt_rdwr_get_action (0, size);
    __rt_log_action (a);
    __rt_log_addr (addr);
@@ -290,6 +291,7 @@ void __rt_store_pre (const void *addr, uint32_t size)
 
 void __rt_store_post (const void *addr, uint32_t size)
 {
+   return; // FIXME - we currently disable this
    __rt_log_rdwr_val (addr, size);
    uint8_t a = __rt_rdwr_get_action (0, size);
    __rt_debug_rdwr (a, addr, size);
@@ -300,6 +302,7 @@ void __rt_store_post (const void *addr, uint32_t size)
 //
 void __rt_load_pre   (const void *addr, uint32_t size)
 {
+   return; // FIXME - we currently disable this
    uint8_t a = __rt_rdwr_get_action (1, size);
    __rt_log_action (a);
    __rt_log_addr (addr);
@@ -308,6 +311,7 @@ void __rt_load_pre   (const void *addr, uint32_t size)
 
 void __rt_load_post  (const void *addr, uint32_t size)
 {
+   return; // FIXME - we currently disable this
    __rt_log_rdwr_val (addr, size);
    uint8_t a = __rt_rdwr_get_action (1, size);
    __rt_debug_rdwr (a, addr, size);
@@ -319,14 +323,17 @@ void __rt_load_post  (const void *addr, uint32_t size)
 // for heap allocation (malloc/free) this is done directly in mm.c
 void __rt_allo (uint8_t *addr, uint32_t size)
 {
+   return; // FIXME - we currently disable this
    TRACE2 (RT_ALLOCA, addr, size);
 }
 void __rt_call (uint16_t id)
 {
+   return; // FIXME - we currently disable this
    TRACE3 (RT_CALL, id);
 }
 void __rt_ret (uint16_t id)
 {
+   return; // FIXME - we currently disable this
    TRACE3 (RT_RET, id);
 }
 
@@ -463,8 +470,8 @@ void __rt_cend (uint32_t exitcode)
    rt->trace.size =
          (uint64_t) (rt->trace.evptr - (uint8_t*) rt->trace.ev.begin);
 
-   fflush (stdout);
-   fflush (stderr);
+   //fflush (stdout);
+   //fflush (stderr);
 
    __rt_end (exitcode);
 }

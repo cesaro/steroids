@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//#define CONFIG_DEBUG 1
-#undef CONFIG_DEBUG
+#define CONFIG_DEBUG 1
+//#undef CONFIG_DEBUG
 
 void breakme (void);
 

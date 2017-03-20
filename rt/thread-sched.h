@@ -4,6 +4,13 @@
 
 #include <pthread.h>
 
+#if 0
+// Thread-local storage
+struct rt_tls
+{
+}
+#endif
+
 // Thread Control Block
 struct rt_tcb
 {
@@ -40,6 +47,9 @@ struct rt_tcb
    // location of the stack
    void  *stackaddr;
    size_t stacksize;
+
+   // thread-local storage
+   //struct rt_tls tls;
 };
 
 void  __rt_thread_init (void);

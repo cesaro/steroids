@@ -409,7 +409,7 @@ void test6 ()
       {-1, -1} // free mode
    };
 #endif
-#if 1
+#if 0
    std::vector<struct replayevent> replay2 = {
       {0, 1},  // #0 st
       {0, 1},  // #0 c#1
@@ -419,7 +419,7 @@ void test6 ()
       {-1, -1} // free mode
    };
 #endif
-   //std::vector<struct replayevent> replay2 = {{-1, -1}};
+   std::vector<struct replayevent> replay2 = {{-1, -1}};
 
    e.set_replay (replay2.data(), replay2.size());
    //e.add_sleepset (0, (void*) 0x125);

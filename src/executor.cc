@@ -34,7 +34,7 @@
 #include "../rt/rt.h"
 #include "instrumenter.hh"
 
-static void dump_ll (const llvm::Module *m, const char *filename)
+void dump_ll (const llvm::Module *m, const char *filename)
 {
    int fd = open (filename, O_WRONLY | O_TRUNC | O_CREAT, 0644);
    ASSERT (fd >= 0);
@@ -456,6 +456,8 @@ void Executor::run ()
    ASSERT (rt.trace.num_ths >= 1);
    ASSERT (rt.trace.num_ths <= RT_MAX_THREADS);
    for (int i = 0; i < rt.trace.num_ths; i++) ASSERT (rt.trace.num_blue[i]);
+   if (rt.trace.size == conf.tracesize)
+      PRINT ("stid: executor: WARNING: event stream size exceeded, execution truncated!");
 }
 
 llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)

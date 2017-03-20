@@ -100,7 +100,6 @@ void __rt_load_post  (const void *addr, uint32_t size);
 void __rt_allo (uint8_t *addr, uint32_t size);
 void __rt_call (uint16_t id);
 void __rt_ret  (uint16_t id);
-void __rt_fre  (uint8_t *addr);
 
 // used in start.s to access the "struct rt" in main.c
 void __rt_save_host_rsp (uint64_t rsp);

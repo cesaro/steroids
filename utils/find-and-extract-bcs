@@ -1,12 +1,18 @@
 #!/bin/sh
 
-echo "Finding an extracting .bc files from ."
+if test $1; then
+   P="$1"
+else
+   P=.
+fi
+
+echo "Finding an extracting .bc files from '$P'"
 
 LIST=/tmp/list
 LIST2=/tmp/full-list
 echo -n > $LIST
 
-for f in $(find)
+for f in $(find "$P")
 do
    file "$f" 2> /dev/null | grep -q 'ELF .* executable, ' > /dev/null 2> /dev/null
    if [ $? != 0 ]; then continue; fi

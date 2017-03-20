@@ -59,7 +59,7 @@ void *_rt_malloc_uninitialized  (size_t size)
    pthread_mutex_unlock (&mutex_malloc);
 
    //printf ("stid: rt: malloc: ret %p size %zu\n", ptr, size);
-   TRACE2 (RT_MALLOC, ptr, size);
+   //TRACE2 (RT_MALLOC, ptr, size);
    return ptr;
 }
 
@@ -73,7 +73,7 @@ void *_rt_malloc  (size_t size)
 
 void _rt_free (void *ptr)
 {
-   TRACE1 (RT_FREE, ptr);
+   //TRACE1 (RT_FREE, ptr);
    //printf ("stid: rt: free: ptr %p", ptr);
    (void) ptr; 
 }
