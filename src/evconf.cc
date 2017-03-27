@@ -2,6 +2,8 @@
 #include "evconf.hh"
 #include "verbosity.h"
 
+namespace stid {
+
 eventt::eventt (int num_ths, unsigned sidx) :
    _tid (0),
    _sidx (sidx),
@@ -381,3 +383,5 @@ bool conft::add_red_events (action_stream_itt &it, int &i, eventt &b_ev)
    ASSERT (0);
    return false;
 }
+
+} // namespace

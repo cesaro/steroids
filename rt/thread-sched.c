@@ -2,8 +2,9 @@
 #include <pthread.h> // in /usr/include
 #include "pthread.h" // in .
 #include "thread-sched.h"
+#include "tls.h"
 
-struct {
+static struct {
    /// global context switch mutex, only 1 thread executes at a time
    pthread_mutex_t m;
    /// the state of every thread
@@ -12,6 +13,9 @@ struct {
    unsigned next;
    /// only one thread executes at a time, pointer stored here
    struct rt_tcb *current;
+   /// Pointer to the base of the thread-local storage of the
+   /// currently-executing thread
+   void *tlsptr;
    /// number of threads currently alive
    int num_ths_alive;
 
@@ -23,6 +27,9 @@ struct {
 
    /// mapping tids in the replay to threads in the runtime
    struct rt_tcb *tidmap[RT_MAX_THREADS];
+
+   /// Initial values for the TLS of each created thread
+   struct rt_tls tlsinit;
    /// the the tid of the next thread that will be created in the replay
    unsigned next_tid;
 } __state;
@@ -281,6 +288,12 @@ void  __rt_thread_init (void)
    __state.tcbs[0].stackaddr = 0;
    __state.tcbs[0].stacksize = 0;
 
+   // initializes the __state.tlsinit
+   __rt_tls_init ();
+   // initializes the main thread's TLB
+   __rt_tls_thread_start (__state.tcbs + 0);
+   __state.tlsptr = __state.tcbs[0].tls.block;
+
    // clear the tidmap, this will allow to catch defects in the replay sequence
    // in __rt_thread_sched_find_next (precisely, a ctxsw to an non-existent
    // thread)
@@ -468,6 +481,7 @@ void __rt_thread_protocol_yield ()
    // otherwise we need to context switch to thread t
    TRACE3 (RT_THCTXSW, TID (t));
    __state.current = t;
+   __state.tlsptr = t->tls.block;
    _printf ("stid: rt: threading: proto: t%d: signaling to t%d\n", TID (me), TID(t));
    ret = pthread_cond_signal (&t->cond);
    if (ret)

@@ -15,6 +15,8 @@
 #include "stid/action.hh"
 #include "stid/action_stream.hh"
 
+namespace stid {
+
 #if 0
 /* @TODO: Add a CheckerConfig
   that controls the checks
@@ -52,4 +54,5 @@ private :
 };
 #endif
 
+} // namespace
 #endif

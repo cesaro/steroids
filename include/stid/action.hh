@@ -9,6 +9,8 @@
 
 #include "../../rt/rt.h"
 
+namespace stid {
+
 typedef uint64_t addrt;
 
 enum class action_typet
@@ -48,5 +50,7 @@ struct actiont
 
 const char *actiont_type_str (action_typet t);
 const char *actiont_type_str (unsigned t);
+
+} // namespace
 
 #endif

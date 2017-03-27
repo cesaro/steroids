@@ -2,9 +2,6 @@
 #include <vector>
 #include <utility>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
@@ -19,31 +16,45 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/TargetSelect.h"
+//#undef DEBUG // exported by ExecutionEngine.h
 
-#undef DEBUG // exported by ExecutionEngine.h
 #include "verbosity.h"
 #include "misc.hh"
 #include "../rt/rt.h"
 #include "instrumenter.hh"
 
-bool Instrumenter::instrument (llvm::Module &m)
+namespace stid {
+
+bool Instrumenter::instrument (llvm::Module &m, Tlsoffsetmap &tlsoffsetmap)
 {
    // cleanup
    reset (m);
    if (not find_rt ()) return false;
+
+#if 1
+   DEBUG ("saving to before.ll...");
+   dump_ll (&m, "before.ll");
+#endif
 
    // compute a map describing how we are supposed to substitute calls to
    // certain functions, as well as a numeric id for every function
    DEBUG ("stid: instrumenter: initializing substmap and funids mappings");
    init_maps ();
 
+   // substitute all uses of thread-local variables by calls to the function
+   // __rt_tls_get_var_addr
+   DEBUG ("stid: instrumenter: instrumenting TLS access");
+   do_tls_variables (tlsoffsetmap);
+
+#if 1
+   DEBUG ("saving to before.ll...");
+   dump_ll (&m, "after-tls.ll");
+#endif
    // instrument every function
-   DEBUG ("stid: instrumenter: starting the instrumentation of every function");
+   DEBUG ("stid: instrumenter: instrumenting functions...");
    for (auto &f : m)
    {
       if (is_rt_fun (&f) or f.isDeclaration ()) continue;
-
-      //DEBUG ("stid: instrumenter: === at fun %s", f.getName().str().c_str());
 
       // instrument the CALL event at the beginning of the entry block
       llvm::IRBuilder<> b (&f.getEntryBlock ().front());
@@ -52,22 +63,27 @@ bool Instrumenter::instrument (llvm::Module &m)
       // visit all instructions and instrument appropriately
       count = 0;
       visit (f);
-      //DEBUG ("stid: instrumenter: done, %d instructions instrumented", count);
    }
 
-#if 0
-   DEBUG ("saving...");
-   int fd = open ("cesar.ll", O_WRONLY | O_TRUNC | O_CREAT, 0644);
-   ASSERT (fd >= 0);
-   llvm::raw_fd_ostream f (fd, true);
-   f << m;
-   f.flush();
-   DEBUG ("saved!...");
+#if 1
+   DEBUG ("saving to after.ll...");
+   dump_ll (&m, "after-instr.ll");
 #endif
 
+
    // check that we didn't do anything stupid
+#ifdef CONFIG_DEBUG
    DEBUG ("stid: instrumenter: verifying module after instrumentation ...");
+#if 0
+   for (auto &f : m) 
+   {
+      if (f.isDeclaration()) continue;
+      llvm::outs() << " verifying fun " << f.getName() << "\n";
+      llvm::verifyFunction (f, &llvm::outs());
+   }
+#endif
    llvm::verifyModule (m, &llvm::outs());
+#endif
    DEBUG ("stid: instrumenter: done");
 
    return true;
@@ -84,12 +100,17 @@ bool Instrumenter::find_rt ()
    call = m->getFunction ("__rt_call");
    ret  = m->getFunction ("__rt_ret");
 
+   tls_get_var_addr  = m->getFunction ("__rt_tls_get_var_addr");
+
    return load_pre != nullptr and store_post != nullptr;
 }
 
 bool Instrumenter::is_rt_fun (llvm::Function *f)
 {
-   return f->getName().startswith ("_rt_") or f->getName().startswith ("__rt_");
+   return \
+      f->getName().startswith ("_rt_") or
+      f->getName().startswith ("__rt_") or
+      f->getName().startswith ("__VERIFIER_");
 }
 
 void Instrumenter::reset (llvm::Module &m)
@@ -362,3 +383,111 @@ int Instrumenter::get_fun_id (llvm::Function *f)
    return funids[f] = next_call_id++;
 }
 #endif
+
+llvm::Instruction *find_some_instruction_user (llvm::Value *v)
+{
+   while (1)
+   {
+      //llvm::outs() << "v " << *v << "\n";
+      auto u = v->use_begin();
+      //if (u == v->use_end()) llvm::outs() << "ret null\n";
+      if (u == v->use_end()) return nullptr;
+      llvm::Instruction *i = llvm::dyn_cast<llvm::Instruction> (u->getUser());
+      if (i) return i;
+      ASSERT (llvm::isa<llvm::Constant> (u->getUser()));
+      v = u->getUser();
+   }
+}
+
+void Instrumenter::do_tls_variables (Tlsoffsetmap &map)
+{
+   for (auto &kv : map)
+   {
+      // find all uses of this global and replace them with calls to
+      // __rt_tls_get_var_addr()
+      replace_tls_var (kv.first, kv.second);
+   }
+}
+
+void Instrumenter::replace_tls_var (llvm::GlobalVariable *g, unsigned offset)
+{
+   //llvm::ConstantInt *offset;
+   llvm::Instruction *ip;
+   llvm::Instruction *previ;
+   llvm::Instruction *i;
+   llvm::User *u;
+   llvm::ConstantExpr *ce;
+   unsigned opn;
+
+   // find all uses of this global
+   //llvm::outs() << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
+   //llvm::outs() << "Global: " << *g << ", " << g->getNumUses() << " uses\n";
+   //llvm::outs() << "Offset: " << offset << "\n";
+   while (1)
+   {
+      // find some use of this global
+      g->removeDeadConstantUsers ();
+      auto it = g->use_begin();
+      if (it == g->use_end()) return; // no more uses, we are done
+      u = it->getUser();
+      opn = it->getOperandNo();
+
+      // compute the insertion point and create an instruction builder there
+      ip = find_some_instruction_user (g);
+      llvm::IRBuilder<> b (ip);
+      //llvm::outs() <<  "target: " << *ip << "\n";
+
+      // create a call to the get_addr function, and bitcast it to the
+      // global's type; store the new instruction into an array
+      i = b.CreateCall (tls_get_var_addr, {b.getInt32 (offset)});
+      //llvm::outs() <<  *i << "\n";
+      i = llvm::cast<llvm::Instruction> (b.CreateBitCast (i, g->getType()));
+      //llvm::outs() << *i << "\n";
+
+      // If the user 'u' can either be an Instruction or a Constant, and in the
+      // latter case it should only be a ConstantExpr, as no other Constant
+      // could use the global as operand.
+      // If 'u' is an Instruction we just need to replace the operand by "i"
+      // If not we need to scan the chain of users until we
+      // reach (again) instruction "ip". All users that we find on the way need to be
+      // ConstantExpr, and **we convert them to instructions** in order to
+      // guarantee that the users of an Instruction are other Instructions and
+      // not Constants (an IR invariant)
+      
+      ASSERT (llvm::isa<llvm::Instruction>(u) or llvm::isa<llvm::ConstantExpr>(u));
+      while (llvm::isa<llvm::ConstantExpr>(u))
+      {
+         //llvm::outs() << "user: " << *u << "\n";
+         ce = llvm::cast<llvm::ConstantExpr>(u);
+         // create a new instruction identic to the ce, substitute its operand
+         // "opn" by the instruction i, and update i
+         previ = i;
+         i = b.Insert (ce->getAsInstruction());
+         i->setOperand (opn, previ);
+         //llvm::outs() <<  *i << "\n";
+
+         // find out a user of ce in the code, we now need to substitute it's
+         // use of ce for a use of i
+         auto it2 = ce->use_begin();
+         ASSERT (it2 != ce->use_end());
+         u = it2->getUser();
+         opn = it2->getOperandNo();
+      }
+
+      // at this point u is an instruction and we have inserted 2 or more new
+      // instructions mimicking the use of the global by this instruction; we
+      // now modify u's operand that (indirectly) used our global
+      ASSERT (u);
+      ASSERT (i);
+      ASSERT (u == ip);
+      ASSERT (llvm::isa<llvm::Instruction>(u));
+      ASSERT (u->getOperand(opn) != i);
+      u->setOperand (opn, i);
+      //llvm::cast<llvm::Instruction>(u)->eraseFromParent();
+
+      //llvm::outs() << "result:" << *u << "\n";
+      //llvm::outs() << "---\n";
+   }
+}
+
+} // namespace

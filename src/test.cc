@@ -33,7 +33,8 @@
 #include "checker.hh"
 #include "../rt/rt.h"
 #include "../rt/lsd.h"
-
+ 
+namespace stid {
 
 void ir_write_ll (const llvm::Module *m, const char *filename)
 {
@@ -203,9 +204,9 @@ void test3 ()
    e.argv.push_back ("a");
    e.argv.push_back ("b");
    e.argv.push_back ("c");
-   e.envp.push_back ("HOME=/home/cesar");
-   e.envp.push_back ("PWD=/usr/bin");
-   e.envp.push_back (nullptr);
+   e.environ.push_back ("HOME=/home/cesar");
+   e.environ.push_back ("PWD=/usr/bin");
+   e.environ.push_back (nullptr);
 
    e.run ();
    DEBUG ("stid: exitcode %d", e.exitcode);
@@ -309,9 +310,9 @@ void test5 ()
    //e.argv.push_back ("a");
    //e.argv.push_back ("b");
    //e.argv.push_back ("c");
-   e.envp.push_back ("HOME=/home/cesar");
-   e.envp.push_back ("PWD=/usr/bin");
-   e.envp.push_back (nullptr);
+   e.environ.push_back ("HOME=/home/cesar");
+   e.environ.push_back ("PWD=/usr/bin");
+   e.environ.push_back (nullptr);
 
    // run the guest
    e.run ();
@@ -383,45 +384,34 @@ void test6 ()
    e.argv.push_back ("f");
    //e.argv.push_back ("/tmp/dme3.ll_net");
    //e.argv.push_back ("-i");
-   e.envp.push_back ("HOME=/home/cesar");
-   e.envp.push_back ("PWD=/usr/bin");
-   e.envp.push_back (nullptr);
+   e.environ.push_back ("HOME=/home/cesar");
+   e.environ.push_back ("PWD=/usr/bin");
+   e.environ.push_back (nullptr);
 
    // run the guest
 #if 0
-   std::vector<struct replayevent> replay2 = {
-      {0, 1},  // #0 st
-      {0, 3},  // #0 c#1 c#2 l
-      {1, 1},  // #1 st
-      {0, 2},  // #0 u l
-      {0, 1},  // #0 u
-      {1, 2},  // #1 l u
-      {2, 3},  // #0 st, l, u
-      {-1, -1} // free mode
-   };
+   Replay replay;
+   replay.push_back ({0, 1});  // #0 st
+   replay.push_back ({0, 8});  // #0 c#1 c#2 l,u x 3 , but no exit
+   replay.push_back ({1, 2});  // #1 s l
+   //replay.push_back ({0, 1}); // -> error, cannot schedule the #0 exit
+   replay.push_back ({-1, -1}); // free mode
 #endif
 #if 0
-   std::vector<struct replayevent> replay2 = {
-      {0, 1},  // #0 st
-      {0, 8},  // #0 c#1 c#2 l,u x 3 , but no exit
-      {1, 2},  // #1 s l
-      // {0, 1}, -> error, cannot schedule the #0 exit
-      {-1, -1} // free mode
-   };
+   Replay replay;
+   replay.push_back ({0, 1});  // #0 st
+   replay.push_back ({0, 1});  // #0 c#1
+   replay.push_back ({1, 1 + 2 * 3}); // #1 st, lu x 3, stop before the exit
+   replay.push_back ({0, 1});  // #0 c#2
+   replay.push_back ({2, 1});
+   replay.push_back ({-1, -1}); // free mode
 #endif
-#if 0
-   std::vector<struct replayevent> replay2 = {
-      {0, 1},  // #0 st
-      {0, 1},  // #0 c#1
-      {1, 1 + 2 * 3}, // #1 st, lu x 3, stop before the exit
-      {0, 1},  // #0 c#2
-      {2, 1},
-      {-1, -1} // free mode
-   };
+#if 1
+   Replay replay;
+   replay.push_back ({-1, -1});
 #endif
-   std::vector<struct replayevent> replay2 = {{-1, -1}};
 
-   e.set_replay (replay2.data(), replay2.size());
+   e.set_replay (replay);
    //e.add_sleepset (0, (void*) 0x125);
    e.run ();
    action_streamt actions (e.get_trace ());
@@ -430,7 +420,7 @@ void test6 ()
    // print the stream and the replay
    actions.print ();
    actions.print_replay ();
-   std::vector<struct replayevent> replay = actions.get_replay ();
+   replay = actions.get_replay ();
 
 #if 0
    DEBUG ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -462,3 +452,4 @@ void test6 ()
    return;
 }
 
+} // namespace

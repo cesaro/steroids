@@ -4,16 +4,23 @@
 
 #include <memory>
 
+#pragma push_macro ("DEBUG")
 
 #include "llvm/IR/Module.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
-#undef DEBUG // will be (re)defined in ExecutionEngine.h
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
+// ExecutionEngine.h exports DEBUG
+
+#pragma pop_macro ("DEBUG")
 
 #include "../../rt/rt.h"
 #include "action_stream.hh"
+#include "tlsemit.hh"
+#include "replay.hh"
 
 #define ALIGN16(i) (((uint64_t) (i)) & 0xf ? (((uint64_t) (i)) + 16) & -16ul : (uint64_t) (i))
+
+namespace stid {
 
 /// This structure holds information necessary to initialize the memory area
 /// used to hold the guest program
@@ -38,22 +45,25 @@ class Executor
 {
 public :
    std::vector<const char*> argv;
-   std::vector<const char*> envp;
+   std::vector<const char*> environ;
    int exitcode;
 
    Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c);
    ~Executor ();
 
    void           run ();
-   void           set_replay (const struct replayevent *tab, int size);
+   void           set_replay (const Replay &r);
    void           add_sleepset (unsigned tid, void *addr);
    void           clear_sleepset ();
    struct rt *    get_runtime ();
    action_streamt get_trace ();
 
+   const ExecutorConfig &config = conf;
+
 protected :
    struct rt rt;
    std::vector<unsigned> sleepsetidx;
+   Tlsoffsetmap tlsoffsetmap;
    ExecutorConfig conf;
    llvm::LLVMContext &ctx;
    llvm::Module *m;
@@ -62,6 +72,7 @@ protected :
    int (*entry) (int, const char* const*, const char* const*);
 
    void initialize_and_instrument_rt ();
+   void emit_tdata ();
    void instrument_events ();
    void jit_compile ();
    void optimize ();
@@ -92,4 +103,5 @@ private:
    struct rt &rt;
 };
 
+} // namespace
 #endif

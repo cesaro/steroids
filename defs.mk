@@ -22,10 +22,10 @@ LLVMLDFLAGS=$(shell llvm-config-$(LLVMVERS) --ldflags)
 LLVMLIBS=$(shell llvm-config-$(LLVMVERS) --libs all) -lz -lpthread -lffi -lncurses -ldl -lm
 
 # traditional variables
-CFLAGS:=-Wall -std=c11 -fPIC -O3
-CXXFLAGS:=-Wall -std=c++11 -fPIC -O3
-#CFLAGS:=-Wall -std=c11 -fPIC -g
-#CXXFLAGS:=-Wall -std=c++11 -fPIC -g
+#CFLAGS:=-Wall -std=c11 -fPIC -O3
+#CXXFLAGS:=-Wall -std=c++11 -fPIC -O3
+CFLAGS:=-Wall -std=c11 -fPIC -g
+CXXFLAGS:=-Wall -std=c++11 -fPIC -g
 #CPPFLAGS:=-I src/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -D NDEBUG
 CPPFLAGS:=-I src/ -I include/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS $(LLVMCXXFLAGS)
 #LDFLAGS:=-dead_strip -static
@@ -123,6 +123,14 @@ YACC:=bison
 %.o : %.cc
 	@echo "CXX $<"
 	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+%.i : %.cc
+	@echo "CXX $<"
+	@$(CXX) -E $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+%.i : %.c
+	@echo "CC  $<"
+	@$(CC) -E $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 %.pdf : %.dot
 	@echo "DOT $<"

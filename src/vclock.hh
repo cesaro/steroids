@@ -4,6 +4,8 @@
 
 #include "verbosity.h"
 
+namespace stid {
+
 class vclockt
 {
 public:
@@ -43,5 +45,6 @@ private:
    int * tab;
 };
 
+} // namespace
 #endif
 

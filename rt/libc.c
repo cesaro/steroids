@@ -9,8 +9,6 @@
 static int __rt_errno = 0;
 // unistd.h
 
-static pthread_mutex_t mutex_malloc = PTHREAD_MUTEX_INITIALIZER;
-
 static uint8_t *__malloc_ptr;
 
 void __rt_libc_init ()
@@ -45,8 +43,8 @@ void *_rt_malloc_uninitialized  (size_t size)
 {
    void *ptr;
 
+   if (size == 0) return 0;
    // get a free memory area, if any memory is left in the heap
-   pthread_mutex_lock (&mutex_malloc);
    ptr = __malloc_ptr;
    __malloc_ptr = (uint8_t*) ALIGN16 (__malloc_ptr + size);
    if (__malloc_ptr > rt->heap.end)
@@ -56,7 +54,6 @@ void *_rt_malloc_uninitialized  (size_t size)
       PRINT ("out of memory: __malloc_ptr %p size %lu, returning null",
             __malloc_ptr, size);
    }
-   pthread_mutex_unlock (&mutex_malloc);
 
    //printf ("stid: rt: malloc: ret %p size %zu\n", ptr, size);
    //TRACE2 (RT_MALLOC, ptr, size);
@@ -126,14 +123,28 @@ void _rt_exit (int status)
 
 void _rt_abort ()
 {
-   // FIXME - we should check that we are called from main, we should destroy
+   int ret;
+
+   // FIXME - factorize common code here and in _rt__exit
    // the conditional variable, etc...
    printf ("stid: rt: abort: called from t%d\n", TID (__state.current));
    if (TID (__state.current) != 0)
    {
       printf ("stid: rt: abort: not supported, this is a limitation of steroids.\n");
       ASSERT (0);
+      __rt_panic ();
    }
+
+   // destroy conditional variable
+   ret = pthread_cond_destroy (&__state.tcbs[0].cond);
+   if (ret)
+   {
+      PRINT ("t0: cond var: errors while destroying: %s; ignoring",
+            strerror (ret));
+   }
+
+   TRACE0 (RT_ABORT);
+
    // we return control immediately to the host
    __rt_cend (253);
 }
@@ -157,8 +168,13 @@ void _rt__exit (int status)
    }
 
    // log the EXIT event for the calling thread (will be main at this point)
+   breakme ();
    TRACE0 (RT_THEXIT);
    rt->trace.num_blue[0]++;
+
+   // issue a warning if the status is non zero
+   if (status)
+      TRACE3 (RT_EXITNZ, status);
 
    // consume one event (the last) from the replay sequence
    ASSERT (rt->replay.current->count == 1 || rt->replay.current->count == -1);

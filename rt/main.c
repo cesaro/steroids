@@ -13,31 +13,36 @@
 #include "debug.h"
 
 // only the event
-#define TRACE0(e) \
+#define TRACE0(e) { \
       __rt_debug_trace0 (e); \
-      *rt->trace.evptr++   = e;
+      *rt->trace.evptr++   = e; \
+      }
 // event + address
-#define TRACE1(e,addr) \
+#define TRACE1(e,addr) { \
       __rt_debug_trace1 (e, addr); \
       *rt->trace.evptr++   = e; \
-      *rt->trace.addrptr++ = (uint64_t) addr;
+      *rt->trace.addrptr++ = (uint64_t) addr; \
+      }
 // event + address + val
-#define TRACE2(e,addr,val) \
+#define TRACE2(e,addr,val) { \
       __rt_debug_trace2 (e, addr, val); \
       *rt->trace.evptr++   = e; \
       *rt->trace.addrptr++ = (uint64_t) addr; \
-      *rt->trace.valptr++  = val;
+      *rt->trace.valptr++  = val; \
+      }
 // event + id
-#define TRACE3(e,id) \
+#define TRACE3(e,id) { \
       __rt_debug_trace3 (e, id); \
       *rt->trace.evptr++   = e; \
-      *rt->trace.idptr++   = id;
-#define TRACE128(e,addr,val) \
+      *rt->trace.idptr++   = id; \
+      }
+#define TRACE128(e,addr,val) { \
       __rt_debug_trace128 (e, addr, val); \
       *rt->trace.evptr++   = e; \
       *rt->trace.addrptr++ = (uint64_t) addr; \
       memcpy (rt->trace.valptr, &(val), 16); \
-      rt->trace.valptr += 2;
+      rt->trace.valptr += 2; \
+      }
 
 #define UNITS_UNIT(s) \
       (s) < 2048 ? "B" : \
@@ -86,4 +91,5 @@ int main (int argc, char **argv, char **env);
 #include "pthread.c"
 #include "libc.c"
 #include "buddy.c"
+#include "tls.c"
 

@@ -41,7 +41,9 @@
 extern "C"
 {
 
-struct stid
+using namespace stid;
+
+struct stid_handle
 {
    const char *path;
    Executor *e;
@@ -58,12 +60,12 @@ static void _ir_write_ll (const llvm::Module *m, const char *filename)
 
 
 // constructor and destructor
-struct stid * stid_init ()
+struct stid_handle * stid_init ()
 {
-   struct stid *s;
+   struct stid_handle *s;
 
    try {
-      s = new struct stid;  
+      s = new struct stid_handle;  
    } catch (const std::bad_alloc& e) {
       return 0;
    }
@@ -72,7 +74,7 @@ struct stid * stid_init ()
    return s;
 }
 
-int stid_term (struct stid *s)
+int stid_term (struct stid_handle *s)
 {
    ASSERT (s);
    delete s->e;
@@ -80,7 +82,7 @@ int stid_term (struct stid *s)
    return 0;
 }
 
-int stid_load_bytecode (struct stid *s, const char *path)
+int stid_load_bytecode (struct stid_handle *s, const char *path)
 {
    static bool init = false;
    llvm::SMDiagnostic err;
@@ -141,9 +143,9 @@ int stid_load_bytecode (struct stid *s, const char *path)
    DEBUG ("stid: load-bytecode: executor created with success!", s, path);
 
    // FIXME - this should be moved to a proper API
-   s->e->envp.push_back ("HOME=/home/msousa");
-   s->e->envp.push_back ("PWD=/usr/bin");
-   s->e->envp.push_back (nullptr);
+   s->e->environ.push_back ("HOME=/home/msousa");
+   s->e->environ.push_back ("PWD=/usr/bin");
+   s->e->environ.push_back (nullptr);
 
    s->e->argv.push_back ("program-name");
    s->e->argv.push_back ("argv1");
@@ -161,7 +163,7 @@ err_executor :
    return -1;
 }
 
-void stid_argv_add (struct stid *s, const char *arg)
+void stid_argv_add (struct stid_handle *s, const char *arg)
 {
    ASSERT (s);
    ASSERT (arg);
@@ -172,7 +174,7 @@ void stid_argv_add (struct stid *s, const char *arg)
    s->e->argv.push_back (s->storage.back().c_str());
 }
 
-void stid_argv_clear (struct stid *s)
+void stid_argv_clear (struct stid_handle *s)
 {
    ASSERT (s);
    ASSERT (s->e != 0);
@@ -181,7 +183,7 @@ void stid_argv_clear (struct stid *s)
    s->e->argv.clear();
 }
 
-int stid_run (struct stid *s, struct stid_replay *rep)
+int stid_run (struct stid_handle *s, struct stid_replay *rep)
 {
    std::vector<int> replay;
 
@@ -218,7 +220,7 @@ int stid_run (struct stid *s, struct stid_replay *rep)
    return 0;
 }
 
-int stid_get_seqexec (struct stid *s, struct stid_exec *run)
+int stid_get_seqexec (struct stid_handle *s, struct stid_exec *run)
 {
    ASSERT (s);
    ASSERT (run);
@@ -313,7 +315,7 @@ static void _stid_convert_po (const conft &pocc, struct stid_po *po)
    }
 }
 
-struct stid_po * stid_po_get (struct stid *s)
+struct stid_po * stid_po_get (struct stid_handle *s)
 {
    struct stid_po *po;
    DEBUG ("stid: po-get: s %p", s);
@@ -433,7 +435,7 @@ int stid_po_term (struct stid_po *po)
    return 0;
 }
 
-int stid_cmd (struct stid *s, int cmd, void *arg1, void *arg2, void *arg3)
+int stid_cmd (struct stid_handle *s, int cmd, void *arg1, void *arg2, void *arg3)
 {
    switch (cmd)
    {

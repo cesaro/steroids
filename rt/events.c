@@ -339,7 +339,7 @@ void __rt_ret (uint16_t id)
 
 void __rt_memreg_print (struct memreg *m, const char *prefix, const char *suffix)
 {
-   printf ("%s%p - %p, %4zu%s%s",
+   printf ("%s%16p - %16p, %4zu%s%s",
       prefix,
       m->begin,
       m->end,
@@ -383,12 +383,14 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    // our little tribute to how everything started ... ;)
    _printf ("stid: rt: main: I feel fantaastic... I feel the PUMP!\n");
 
-#if 0
+#if 1
    printf ("stid: rt: main: guest's address space:\n");
    __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
-   __rt_memreg_print (&rt->data, "stid: rt: main:  ", ", data (.data, .bss, .rodata, and others)\n");
+   __rt_memreg_print (&rt->data, "stid: rt: main:  ", ", data (.data, .bss, .rodata, others)\n");
    __rt_memreg_print (&rt->heap, "stid: rt: main:  ", ", heap\n");
    __rt_memreg_print (&rt->t0stack, "stid: rt: main:  ", ", main stack\n");
+   printf ("stid: rt: main: thread-local storage initializers:\n");
+   __rt_memreg_print (&rt->tdata, "stid: rt: main:  ", ", .tdata/.tbss\n");
    printf ("stid: rt: main: event trace buffer:\n");
    __rt_memreg_print (&rt->trace.ev, "stid: rt: main:  ", ", event trace (8bit event ids)\n");
    __rt_memreg_print (&rt->trace.addr, "stid: rt: main:  ", ", event trace (64bit addr)\n");
@@ -440,10 +442,10 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    }
    myenv[n] = 0;
 
-#if 0
-   printf ("stid: rt: main: myargc %d myargv %p, myenv %p (%d)\n",
-         argc, myargv, myenv, n);
-   for (i = 0; i < argc; i++)
+   _printf ("stid: rt: main: |argv| %d |env| %d\n",
+         argc, n);
+#if 1
+   for (i = 0; i < (unsigned) argc; i++)
       printf ("stid: rt: main: argv[%2i] %16p '%s'\n", i, myargv[i], myargv[i]);
    for (i = 0; i <= n; i++)
       printf ("stid: rt: main:  env[%2i] %16p '%s'\n", i, myenv[i], myenv[i]);

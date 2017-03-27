@@ -12,7 +12,7 @@
 void test1 ()
 {
    int i, ret;
-   struct stid *s;
+   struct stid_handle *s;
    struct stid_exec stream;
    struct stid_action *a;
 
@@ -129,7 +129,7 @@ void test8 ()
 
 void test9 ()
 {
-   struct stid *s;
+   struct stid_handle *s;
    struct stid_po *po;
    const char *path = "input.ll";
    struct stid_replay replay;

@@ -4,12 +4,16 @@
 #include <memory>
 #include <cstring>
 #include <string>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include "llvm/Support/raw_ostream.h"
 
 #include "misc.hh"
+#include "verbosity.h"
 
 std::string fmt (const std::string fmt_str, ...)
 {
@@ -80,7 +84,7 @@ void print_type (llvm::Type *t, std::string &s)
    buff.flush ();
 }
 
-void print_value (llvm::Value *v, std::string &s)
+void print_value (const llvm::Value *v, std::string &s)
 {
    llvm::raw_string_ostream buff (s);
    v->print (buff);
@@ -93,3 +97,12 @@ void print_value_as_operand (llvm::Value *v, std::string &s)
    v->printAsOperand (buff);
    buff.flush ();
 }
+
+void dump_ll (const llvm::Module *m, const char *filename)
+{
+   int fd = open (filename, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+   ASSERT (fd >= 0);
+   llvm::raw_fd_ostream f (fd, true);
+   f << *m;
+}
+

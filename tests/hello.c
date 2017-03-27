@@ -591,9 +591,25 @@ int main11 ()
    pthread_exit (0);
    return 0;
 }
+#endif
+
+int __thread a = 0x11223344;
+int __thread b = 0x55667788;
+struct abc {
+   int x;
+   float f;
+};
+struct abc __thread st = {10, 3.1483294320};
+int __thread vec[30] = {0x12, 0x13, 0x14};
+int __thread c;
+extern int __thread fuera;
+long double __thread f1;
+int __thread c2;
 
 int main12 (int argc, char **argv)
 {
+   static uint64_t __thread main12x = 112233;
+
    int x[5] = {0, 1, 2, 3, 4};
 
    (void) argv;
@@ -605,29 +621,82 @@ int main12 (int argc, char **argv)
    else
    {
       x[3] += 20;
+      a = 10;
+      b = 20;
+      st.x = 123;
+      st.f = 8899;
+      main12x = 123123;
    }
 
-   printf ("x[2] %d x[3] %d\n", x[2], x[3]);
+   printf ("x[2] %d x[3] %d %f %lu\n", x[2], x[3], st.f, main12x);
+
+   uint64_t l;
+
+   l = (uint64_t) &st;
+   l += 10;
+   l = l < 23;
+   c = strlen ((void*) l);
+   a = 123;
+   printf ("%d\n", c);
+
    return 0;
 }
-#endif
 
 int main13 (int argc, char **argv)
 {
    (void) argv;
 
-   //int *p = (int*) 11223344;
-   int *p = (int*) argv;
+   c = 10;
+   printf ("hello 13\n");
+   printf ("argc %d\n", argc);
+   printf ("argv %p\n", argv);
+   printf ("a %x\n", a);
+   printf ("b %x\n", b);
+   return argc + st.x + c;
+}
 
-   *p = argc + 10;
-   return argc;
+int __thread tls14 = 123;
+
+void *thread14 (void *arg)
+{
+   (void) arg;
+
+   printf ("m: tls14 %d &tls14 %p\n", tls14, &tls14);
+   tls14 = 222;
+   printf ("m: tls14 %d &tls14 %p (after)\n", tls14, &tls14);
+   return NULL;
+}
+
+int main14 ()
+{
+   pthread_t t;
+   int ret;
+
+   printf ("m: tls14 %d &tls14 %p\n", tls14, &tls14);
+   tls14 = 111;
+   printf ("m: tls14 %d &tls14 %p (after)\n", tls14, &tls14);
+
+   /* create threads */
+   ret = pthread_create (&t, NULL, thread14, (void*) 1);
+   printf ("m: create: ret %d\n", ret);
+   assert (ret == 0);
+
+   printf ("m: tls14 %d &tls14 %p\n", tls14, &tls14);
+   tls14 = 111;
+   printf ("m: tls14 %d &tls14 %p (after)\n", tls14, &tls14);
+
+   pthread_exit (0);
 }
 
 int main (int argc, char **argv)
 //int main ()
 {
+   (void) argc;
+   (void) argv;
+
    //return main9 ();
    //return main10 ();
-   return main13 (argc, argv);
+   return main14 ();
+   //return main13 (argc, argv);
 }
 

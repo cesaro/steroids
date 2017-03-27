@@ -76,6 +76,9 @@ int   _rt_pthread_create(pthread_t *tid,
    t->arg = arg;
    ret = pthread_cond_init (&t->cond, 0);
    if (ret) goto err_cond; // we return the same error
+   // thread-local block
+   ret = __rt_tls_thread_start (t);
+   if (ret) goto err_cond;
 
    // if we got no attributes, create default ones
    if (! attr)
@@ -128,6 +131,7 @@ err_create:
 err_stack_alloc:
    if (need_destroy) pthread_attr_destroy (&attr2); // ignore possible error
 err_attr_init:
+   __rt_tls_thread_term (t);
    pthread_cond_destroy (&t->cond); // ignore possible error
 err_cond:
    __state.next--; // release the tcb

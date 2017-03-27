@@ -3,7 +3,10 @@
 #define __STID_ACTION_STREAM_HH_
 
 #include "action.hh"
+#include "replay.hh"
 #include "../../rt/rt.h"
+
+namespace stid {
 
 class action_streamt;
 
@@ -59,7 +62,7 @@ public:
    inline size_t size () const
       { return rt->trace.size; }
    void print (int limit = -1) const;
-   std::vector<struct replayevent> get_replay ();
+   Replay get_replay ();
    void             print_replay ();
 
 
@@ -94,5 +97,7 @@ public:
    action_stream2t (const action_streamt &s);
    void diff (const action_stream2t &other, optt opt = FULL);
 };
+
+} // namespace
 
 #endif

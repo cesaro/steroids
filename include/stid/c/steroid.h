@@ -38,7 +38,7 @@ extern "C" {
  */
 
 // opaque
-struct stid;
+struct stid_handle;
 
 struct stid_ctsw
 {
@@ -81,24 +81,24 @@ struct stid_po
 };
 
 // constructor and destructor
-struct stid * stid_init ();
-int stid_term (struct stid *s);
+struct stid_handle * stid_init ();
+int stid_term (struct stid_handle *s);
 
 // load an LLVM bytecode file
-int stid_load_bytecode (struct stid *s, const char *path);
+int stid_load_bytecode (struct stid_handle *s, const char *path);
 
 // adding arguments to the commandline of the program
-void stid_argv_add (struct stid *s, const char *arg);
-void stid_argv_clear (struct stid *s);
+void stid_argv_add (struct stid_handle *s, const char *arg);
+void stid_argv_clear (struct stid_handle *s);
 
 // run the JIT compiled code and generate the action stream
-int stid_run (struct stid *s, struct stid_replay *rep);
+int stid_run (struct stid_handle *s, struct stid_replay *rep);
 
 // get the (public version of) the action stream
-int stid_get_seqexec (struct stid *s, struct stid_exec *run);
+int stid_get_seqexec (struct stid_handle *s, struct stid_exec *run);
 
 // operations on the po execution:
-struct stid_po *stid_po_get (struct stid *s);
+struct stid_po *stid_po_get (struct stid_handle *s);
 int             stid_po_term (struct stid_po *po);
 int             stid_po_print (const struct stid_po *po);
 
@@ -111,7 +111,7 @@ int stid_test ();
 int stid_test_checker ();
 
 // arbitrary commands to the internals of the steroids engine
-int stid_cmd (struct stid *s, int cmd, void *arg1, void *arg2, void *arg3);
+int stid_cmd (struct stid_handle *s, int cmd, void *arg1, void *arg2, void *arg3);
 
 #ifdef __cplusplus
 } // extern "C"

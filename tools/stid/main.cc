@@ -109,7 +109,7 @@ void replay2replay (std::vector<int> &rep1, struct stid_replay &rep2)
 
 void main1 (struct opts *opts)
 {
-   struct stid *s;
+   struct stid_handle *s;
    struct stid_po *po;
    struct stid_replay replay;
    int ret;

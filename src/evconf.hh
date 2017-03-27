@@ -9,6 +9,8 @@
 #include "stid/action.hh"
 #include "stid/action_stream.hh"
 
+namespace stid {
+
 class conft;
 
 class eventt
@@ -80,4 +82,5 @@ private:
    friend class eventt;
 };
 
+} // namespace
 #endif

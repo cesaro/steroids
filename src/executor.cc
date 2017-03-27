@@ -25,23 +25,18 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/IPO.h"
+#undef DEBUG // exported by ExecutionEngine.h
 
 #include "stid/action_stream.hh"
 #include "stid/executor.hh"
+#include "stid/tlsemit.hh"
 
 #include "verbosity.h"
 #include "misc.hh"
 #include "../rt/rt.h"
 #include "instrumenter.hh"
 
-void dump_ll (const llvm::Module *m, const char *filename)
-{
-   int fd = open (filename, O_WRONLY | O_TRUNC | O_CREAT, 0644);
-   ASSERT (fd >= 0);
-   llvm::raw_fd_ostream f (fd, true);
-   f << *m;
-}
-
+namespace stid {
 
 uint8_t *MyMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment,
          unsigned SectionID, llvm::StringRef SectionName, bool isReadOnly)
@@ -78,6 +73,10 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    rt.trace.id.begin = 0;
    rt.trace.val.begin = 0;
 
+   // make safe-to-use argv and environ arrays
+   argv.push_back ("program");
+   environ.push_back (nullptr);
+
    // reserve capacity in sleepsetidx
    sleepsetidx.reserve (RT_MAX_THREADS);
 
@@ -101,6 +100,7 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
 
    // initialize guest memory area and instrument the llvm module
    initialize_and_instrument_rt ();
+   emit_tdata ();
    instrument_events ();
    optimize ();
    jit_compile ();
@@ -128,7 +128,7 @@ void Executor::malloc_memreg (struct memreg *m, size_t size)
 
 void Executor::print_memreg (struct memreg *m, const char *prefix, const char *suffix)
 {
-   printf ("%s%p - %p, %4zu%s%s",
+   printf ("%s%16p - %16p, %4zu%s%s",
       prefix,
       m->begin,
       m->end,
@@ -171,6 +171,8 @@ void Executor::initialize_and_instrument_rt ()
    rt.data.begin = rt.mem.begin;
    rt.data.end = rt.mem.begin;
    rt.data.size = 0;
+
+   // rt.tdata will be initialized in emit_tdata()
 
    // allocate memory for the event stream, ids (uint8_t)
    malloc_memreg (&rt.trace.ev, conf.tracesize);
@@ -235,6 +237,32 @@ void Executor::initialize_and_instrument_rt ()
    }
 }
 
+void Executor::emit_tdata ()
+{
+   Tlsemit tlsdata (m, ee);
+
+   TRACE ("stid: executor: emitting TLS sections (.tdata and .tbss)");
+   tlsdata.emit();
+
+   TRACE ("stid: executor: done, %lu symbols, %zu%s",
+         tlsdata.map.size(),
+         UNITS_SIZE (tlsdata.get_size()),
+         UNITS_UNIT (tlsdata.get_size()));
+
+   rt.tdata.size = tlsdata.get_size ();
+   rt.tdata.begin = (uint8_t *) tlsdata.move_dest();
+   rt.tdata.end = rt.tdata.begin + rt.tdata.size;
+
+#ifdef CONFIG_DEBUG
+   for (auto &kv : tlsdata.map)
+      DEBUG ("stid: executor: tls: var '%s' -> offset %p",
+            kv.first->getName().str().c_str(), kv.second);
+#endif
+
+   // move the map from the Tlsdata object to the Executor
+   tlsoffsetmap = std::move (tlsdata.map);
+}
+
 void Executor::optimize ()
 {
    // This function optimizes the LLVM just before jitting it, after
@@ -248,7 +276,6 @@ void Executor::optimize ()
       return;
    }
    DEBUG ("stid: executor: optimizing, optlevel %u", conf.optlevel);
-   //dump_ll (m, "before.ll");
 
    // a module pass manager and a function pass manager, they will store the
    // sequence of optimization passes that we run; we will insert the
@@ -285,7 +312,7 @@ void Executor::optimize ()
    // run the module pass manger
    pm.run (*m);
 
-   //dump_ll (m, "after.ll");
+   dump_ll (m, "opt.ll");
    DEBUG ("stid: executor: done");
 }
 
@@ -350,6 +377,10 @@ void Executor::jit_compile ()
       print_memreg (&rt.t0stack, "stid: executor:  ", ", stack (main thread)\n");
    }
 
+   TRACE ("stid: exeutor: thread-local storage initializers:");
+   if (verb_trace)
+      print_memreg (&rt.tdata, "stid: executor:  ", ", .tdata/.tbss\n");
+
    TRACE ("stid: executor: event trace buffer:");
    if (verb_trace) {
       print_memreg (&rt.trace.ev, "stid: executor:  ", ", event trace (8bit event ids)\n");
@@ -364,7 +395,7 @@ void Executor::instrument_events ()
    // instrument the code
    Instrumenter i;
    TRACE ("stid: executor: instrumenting source...");
-   if (not i.instrument (*m))
+   if (not i.instrument (*m, tlsoffsetmap))
    {
       throw std::runtime_error ("stid: executor: rt missing in input module");
    }
@@ -419,7 +450,7 @@ void Executor::run ()
    // clear memory for deterministic execution
    detex_apply ();
 
-   // make sure that argv and envp members have the right null pointer at the
+   // make sure that argv and environ members have the right null pointer at the
    // end
    //DEBUG ("stid: executor: checking argv, argp");
    if (argv.size() == 0)
@@ -432,14 +463,14 @@ void Executor::run ()
       std::string s = fmt ("stid: executor: argv[0] cannot be a null pointer");
       throw std::runtime_error (s);
    }
-   if (envp.size() == 0)
+   if (environ.size() == 0)
    {
-      std::string s = fmt ("stid: executor: envp needs to contain at least one entry");
+      std::string s = fmt ("stid: executor: environ needs to contain at least one entry");
       throw std::runtime_error (s);
    }
-   if (envp.back() != 0)
+   if (environ.back() != 0)
    {
-      std::string s = fmt ("stid: executor: envp: last entry should be a null pointer");
+      std::string s = fmt ("stid: executor: environ: last entry should be a null pointer");
       throw std::runtime_error (s);
    }
 
@@ -447,7 +478,7 @@ void Executor::run ()
    DEBUG ("stid: executor: starting guest execution");
    //DEBUG ("stid: executor: ====================================================");
    breakme ();
-   exitcode = entry (argv.size(), argv.data(), envp.data());
+   exitcode = entry (argv.size(), argv.data(), environ.data());
    //DEBUG ("stid: executor: ====================================================");
    //DEBUG ("stid: executor: guest execution terminated");
    DEBUG ("stid: executor: %zu events collected, %d thread created, exitcode %d",
@@ -471,17 +502,17 @@ llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)
    return c;
 }
 
-void Executor::set_replay (const struct replayevent *tab, int size)
+void Executor::set_replay (const Replay &r)
 {
-   if (size > replay_capacity)
+   if (r.size() > replay_capacity)
    {
-      replay_capacity = size * 1.5;
+      replay_capacity = r.size() * 1.5;
       delete rt.replay.tab;
       rt.replay.tab = new struct replayevent[replay_capacity];
    }
 
-   rt.replay.size = size;
-   memcpy (rt.replay.tab, tab, size * sizeof(struct replayevent));
+   rt.replay.size = r.size();
+   memcpy (rt.replay.tab, r.data(), r.size() * sizeof(struct replayevent));
 }
 
 void Executor::add_sleepset (unsigned tid, void *addr)
@@ -506,3 +537,4 @@ action_streamt Executor::get_trace ()
    return action_streamt (&rt);
 }
 
+} // namespace

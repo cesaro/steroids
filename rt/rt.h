@@ -26,6 +26,7 @@ extern "C" {
 #define RT_ACTION_CLASS_WR64  0x60  // 011 0
 #define RT_ACTION_CLASS_MM    0x80  // 100 0
 #define RT_ACTION_CLASS_TH    0xa0  // 101 0
+#define RT_ACTION_CLASS_WARN  0xc0  // 110 0
 
 // event ids: RD8 : number of bytes read, from 1 to 4
 // event ids: RD64: number of 64bit words read, from 1 to 31
@@ -43,12 +44,16 @@ extern "C" {
 #define RT_ACTION_THCTXSW     0x03  // 0 0011
 #define RT_ACTION_MTXLOCK     0x04  // 0 0100
 #define RT_ACTION_MTXUNLK     0x05  // 0 0101
+// event ids: WARN
+#define RT_ACTION_ABORT       0x00  // 0 0000
+#define RT_ACTION_EXITNZ      0x01  // 0 0001
+
 
 // get the action class or the event id
 #define RT_ACTION_CLASS(x)    ((x) & RT_ACTION_CLASS_MASK)
 #define RT_ACTION_ID(x)       ((x) & RT_ACTION_ID_MASK)
 
-// often used event ids
+// memory access: often used event ids
 #define RT_RD8                (RT_ACTION_CLASS_RD8 | 1)
 #define RT_RD16               (RT_ACTION_CLASS_RD8 | 2)
 #define RT_RD32               (RT_ACTION_CLASS_RD8 | 4)
@@ -63,17 +68,22 @@ extern "C" {
 #define RT_WR128              (RT_ACTION_CLASS_WR64 | 2)
 #define RT_WR192              (RT_ACTION_CLASS_WR64 | 3)
 #define RT_WR256              (RT_ACTION_CLASS_WR64 | 4)
+// memory allocation and function calls
 #define RT_ALLOCA             (RT_ACTION_CLASS_MM | RT_ACTION_ALLOCA)
 #define RT_MALLOC             (RT_ACTION_CLASS_MM | RT_ACTION_MALLOC)
 #define RT_FREE               (RT_ACTION_CLASS_MM | RT_ACTION_FREE)
 #define RT_CALL               (RT_ACTION_CLASS_MM | RT_ACTION_CALL)
 #define RT_RET                (RT_ACTION_CLASS_MM | RT_ACTION_RET)
+// threading
 #define RT_THCREAT            (RT_ACTION_CLASS_TH | RT_ACTION_THCREAT)
 #define RT_THJOIN             (RT_ACTION_CLASS_TH | RT_ACTION_THJOIN)
 #define RT_THEXIT             (RT_ACTION_CLASS_TH | RT_ACTION_THEXIT)
 #define RT_THCTXSW            (RT_ACTION_CLASS_TH | RT_ACTION_THCTXSW)
 #define RT_MTXLOCK            (RT_ACTION_CLASS_TH | RT_ACTION_MTXLOCK)
 #define RT_MTXUNLK            (RT_ACTION_CLASS_TH | RT_ACTION_MTXUNLK)
+// defects
+#define RT_ABORT              (RT_ACTION_CLASS_WARN | RT_ACTION_ABORT)
+#define RT_EXITNZ             (RT_ACTION_CLASS_WARN | RT_ACTION_EXITNZ)
 
 #define RT_IS_MULTIW_RDWR(x)  (RT_IS_MULTIW_RD(x) || RT_IS_MULTIW_WR(x))
 #define RT_IS_MULTIW_RD(x)    (((x) & RT_ACTION_CLASS_MASK) == RT_ACTION_CLASS_RD64)
@@ -100,6 +110,9 @@ void __rt_load_post  (const void *addr, uint32_t size);
 void __rt_allo (uint8_t *addr, uint32_t size);
 void __rt_call (uint16_t id);
 void __rt_ret  (uint16_t id);
+
+// returns the pointer of a given thread-local variable
+uint8_t *__rt_tls_get_var_addr (uint32_t offset) __attribute__ ((pure));
 
 // used in start.s to access the "struct rt" in main.c
 void __rt_save_host_rsp (uint64_t rsp);
@@ -187,6 +200,7 @@ struct rt
 
    // subregions inside of "mem"
    struct memreg data;
+   struct memreg tdata; // .tdata + .tbss
    struct memreg heap;
    struct memreg t0stack;
 
@@ -243,6 +257,9 @@ static inline const char *__rt_action_to_str (uint8_t a)
    // locks
    case RT_MTXLOCK : return "MTXLOCK";
    case RT_MTXUNLK : return "MTXUNLK";
+   // defects
+   case RT_ABORT   : return "W-ABORT";
+   case RT_EXITNZ  : return "W-EXITN";
 
    // less common loads / stores
    default :

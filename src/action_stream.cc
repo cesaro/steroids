@@ -2,6 +2,8 @@
 #include "stid/action_stream.hh"
 #include "verbosity.h"
 
+namespace stid {
+
 action_stream_itt::action_stream_itt (const action_streamt &s, bool begin) :
    trace (s.rt->trace) // we make a copy, this saves 1 memory access in future operations
 {
@@ -45,17 +47,19 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
       trace.addrptr++;
       break;
 
-   // call, ret, context switch: 1 argument, an id
+   // call, ret, context switch, exitnz: 1 argument, an id
    case RT_CALL:
    case RT_RET:
    case RT_THCREAT:
    case RT_THJOIN:
    case RT_THCTXSW:
+   case RT_EXITNZ:
       trace.idptr++;
       break;
 
-   // exit: 0 arguments
+   // abort: 0 arguments
    case RT_THEXIT:
+   case RT_ABORT :
       break;
 
    // mutex-{lock,unlock}: 1 argument, an address
@@ -133,6 +137,16 @@ bool action_stream_itt::has_addr () const
          ASSERT (0);
          return true;
       }
+   case RT_ACTION_CLASS_WARN :
+      switch (t)
+      {
+      case RT_ABORT :
+      case RT_EXITNZ :
+         return false;
+      default :
+         ASSERT (0);
+         return true;
+      }
    default :
       ASSERT (0);
       return true;
@@ -167,6 +181,16 @@ bool action_stream_itt::has_val () const
       }
    case RT_ACTION_CLASS_TH:
       return false;
+   case RT_ACTION_CLASS_WARN :
+      switch (t)
+      {
+      case RT_ABORT :
+      case RT_EXITNZ :
+         return false;
+      default :
+         ASSERT (0);
+         return true;
+      }
    default :
       ASSERT (0);
       return true;
@@ -204,11 +228,22 @@ bool action_stream_itt::has_id () const
       {
       case RT_MTXLOCK :
       case RT_MTXUNLK :
-      case RT_THEXIT :
          return false;
+      case RT_THEXIT :
       case RT_THCREAT :
       case RT_THJOIN :
       case RT_THCTXSW :
+         return true;
+      default :
+         ASSERT (0);
+         return true;
+      }
+   case RT_ACTION_CLASS_WARN :
+      switch (t)
+      {
+      case RT_ABORT :
+         return false;
+      case RT_EXITNZ :
          return true;
       default :
          ASSERT (0);
@@ -272,17 +307,19 @@ const char *action_stream_itt::str () const
       sprintf (str, "%s %#-18lx, %#-18lx", action, addr(), *val());
       break;
 
-   // call, ret, threads
+   // call, ret, threads, exit
    case RT_CALL    :
    case RT_RET     :
    case RT_THCREAT :
    case RT_THJOIN  :
    case RT_THCTXSW :
+   case RT_EXITNZ :
       sprintf (str, "%s %#x", action, id());
       break;
 
-   // exit
+   // exit, abort
    case RT_THEXIT  :
+   case RT_ABORT :
       sprintf (str, "%s", action);
       break;
 
@@ -364,10 +401,10 @@ void action_streamt::print (int limit) const
    printf ("== action stream end ==\n");
 }
 
-std::vector<struct replayevent> action_streamt::get_replay ()
+Replay action_streamt::get_replay ()
 {
    unsigned i;
-   std::vector<struct replayevent> replay;
+   Replay replay;
    struct replayevent ctx;
    int sawfirst[RT_MAX_THREADS];
    int blue[RT_MAX_THREADS];
@@ -386,8 +423,10 @@ std::vector<struct replayevent> action_streamt::get_replay ()
 
    for (auto &ac : *this)
    {
-      // if previous one was exit, then this one needs to be context switch
-      ASSERT (not lastexit or ac.type() == RT_THCTXSW);
+      // if previous one was exit, then this one needs to be context switch or
+      // exit non-zero
+      ASSERT (not lastexit or ac.type() == RT_THCTXSW or ac.type() == RT_EXITNZ);
+
 
       switch (ac.type())
       {
@@ -565,3 +604,4 @@ idx %-13zu type %-18s type %-18s %s
    printf ("== diff end ==\n");
 }
 
+} // namespace

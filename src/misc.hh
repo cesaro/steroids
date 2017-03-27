@@ -6,6 +6,7 @@
 
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
+#include <llvm/IR/Module.h>
 
 #define UNITS_UNIT(s) \
       (s) < 2048 ? "B" : \
@@ -24,7 +25,8 @@ std::string operator * (std::string lhs, int i);
 std::string quoted_str (const char * str);
 
 void print_type (llvm::Type *t, std::string &s);
-void print_value (llvm::Value *v, std::string &s);
+void print_value (const llvm::Value *v, std::string &s);
 void print_value_as_operand (llvm::Value *v, std::string &s);
+void dump_ll (const llvm::Module *m, const char *filename);
 
 #endif

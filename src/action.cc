@@ -1,6 +1,8 @@
 
 #include "stid/action.hh"
 
+namespace stid {
+
 const char *actiont_type_str (unsigned t)
 {
    return actiont_type_str ((action_typet) t);
@@ -89,3 +91,4 @@ void actiont::pretty_print ()
    }
 }
 
+} // namespace

@@ -10,6 +10,8 @@
 #include "vclock.hh"
 
 
+namespace stid {
+
 #if 0
 void Checker::run ()
 {
@@ -79,3 +81,5 @@ void Checker::run ()
 }
 
 #endif
+
+} // namespace
