@@ -47,7 +47,7 @@ int __rt_thread_sched_update (struct rt_tcb *t)
    switch (t->state)
    {
    case SCHED_RUNNABLE :
-      //_printf ("stid: rt: threading: sched: update: t%d is RUNNABLE\n", TID (t));
+      //DEBUG ("stid: rt: threading: sched: update: t%d is RUNNABLE", TID (t));
       return 1;
 
    case SCHED_WAIT_MUTEX :
@@ -60,13 +60,12 @@ int __rt_thread_sched_update (struct rt_tcb *t)
          // unlock the mutex, as we just locked it!
          ret = pthread_mutex_unlock (t->wait_mutex);
          // FIXME -- issue a warning into the stream here
-         if (ret != 0) PRINT ("error: unlock: %s\n", strerror (ret));
+         if (ret != 0) ALERT ("error: unlock: %s\n", strerror (ret));
          // wake up threads sleeping on this mutex
          __rt_thread_sleepset_awake (t->wait_mutex);
          // change the thread state
          t->state = SCHED_RUNNABLE;
-         _printf ("stid: rt: threading: sched: update: t%d, "
-               "WAIT_MUTEX(%p) -> RUNNABLE\n", TID (t), t->wait_mutex);
+         //DEBUG ("stid: rt: threading: sched: update: t%d, " "WAIT_MUTEX(%p) -> RUNNABLE", TID (t), t->wait_mutex);
          return 1;
       }
       ASSERT (ret == EBUSY); // could also be other errors ...
@@ -78,8 +77,7 @@ int __rt_thread_sched_update (struct rt_tcb *t)
       if (! t->wait_join->flags.alive)
       {
          t->state = SCHED_RUNNABLE;
-         _printf ("stid: rt: threading: sched: update: t%d, "
-               "WAIT_JOIN(t%d) -> RUNNABLE\n", TID (t), TID (t->wait_join));
+         //DEBUG ("stid: rt: threading: sched: update: t%d, WAIT_JOIN(t%d) -> RUNNABLE", TID (t), TID (t->wait_join));
          return 1;
       }
       return 0;
@@ -98,8 +96,7 @@ int __rt_thread_sched_update (struct rt_tcb *t)
       if (__state.num_ths_alive == 1)
       {
          t->state = SCHED_RUNNABLE;
-         _printf ("stid: rt: threading: sched: update: t%d, "
-               "WAIT_ALLEXIT -> RUNNABLE\n", TID (t));
+         //DEBUG ("stid: rt: threading: sched: update: t%d, WAIT_ALLEXIT -> RUNNABLE", TID (t));
          return 1;
       }
       return 0;
@@ -134,8 +131,7 @@ struct rt_tcb* __rt_thread_sched_find_any ()
    // all of them and run the first, at this point this execution is an SSB
    if (__state.sleepset.size)
    {
-      _printf ("stid: rt: threading: sched: find-any: no runnable thread, "
-            "%u in sleepset (SSB!!!)\n", __state.sleepset.size);
+      //DEBUG ("stid: rt: threading: sched: find-any: no runnable thread, %u in sleepset (SSB!!!)", __state.sleepset.size);
 
       // release all
       for (i = 0; i < __state.sleepset.size; i++)
@@ -144,9 +140,7 @@ struct rt_tcb* __rt_thread_sched_find_any ()
          ASSERT (t);
          ASSERT (t->state == SCHED_WAIT_SS);
          t->state = SCHED_WAIT_MUTEX;
-         _printf ("stid: rt: threading: sched: find-any: t%d, "
-               "WAIT_SS(%p) -> WAIT_MUTEX(%p)\n",
-               TID (t), t->wait_mutex, t->wait_mutex);
+         //DEBUG ("stid: rt: threading: sched: find-any: t%d, WAIT_SS(%p) -> WAIT_MUTEX(%p)", TID (t), t->wait_mutex, t->wait_mutex);
       }
       __state.sleepset.size = 0;
       // schedule the first
@@ -156,7 +150,7 @@ struct rt_tcb* __rt_thread_sched_find_any ()
       return t;
    }
 
-   PRINT ("deadlock found: no thread is runnable, empty sleep set");
+   ALERT ("deadlock found: no thread is runnable, empty sleep set");
    return 0;
 }
 
@@ -188,7 +182,7 @@ struct rt_tcb* __rt_thread_sched_find_next ()
    rt->replay.current++;
    if (rt->replay.current->tid == -1)
    {
-      _printf ("stid: rt: threading: sched: find-next: transition to FREEMODE\n");
+      INFO ("stid: rt: threading: sched: find-next: transition to FREEMODE");
       // if we switch to free mode, we initialize the structure __state.sleepset
       // and pick any thread to run
       __rt_thread_sleepset_init ();
@@ -202,8 +196,8 @@ struct rt_tcb* __rt_thread_sched_find_next ()
    t = __state.tidmap[rt->replay.current->tid];
    ASSERT (t);
    ASSERT (t->flags.alive);
-   _printf ("stid: rt: threading: sched: find-next: "
-         "replaying context switch to t%d (r%u), and then %d events\n",
+   INFO ("stid: rt: threading: sched: find-next: "
+         "replaying context switch to t%d (r%u), and then %d events",
          TID(t), rt->replay.current->tid, rt->replay.current->count);
    // the scheduler should to agree to run this thread now
    ret = __rt_thread_sched_update (t);
@@ -230,8 +224,7 @@ void __rt_thread_sleepset_init ()
          t = __state.tidmap[i];
          ASSERT (t->state == SCHED_WAIT_MUTEX);
          ASSERT (t->wait_mutex == rt->replay.sleepset[i]);
-         _printf ("stid: rt: threading: sched: sleepset-init: t%d, "
-               "WAIT_MUTEX -> WAIT_SS(%p)\n", TID (t), t->wait_mutex);
+         //DEBUG ("stid: rt: threading: sched: sleepset-init: t%d, " "WAIT_MUTEX -> WAIT_SS(%p)", TID (t), t->wait_mutex);
          t->state = SCHED_WAIT_SS;
          __state.sleepset.tab[j] = t;
          j++;
@@ -257,8 +250,7 @@ void __rt_thread_sleepset_awake (pthread_mutex_t *m)
       {
          // let the thread compete for the mutex
          t->state = SCHED_WAIT_MUTEX;
-         _printf ("stid: rt: threading: sched: sleepset-awake: t%d, "
-               "WAIT_SS -> WAIT_MUTEX\n", TID (t));
+         //DEBUG ("stid: rt: threading: sched: sleepset-awake: t%d, " "WAIT_SS -> WAIT_MUTEX", TID (t));
          // extract thread i from the sleep set
          if (i != __state.sleepset.size - 1)
             __state.sleepset.tab[i] =
@@ -277,7 +269,6 @@ void  __rt_thread_init (void)
 #endif
 
    // whoever calls this function becomes the main thread (tid = 0)
-   _printf ("stid: rt: threading: initializing the multithreading library\n");
    __state.next = 1;
    __state.current = __state.tcbs;
    __state.num_ths_alive = 1;
@@ -309,14 +300,14 @@ void  __rt_thread_init (void)
    if (ret)
    {
       // FIXME -- issue a warning into the stream here
-      PRINT ("error: initializing cs mutex: %s\n", strerror (ret));
+      ALERT ("error: initializing cs mutex: %s\n", strerror (ret));
    }
 
    // initialize main's conditional variable
    ret = pthread_cond_init (&__state.tcbs[0].cond, 0);
    if (ret)
    {
-      PRINT ("t0: error: initializing t0 conditional variable: %s; ignoring",
+      ALERT ("t0: error: initializing t0 conditional variable: %s; ignoring",
             strerror (ret));
    }
 
@@ -327,13 +318,11 @@ void  __rt_thread_term (void)
 {
    int ret;
 
-   _printf ("stid: rt: threading: terminating the multithreading library\n");
-
    // only the main thread should be calling this, stop the model checker
    // otherwise
    if (TID (__state.current) != 0)
    {
-      PRINT ("error: thread %d called exit() but this runtime "
+      ALERT ("error: thread %d called exit() but this runtime "
             "only supports calls to exit() from the main thread",
             TID (__state.current));
       fflush (stdout);
@@ -344,7 +333,7 @@ void  __rt_thread_term (void)
    // and it should call it only when the main thread is the only one alive
    if  (__state.num_ths_alive > 1)
    {
-      PRINT ("error: main thread called exit() but %d other threads are still alive;"
+      ALERT ("error: main thread called exit() but %d other threads are still alive;"
             " this is not currently supported by the runtime",
             __state.num_ths_alive - 1);
       fflush (stdout);
@@ -360,7 +349,7 @@ void  __rt_thread_term (void)
    ret = pthread_mutex_unlock (&__state.m);
    if (ret)
    {
-      PRINT ("t%d: errors while unlocking cs mutex: %s; ignoring",
+      ALERT ("t%d: errors while unlocking cs mutex: %s; ignoring",
             TID(__state.current), strerror (ret));
    }
 
@@ -368,7 +357,7 @@ void  __rt_thread_term (void)
    ret = pthread_mutex_destroy (&__state.m);
    if (ret)
    {
-      PRINT ("t%d: errors while destroying cs mutex: %s; ignoring",
+      ALERT ("t%d: errors while destroying cs mutex: %s; ignoring",
             TID(__state.current), strerror (ret));
    }
 }
@@ -378,7 +367,7 @@ void *__rt_thread_start (void *arg)
    struct rt_tcb *t = (struct rt_tcb *) arg;
    void *ret;
 
-   //_printf ("stid: rt: threading: start: t%d: starting!\n", TID (t));
+   //DEBUG ("stid: rt: threading: start: t%d: starting!", TID (t));
 
    // start protocol: we wait to get our context switch
    __rt_thread_protocol_wait (t);
@@ -404,10 +393,10 @@ void __rt_thread_protocol_wait_first ()
    ret = pthread_mutex_lock (&__state.m);
    if (ret != 0)
    {
-      PRINT ("error: t0: acquiring internal mutex: %s", strerror (ret));
+      ALERT ("error: t0: acquiring internal mutex: %s", strerror (ret));
       __rt_cend (255);
    }
-   //_printf ("stid: rt: threading: proto: t0: acquired cs lock\n");
+   //DEBUG ("stid: rt: threading: proto: t0: acquired cs lock");
 
    // consume the THSTART event of main
    REPLAY_CONSUME_ONE ();
@@ -431,19 +420,19 @@ void __rt_thread_protocol_wait (struct rt_tcb *me)
    // lock on the global mutex
    ret = pthread_mutex_lock (&__state.m);
    if (ret != 0) goto err_panic;
-   _printf ("stid: rt: threading: proto: t%d: acquired cs lock\n", TID (me));
+   DEBUG ("stid: rt: threading: proto: t%d: acquired cs lock", TID (me));
 
    // if I am not the next thread to execute, then this was a spurious lock and
    // I wait until it's my turn
    if (__state.current != me)
    {
-      _printf ("stid: rt: threading: proto: t%d: "
-            "spurious acquisition (next is t%d), waiting\n",
+      DEBUG ("stid: rt: threading: proto: t%d: "
+            "spurious acquisition (next is t%d), waiting",
             TID (me), TID (__state.current));
       ret = pthread_cond_wait (&me->cond, &__state.m);
       if (ret != 0) goto err_wait;
-      _printf ("stid: rt: threading: proto: t%d: "
-            "acquired cs lock after cond_wait\n", TID (me));
+      DEBUG ("stid: rt: threading: proto: t%d: "
+            "acquired cs lock after cond_wait", TID (me));
    }
 
    // now I should be the next thread to run
@@ -451,11 +440,11 @@ void __rt_thread_protocol_wait (struct rt_tcb *me)
    return;
 
 err_wait :
-   PRINT ("error: t%d: waiting on conditional variable: %s",
+   ALERT ("error: t%d: waiting on conditional variable: %s",
          TID (me), strerror (ret));
    __rt_cend (255);
 err_panic :
-   PRINT ("error: t%d: acquiring cs mutex: %s", TID (me), strerror (ret));
+   ALERT ("error: t%d: acquiring cs mutex: %s", TID (me), strerror (ret));
    __rt_cend (255);
 }
 
@@ -482,20 +471,20 @@ void __rt_thread_protocol_yield ()
    TRACE3 (RT_THCTXSW, TID (t));
    __state.current = t;
    __state.tlsptr = t->tls.block;
-   _printf ("stid: rt: threading: proto: t%d: signaling to t%d\n", TID (me), TID(t));
+   DEBUG ("stid: rt: threading: proto: t%d: signaling to t%d", TID (me), TID(t));
    ret = pthread_cond_signal (&t->cond);
    if (ret)
    {
-      PRINT ("error: t%d: signal for t%d: %s", TID (me), TID(t), strerror (ret));
+      ALERT ("error: t%d: signal for t%d: %s", TID (me), TID(t), strerror (ret));
       __rt_cend (255);
    }
 
    // unlock on the cs mutex
-   //_printf ("stid: rt: threading: proto: t%d: released cs lock\n", TID (me));
+   //DEBUG ("stid: rt: threading: proto: t%d: released cs lock", TID (me));
    ret = pthread_mutex_unlock (&__state.m);
    if (ret)
    {
-      PRINT ("error: t%d: releasing internal mutex: %s", TID (me), strerror (ret));
+      ALERT ("error: t%d: releasing internal mutex: %s", TID (me), strerror (ret));
       __rt_cend (255);
    }
 

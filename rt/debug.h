@@ -8,16 +8,24 @@
 //#define CONFIG_DEBUG 1
 #undef CONFIG_DEBUG
 
-void breakme (void);
+// synonym of printf
+#define PRINT_(fmt,args...) printf (fmt, ##args)
+#define PRINT(fmt,args...)  PRINT_ (fmt "\n", ##args)
 
-#define BREAK(expr) if (expr) breakme ()
-#define PRINT(fmt,args...) \
-      printf (__FILE__ ":%d: %s: " fmt "\n", __LINE__, __func__, ##args)
+// important messages to the final user, usually regarding assumptions of the
+// implementation
+#define ALERT(fmt,args...) \
+   PRINT (__FILE__ ":%d: %s: " fmt, __LINE__, __func__, ##args)
 
+// messages displayed only if rt->flags.verbose is enabled
+#define INFO(fmt,args...) \
+   { if (rt->flags.verbose) PRINT (fmt, ##args); }
+
+// assertion checking + DEBUG macro
 #ifdef CONFIG_DEBUG
 #define ASSERT(expr) \
 	{if (! (expr)) { \
-		PRINT ("Assertion `" #expr "' failed.\n"); \
+		ALERT ("Assertion `" #expr "' failed.\n"); \
 		breakme (); \
       fflush (stdout); \
 		exit (1); \
@@ -28,11 +36,15 @@ void breakme (void);
 #define DEBUG(fmt,args...)
 #endif
 
+// DEBUG macro that remains enabled when we disable CONFIG_DEBUG
 #define DEBUG2(fmt,args...) \
 	PRINT (__FILE__ ":%d: %s: " fmt, __LINE__, __func__, ##args)
+
+// the great and only SHOW macro :)
 #define SHOW(expr,type)	DEBUG (#expr "='%" type "'", expr)
 
-#define _printf(fmt,args...) printf (fmt, ##args)
-//#define _printf(fmt,args...)
+// gdb debugging
+void breakme (void);
+#define BREAK(expr) if (expr) breakme ()
 
 #endif

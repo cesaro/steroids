@@ -31,7 +31,7 @@ bool Instrumenter::instrument (llvm::Module &m, Tlsoffsetmap &tlsoffsetmap)
    reset (m);
    if (not find_rt ()) return false;
 
-#if 1
+#if 0
    DEBUG ("saving to before.ll...");
    dump_ll (&m, "before.ll");
 #endif
@@ -46,7 +46,7 @@ bool Instrumenter::instrument (llvm::Module &m, Tlsoffsetmap &tlsoffsetmap)
    DEBUG ("stid: instrumenter: instrumenting TLS access");
    do_tls_variables (tlsoffsetmap);
 
-#if 1
+#if 0
    DEBUG ("saving to before.ll...");
    dump_ll (&m, "after-tls.ll");
 #endif
@@ -65,7 +65,7 @@ bool Instrumenter::instrument (llvm::Module &m, Tlsoffsetmap &tlsoffsetmap)
       visit (f);
    }
 
-#if 1
+#if 0
    DEBUG ("saving to after.ll...");
    dump_ll (&m, "after-instr.ll");
 #endif

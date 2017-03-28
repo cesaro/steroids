@@ -1,4 +1,7 @@
 
+#include "libc/mm.h"
+#include "libc/stdio.h"
+#include "thread-sched.h"
 
 // this file will be #include'd in the main.c file
 
@@ -348,6 +351,20 @@ void __rt_memreg_print (struct memreg *m, const char *prefix, const char *suffix
       suffix);
 }
 
+void __rt_libc_init ()
+{
+   __rt_mm_init ();
+   __rt_thread_init ();
+   __rt_stdio_init ();
+}
+
+void __rt_libc_term ()
+{
+   __rt_thread_term ();
+   __rt_mm_term ();
+   __rt_stdio_term ();
+}
+
 int __rt_mainn (int argc, const char * const *argv, const char * const *env)
 {
    int ret;
@@ -381,43 +398,44 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    ASSERT (sizeof (long double) == 16);
 
    // our little tribute to how everything started ... ;)
-   _printf ("stid: rt: main: I feel fantaastic... I feel the PUMP!\n");
 
-#if 1
-   printf ("stid: rt: main: guest's address space:\n");
-   __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
-   __rt_memreg_print (&rt->data, "stid: rt: main:  ", ", data (.data, .bss, .rodata, others)\n");
-   __rt_memreg_print (&rt->heap, "stid: rt: main:  ", ", heap\n");
-   __rt_memreg_print (&rt->t0stack, "stid: rt: main:  ", ", main stack\n");
-   printf ("stid: rt: main: thread-local storage initializers:\n");
-   __rt_memreg_print (&rt->tdata, "stid: rt: main:  ", ", .tdata/.tbss\n");
-   printf ("stid: rt: main: event trace buffer:\n");
-   __rt_memreg_print (&rt->trace.ev, "stid: rt: main:  ", ", event trace (8bit event ids)\n");
-   __rt_memreg_print (&rt->trace.addr, "stid: rt: main:  ", ", event trace (64bit addr)\n");
-   __rt_memreg_print (&rt->trace.val, "stid: rt: main:  ", ", event trace (64bit val)\n");
-   __rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
-#endif
-   _printf ("stid: rt: main: replay seq: ");
-   for (i = 0; i < rt->replay.size; i++)
+   if (rt->flags.verbose)
    {
-      if (i) _printf ("; ");
-      if (rt->replay.tab[i].tid == -1)
+      PRINT ("stid: rt: main: I feel fantaastic... I feel the PUMP!");
+      PRINT ("stid: rt: main: guest's address space:");
+      __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
+      __rt_memreg_print (&rt->data, "stid: rt: main:  ", ", data (.data, .bss, .rodata, others)\n");
+      __rt_memreg_print (&rt->heap, "stid: rt: main:  ", ", heap\n");
+      __rt_memreg_print (&rt->t0stack, "stid: rt: main:  ", ", main stack\n");
+      PRINT ("stid: rt: main: thread-local storage initializers:");
+      __rt_memreg_print (&rt->tdata, "stid: rt: main:  ", ", .tdata/.tbss\n");
+      PRINT ("stid: rt: main: event trace buffer:");
+      __rt_memreg_print (&rt->trace.ev, "stid: rt: main:  ", ", event trace (8bit event ids)\n");
+      __rt_memreg_print (&rt->trace.addr, "stid: rt: main:  ", ", event trace (64bit addr)\n");
+      __rt_memreg_print (&rt->trace.val, "stid: rt: main:  ", ", event trace (64bit val)\n");
+      __rt_memreg_print (&rt->trace.id, "stid: rt: main:  ", ", event trace (16bit call ids)\n");
+      PRINT_ ("stid: rt: main: replay seq: ");
+      for (i = 0; i < rt->replay.size; i++)
       {
-         _printf ("-1\n");
+         if (i) PRINT_ ("; ");
+         if (rt->replay.tab[i].tid == -1)
+         {
+            PRINT ("-1");
+         }
+         else
+         {
+            // every context switch requests to replay at least 1 event
+            ASSERT (rt->replay.tab[i].tid >= 0);
+            ASSERT (rt->replay.tab[i].count >= 1);
+            PRINT_ ("%u %u", rt->replay.tab[i].tid, rt->replay.tab[i].count);
+         }
       }
-      else
-      {
-         // every context switch requests to replay at least 1 event
-         ASSERT (rt->replay.tab[i].tid >= 0);
-         ASSERT (rt->replay.tab[i].count >= 1);
-         _printf ("%u %u", rt->replay.tab[i].tid, rt->replay.tab[i].count);
-      }
+      PRINT_ ("stid: rt: main: sleepset: ");
+      for (i = 0; i < RT_MAX_THREADS; i++)
+         if (rt->replay.sleepset[i])
+            PRINT_ ("%d (%p); ", i, rt->replay.sleepset[i]);
+      PRINT ("\nstid: rt: main: ======================");
    }
-   _printf ("stid: rt: main: sleepset: ");
-   for (i = 0; i < RT_MAX_THREADS; i++)
-      if (rt->replay.sleepset[i])
-         _printf ("%d (%p); ", i, rt->replay.sleepset[i]);
-   _printf ("\nstid: rt: main: ======================\n");
 
    // initialize subsystems (before this there is no guarantee that
    // std{in,out,err} are correctly initialized!!!
@@ -432,27 +450,25 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    char *myenv[n+1];
    for (i = 0; i < (unsigned) argc; i++)
    {
-      myargv[i] = _rt_malloc (strlen (argv[i]) + 1);
+      myargv[i] = __rt_malloc_uninitialized (strlen (argv[i]) + 1);
       strcpy (myargv[i], argv[i]);
    }
    for (i = 0; i < n; i++)
    {
-      myenv[i] = _rt_malloc (strlen (env[i]) + 1);
+      myenv[i] = __rt_malloc_uninitialized (strlen (env[i]) + 1);
       strcpy (myenv[i], env[i]);
    }
    myenv[n] = 0;
 
-   _printf ("stid: rt: main: |argv| %d |env| %d\n",
-         argc, n);
-#if 1
-   for (i = 0; i < (unsigned) argc; i++)
-      printf ("stid: rt: main: argv[%2i] %16p '%s'\n", i, myargv[i], myargv[i]);
-   for (i = 0; i <= n; i++)
-      printf ("stid: rt: main:  env[%2i] %16p '%s'\n", i, myenv[i], myenv[i]);
-   // call main
-   printf ("stid: rt: main: calling user's main...\n");
-#endif
-   __rt_debug_header ();
+   if (rt->flags.verbose)
+   {
+      PRINT ("stid: rt: main: |argv| %d |env| %d", argc, n);
+      for (i = 0; i < (unsigned) argc; i++)
+         PRINT ("stid: rt: main: argv[%2i] %16p '%s'", i, myargv[i], myargv[i]);
+      for (i = 0; i <= n; i++)
+         PRINT ("stid: rt: main:  env[%2i] %16p '%s'", i, myenv[i], myenv[i]);
+      __rt_debug_header ();
+   }
    ret = main (argc, myargv, myenv);
 
    // do the instrumented verison of exit(3)
@@ -495,7 +511,7 @@ uint64_t __rt_get_memend ()
 
 void __rt_panic ()
 {
-   PRINT ("panic, aborting!");
+   ALERT ("panic, aborting!");
    abort ();
 }
 

@@ -153,6 +153,17 @@ void Executor::initialize_and_instrument_rt ()
    }
    rt.default_thread_stack_size = conf.defaultstacksize;
 
+   // flags
+   rt.flags.dosleep = conf.flags.dosleep;
+   rt.flags.verbose = conf.flags.verbose;
+
+   // strace
+   rt.strace.fs = conf.strace.fs;
+   rt.strace.pthreads = conf.strace.pthreads;
+   rt.strace.malloc = conf.strace.malloc;
+   rt.strace.proc = conf.strace.proc;
+   rt.strace.others = conf.strace.others;
+
    // allocate the memory space for the guest code (data, rodata, bss, heap,
    // main stack, ...)
    malloc_memreg (&rt.mem, conf.memsize);
@@ -312,7 +323,7 @@ void Executor::optimize ()
    // run the module pass manger
    pm.run (*m);
 
-   dump_ll (m, "opt.ll");
+   //dump_ll (m, "opt.ll");
    DEBUG ("stid: executor: done");
 }
 

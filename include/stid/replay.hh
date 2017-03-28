@@ -6,8 +6,11 @@
 
 namespace stid {
 
+
 class Replay : public std::vector<struct replayevent>
 {
+public:
+   typedef std::vector<struct replayevent> Vector;
 };
 
 } // namespace

@@ -54,13 +54,12 @@ int   _rt_pthread_create(pthread_t *tid,
    int need_destroy = 0;
    struct rt_tcb *me = __state.current;
 
-   _printf ("stid: rt: threading: t%d: "
-         "pthread_create (tid=%p, attr=%p, start=%p, arg=%p); replay %d\n",
-         TID (me), tid, attr, start, arg, rt->replay.current->count);
-
    // yield the cpu and come back only if we are in free mode or we can replay
    // this event
    __rt_thread_protocol_yield ();
+
+   STRACE (pthreads, "pthread_create (tid=t%d, attr=%p, start=%p, arg=%p); replay %d",
+         __state.next, attr, start, arg, rt->replay.current->count);
 
    // find an available TCB
    if (__state.next >= RT_MAX_THREADS) return ENOMEM;
@@ -105,19 +104,19 @@ int   _rt_pthread_create(pthread_t *tid,
    __state.num_ths_alive++;
 
    // log the event
-   _printf ("stid: rt: threading: t%d: new thread t%d, stack %p size %zu%s\n",
-         TID (me),
-         TID (t),
-         t->stackaddr,
-         UNITS_SIZE (t->stacksize),
-         UNITS_UNIT (t->stacksize));
+   //INFO ("stid: rt: threading: t%d: new thread t%d, stack %p size %zu%s, "
+   //      "tidmap+ r%u -> t%d",
+   //      TID (me),
+   //      TID (t),
+   //      t->stackaddr,
+   //      UNITS_SIZE (t->stacksize),
+   //      UNITS_UNIT (t->stacksize),
+   //      __state.next_tid, TID(t));
    TRACE3 (RT_THCREAT, TID (t));
    REPLAY_CONSUME_ONE ();
    rt->trace.num_blue[TID(me)]++;
 
    // update the tidmap
-   _printf ("stid: rt: threading: t%d: tidmap: adding r%u -> t%d\n",
-            TID (me), __state.next_tid, TID(t));
    __state.tidmap[__state.next_tid] = t;
    __state.next_tid++;
 
@@ -142,7 +141,7 @@ int   _rt_pthread_detach(pthread_t t)
 {
    // main needs to JOIN for them, we do not support this for the time begin
    (void) t;
-   PRINT ("warning: pthread_detach called but we do not have support for it");
+   ALERT ("warning: pthread_detach called but we do not have support for it");
    return EINVAL;
 }
 
@@ -153,10 +152,6 @@ int   _rt_pthread_join(pthread_t t, void **retval)
    struct rt_tcb *other = (struct rt_tcb *) t;
    struct rt_tcb *me = __state.current;
 
-   _printf ("stid: rt: threading: t%d: "
-         "pthread_join (other=t%d, retval=%p); replay %d\n",
-         TID (me), TID(other), retval, rt->replay.current->count);
-
    // validate arguments
    if (other < __state.tcbs || other > __state.tcbs + RT_MAX_THREADS)
       return EINVAL;
@@ -165,6 +160,9 @@ int   _rt_pthread_join(pthread_t t, void **retval)
    me->state = SCHED_WAIT_JOIN;
    me->wait_join = other;
    __rt_thread_protocol_yield ();
+
+   STRACE (pthreads, "pthread_join (other=t%d, retval=%p); replay %d",
+         TID(other), retval, rt->replay.current->count);
 
    // when we are scheduled again we can join without blocking
    ASSERT (other->flags.alive == 0);
@@ -191,13 +189,12 @@ void  _rt_pthread_exit(void *retval)
    int ret;
    unsigned i;
 
-   _printf ("stid: rt: threading: t%d: "
-         "pthread_exit (retval=%p); replay %d, alive %d\n",
-         TID (me), retval, rt->replay.current->count, __state.num_ths_alive);
-
    // yield the cpu and come back only if we are in free mode or we can replay
    // this event
    __rt_thread_protocol_yield ();
+
+   STRACE (pthreads, "pthread_exit (retval=%p); replay %d, alive %d",
+         retval, rt->replay.current->count, __state.num_ths_alive);
 
    // if we are the main thread, either we exit with status 0 (if no other
    // thread is alive) or we wait for the other threads to finish, join for the
@@ -213,15 +210,14 @@ void  _rt_pthread_exit(void *retval)
       ASSERT (__state.num_ths_alive == 1); // only me!
 
       // NPTL join (release resources, otherwise I get segfaults...)
-      _printf ("stid: rt: threading: t%d: scanning all threads to join (next %d)\n", TID (me), __state.next);
       for (i = 0; i < __state.next; i++)
       {
-         _printf ("stid: rt: threading: t%d: checking tid %d, needsjoin %d\n", TID(me), i, __state.tcbs[i].flags.needsjoin);
+         INFO ("stid: rt: threading: t%d: checking tid %d, needsjoin %d",
+               TID(me), i, __state.tcbs[i].flags.needsjoin);
          if (__state.tcbs[i].flags.needsjoin)
          {
-            _printf ("stid: rt: threading: t%d: joining for t%d\n", TID (me), i);
             if (pthread_join (__state.tcbs[i].tid, 0))
-               PRINT ("t%d: exit: errors while joinng for t%d; ignoring", TID(me), i);
+               ALERT ("t%d: exit: errors while joinng for t%d; ignoring", TID(me), i);
          }
       }
       _rt_exit (0);
@@ -243,7 +239,7 @@ void  _rt_pthread_exit(void *retval)
    ret = pthread_cond_destroy (&me->cond); // ignore error
    if (ret)
    {
-      PRINT ("t%d: cond var: errors while destroying: %s; ignoring",
+      ALERT ("t%d: cond var: errors while destroying: %s; ignoring",
             TID(me), strerror (ret));
    }
 
@@ -266,7 +262,7 @@ pthread_t _rt_pthread_self (void)
 int   _rt_pthread_cancel(pthread_t t)
 {
    (void) t;
-   PRINT ("pthread_cancel called and we do not have support for it");
+   ALERT ("pthread_cancel called and we do not have support for it");
    return EINVAL;
 }
 int   _rt_pthread_setcancelstate(int state, int *oldstate)
@@ -274,7 +270,7 @@ int   _rt_pthread_setcancelstate(int state, int *oldstate)
    (void) state;
    (void) oldstate;
    // FIXME -- issue a warning in the stream
-   PRINT ("pthread_setcancelstate called and we do not have support for it");
+   ALERT ("pthread_setcancelstate called and we do not have support for it");
    return EINVAL;
 }
 int   _rt_pthread_setcanceltype(int type, int *oldtype)
@@ -282,13 +278,13 @@ int   _rt_pthread_setcanceltype(int type, int *oldtype)
    (void) type;
    (void) oldtype;
    // FIXME -- issue a warning in the stream
-   PRINT ("pthread_setcanceltype called and we do not have support for it");
+   ALERT ("pthread_setcanceltype called and we do not have support for it");
    return EINVAL;
 }
 void  _rt_pthread_testcancel(void)
 {
    // FIXME -- issue a warning in the stream
-   PRINT ("pthread_test_cancel called and we do not have support for it");
+   ALERT ("pthread_test_cancel called and we do not have support for it");
 }
 // FIXME - guess how to support or not this
 #if 0
@@ -297,13 +293,13 @@ void  _rt_pthread_cleanup_push(void (*routine)(void *arg), void *arg)
    (void) routine;
    (void) arg;
    // FIXME -- issue a warning in the stream
-   PRINT ("pthread_cleanup_push called and we do not have support for it");
+   ALERT ("pthread_cleanup_push called and we do not have support for it");
    pthread_cleanup_push (routine, arg);
 }
 void  _rt_pthread_cleanup_pop(int ex)
 {
    (void) ex;
-   PRINT ("pthread_cleanup_pop called and we do not have support for it");
+   ALERT ("pthread_cleanup_pop called and we do not have support for it");
    pthread_cleanup_pop (ex);
 }
 #endif
@@ -324,7 +320,7 @@ int   _rt_pthread_mutexattr_settype(pthread_mutexattr_t *a, int type)
    (void) a;
    if (type != PTHREAD_MUTEX_NORMAL)
    {
-      PRINT ("pthread_mutexattr_settype: "
+      ALERT ("pthread_mutexattr_settype: "
             "setting type != PTHREAD_MUTEX_NORMAL is unsupported");
       return EINVAL;
    }
@@ -336,7 +332,7 @@ int   _rt_pthread_mutexattr_setrobust(pthread_mutexattr_t *a, int rob)
    (void) a;
    if (rob != PTHREAD_MUTEX_STALLED)
    {
-      PRINT ("pthread_mutexattr_setrobust: "
+      ALERT ("pthread_mutexattr_setrobust: "
             "setting rob != PTHREAD_MUTEX_STALLED is unsupported");
       return EINVAL;
    }
@@ -351,16 +347,12 @@ int   _rt_pthread_mutexattr_setrobust(pthread_mutexattr_t *a, int rob)
 int   _rt_pthread_mutex_consistent(pthread_mutex_t *m)
 {
    (void) m;
-   PRINT ("pthread_mutex_consistent: call to unsuported primitive");
+   ALERT ("pthread_mutex_consistent: call to unsuported primitive");
    return EINVAL;
 }
 
 int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
 {
-   _printf ("stid: rt: threading: t%d: "
-         "pthread_mutex_lock (m=%p); replay %d\n",
-         TID (__state.current), m, rt->replay.current->count);
-
    struct rt_tcb *me = __state.current;
    int ret;
 
@@ -368,6 +360,9 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
    me->state = SCHED_WAIT_MUTEX;
    me->wait_mutex = m;
    __rt_thread_protocol_yield ();
+
+   STRACE (pthreads, "pthread_mutex_lock (m=%p); replay %d",
+         m, rt->replay.current->count);
 
    // locking now is non-blocking, return possible errors
    ret = pthread_mutex_lock (m);
@@ -383,16 +378,15 @@ int   _rt_pthread_mutex_lock(pthread_mutex_t *m)
 
 int   _rt_pthread_mutex_unlock(pthread_mutex_t *m)
 {
-   _printf ("stid: rt: threading: t%d: "
-         "pthread_mutex_unlock (m=%p); replay %d\n",
-         TID (__state.current), m, rt->replay.current->count);
-
    struct rt_tcb *me = __state.current;
    int ret;
 
    // yield the cpu and come back only if we are in free mode or we can replay
    // this event
    __rt_thread_protocol_yield ();
+
+   STRACE (pthreads, "pthread_mutex_unlock (m=%p); replay %d",
+         m, rt->replay.current->count);
 
    // unlock the mutex
    ret = pthread_mutex_unlock (m);
@@ -412,7 +406,7 @@ int   _rt_pthread_mutex_timedlock(pthread_mutex_t *restrict m,
    (void) m;
    (void) tm;
    // FIXME -- issue a warning in the stream
-   PRINT ("pthread_mutex_timedlock: call to unsuported primitive");
+   ALERT ("pthread_mutex_timedlock: call to unsuported primitive");
    return EINVAL;
 }
 
@@ -420,7 +414,7 @@ int   _rt_pthread_mutex_trylock(pthread_mutex_t * m)
 {
    (void) m;
    // FIXME -- issue a warning in the stream
-   PRINT ("pthread_mutex_trylock: call to unsuported primitive");
+   ALERT ("pthread_mutex_trylock: call to unsuported primitive");
    return EINVAL;
 }
 
@@ -436,14 +430,14 @@ int   _rt_pthread_condattr_setpshared(pthread_condattr_t *, int);
 int   _rt_pthread_cond_broadcast(pthread_cond_t *cond)
 {
    (void) cond;
-   PRINT ("pthread_cond_broadcast: call to unsuported primitive");
+   ALERT ("pthread_cond_broadcast: call to unsuported primitive");
    __rt_panic ();
    return 0;
 }
 int   _rt_pthread_cond_destroy(pthread_cond_t *cond)
 {
    (void) cond;
-   PRINT ("pthread_cond_destroy: call to unsuported primitive");
+   ALERT ("pthread_cond_destroy: call to unsuported primitive");
    __rt_panic ();
    return 0;
 }
@@ -452,14 +446,14 @@ int   _rt_pthread_cond_init(pthread_cond_t *restrict cond,
 {
    (void) cond;
    (void) attr;
-   PRINT ("pthread_cond_init: call to unsuported primitive");
+   ALERT ("pthread_cond_init: call to unsuported primitive");
    __rt_panic ();
    return 0;
 }
 int   _rt_pthread_cond_signal(pthread_cond_t *cond)
 {
    (void) cond;
-   PRINT ("pthread_cond_signal: call to unsuported primitive");
+   ALERT ("pthread_cond_signal: call to unsuported primitive");
    __rt_panic ();
    return 0;
 }
@@ -469,7 +463,7 @@ int   _rt_pthread_cond_timedwait(pthread_cond_t *restrict cond,
    (void) cond;
    (void) attr;
    (void) tm;
-   PRINT ("pthread_cond_timedwait: call to unsuported primitive");
+   ALERT ("pthread_cond_timedwait: call to unsuported primitive");
    __rt_panic ();
    return 0;
 }
@@ -478,7 +472,7 @@ int   _rt_pthread_cond_wait(pthread_cond_t *restrict cond,
 {
    (void) cond;
    (void) m;
-   PRINT ("pthread_cond_wait: call to unsuported primitive");
+   ALERT ("pthread_cond_wait: call to unsuported primitive");
    __rt_panic ();
    return 0;
 }
@@ -549,7 +543,7 @@ int __rt_thread_stack_alloc (struct rt_tcb *t, pthread_attr_t *attr)
    if (t->stacksize == 0) t->stacksize = rt->default_thread_stack_size;
 
    // FIXME - malloc
-   t->stackaddr = _rt_malloc_uninitialized (t->stacksize);
+   t->stackaddr = __rt_malloc_uninitialized (t->stacksize);
    if (! t->stackaddr)
    {
       ret = ENOMEM;

@@ -55,6 +55,11 @@
             (s) / (1024 * 1024) < 1024 ? (s) / (1024 * 1024) : \
                (s) / (size_t) (1024 * 1024 * 1024)
 
+#define STRACE(what,fmt,args...) { \
+   if (rt->strace.what) \
+      printf ("t%d: " fmt "\n", TID(__state.current), ##args); \
+   }
+
 // this data will be filled by the host when instrumenting the code
 static struct rt * const rt; // stored in the Executor object, in the host
 static const uint64_t memstart;
@@ -77,19 +82,17 @@ void breakme () {}
 // it becomes visible; see README.md for comments
 int main (int argc, char **argv, char **env);
 
-#if 0
-// we need to redefine the errno macro for us, since instrumentation will not
-// happen inside of the _rt_* functions
-#ifdef errno
-#undef errno
-#endif
-#define errno (*_rt___errno_location ())
-#endif
-
+// runtime, thread control and scheduling, replay support, tls
 #include "events.c"
 #include "thread-sched.c"
 #include "pthread.c"
-#include "libc.c"
-#include "buddy.c"
 #include "tls.c"
+
+// libc function hooks
+#include "libc/proc.c"
+#include "libc/fs.c"
+#include "libc/mm.c"
+#include "libc/stdio.c"
+#include "libc/misc.c"
+#include "libc/extvars.c" // libc variables
 

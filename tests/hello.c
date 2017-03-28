@@ -10,9 +10,10 @@
 #include <ctype.h>
 #include <pthread.h>
 #include <sched.h>
+#include <fcntl.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <sys/resource.h>
+#include <sys/stat.h>
 
 #if 0
 long long l = 123; // 8 bytes
@@ -672,6 +673,7 @@ int main14 ()
    pthread_t t;
    int ret;
 
+
    printf ("m: tls14 %d &tls14 %p\n", tls14, &tls14);
    tls14 = 111;
    printf ("m: tls14 %d &tls14 %p (after)\n", tls14, &tls14);
@@ -681,11 +683,57 @@ int main14 ()
    printf ("m: create: ret %d\n", ret);
    assert (ret == 0);
 
+
    printf ("m: tls14 %d &tls14 %p\n", tls14, &tls14);
    tls14 = 111;
    printf ("m: tls14 %d &tls14 %p (after)\n", tls14, &tls14);
 
    pthread_exit (0);
+}
+
+int main15 ()
+{
+   int fd;
+   int ret, ret2;
+   char buff[1024];
+
+   fd = open ("/tmp/1ped.fasta", O_RDONLY);
+   printf ("fd %d\n", fd);
+
+   ret = read (fd, buff, 20);
+   printf ("ret %d\n", ret);
+
+   ret2 = write (1, buff, ret);
+   printf ("ret2 %d\n", ret2);
+
+   ret = fwrite (buff, 10, 2, stdout);
+
+   ret = fclose (stdout);
+   printf ("ret %d\n", ret);
+
+   FILE *f;
+
+   f = fopen ("/tmp/x.fasta", "r");
+   printf ("f %p\n", f);
+
+   ret = close (fd);
+   printf ("ret %d\n", ret);
+
+   ret = sleep (2);
+   printf ("ret %d errno %d\n", ret, errno);
+
+   ret = usleep (800 * 1000);
+   printf ("ret %d errno %d\n", ret, errno);
+
+   f = fdopen (1, "w");
+   printf ("f %p\n", f);
+
+   ret = fclose (f);
+   printf ("ret %d\n", ret);
+
+   printf ("herreeeeeeeeeeeeeeeeeeee\n");
+
+   return 0;
 }
 
 int main (int argc, char **argv)
@@ -696,7 +744,6 @@ int main (int argc, char **argv)
 
    //return main9 ();
    //return main10 ();
-   return main14 ();
+   return main15 ();
    //return main13 (argc, argv);
 }
-

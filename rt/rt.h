@@ -128,12 +128,6 @@ void __rt_libc_init ();
 void __rt_libc_term ();
 
 // stdlib.h
-void __rt_mm_init (); // internal
-void __rt_mm_term (); // internal
-void *_rt_malloc_uninitialized (size_t size); // internal
-void *_rt_malloc  (size_t size);
-void  _rt_free    (void *ptr);
-void *_rt_realloc (void *ptr, size_t size);
 int   _rt_atexit (void (* fun) (void));
 void  _rt_exit (int status);
 void _rt_abort ();
@@ -167,7 +161,7 @@ struct eventrace {
    uint64_t *addrptr;
    uint64_t *valptr;
    uint16_t *idptr;
-   
+
    uint64_t size;
 
    int    num_ths;
@@ -208,11 +202,25 @@ struct rt
    struct eventrace trace;
    struct reptrace replay;
 
-   // stack pointer of the host upon entry on guest code
-   uint64_t host_rsp;
-
    // default stack size for a thread
    size_t default_thread_stack_size;
+
+   // flags 
+   struct {
+      unsigned dosleep : 1; // sleep should actually sleep
+      unsigned verbose : 1;
+   } flags;
+
+   struct {
+      unsigned fs : 1;        // print file-system syscalls
+      unsigned pthreads : 1;  // print pthread calls
+      unsigned malloc : 1;    // print calls to malloc/free and friends
+      unsigned proc : 1;      // print process-related calls (exit, sleep, abort, ...)
+      unsigned others : 1;    // all other calls
+   } strace;
+   
+   // stack pointer of the host upon entry on guest code
+   uint64_t host_rsp;
 };
 
 // const for fast address checking without memory access, defined in main.c

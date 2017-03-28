@@ -27,12 +27,12 @@ int  __rt_tls_thread_start (struct rt_tcb *me)
 
    // we clone the initial TLS given with the program, creating a copy for this
    // thread
-   ptr = _rt_malloc_uninitialized (__state.tlsinit.size);
+   ptr = __rt_malloc_uninitialized (__state.tlsinit.size);
    if (__state.tlsinit.size && !ptr) return ENOMEM;
    me->tls.block = ptr;
    __rt_tls_copy (&me->tls, &__state.tlsinit);
-   _printf ("stid: rt: tls: start me=t%u me.tls.{block=%p size=%zu} tlsinit.{block=%p, size=%zu}\n",
-         TID (me), me->tls.block, me->tls.size, __state.tlsinit.block, __state.tlsinit.size);
+   //INFO ("stid: rt: tls: start me=t%u me.tls.{block=%p size=%zu} tlsinit.{block=%p, size=%zu}",
+   //      TID (me), me->tls.block, me->tls.size, __state.tlsinit.block, __state.tlsinit.size);
    return 0;
 }
 

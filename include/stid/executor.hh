@@ -39,6 +39,21 @@ struct ExecutorConfig
    uint64_t tracesize;;
    // Set to 0, 1, 2, or 3 to optimize as "opt -Oxx" would do
    unsigned optlevel;
+
+   // flags 
+   struct {
+      unsigned dosleep : 1; // sleep should actually sleep
+      unsigned verbose : 1; // verbose messages from the runtime
+   } flags;
+
+   /// Print strace(1)-like messages on various system calls
+   struct {
+      unsigned fs : 1;        /// file-system syscalls
+      unsigned pthreads : 1;  /// pthread calls
+      unsigned malloc : 1;    /// memory allocation
+      unsigned proc : 1;      /// process related
+      unsigned others : 1;    /// all others
+   } strace;
 };
 
 class Executor

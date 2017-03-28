@@ -20,6 +20,7 @@ void Varemit::emit ()
       dest = new char[size];
       size_t s = (char*) emit_or_size (dest) - (char*) dest;
       ASSERT (s == size);
+      (void) s;
    }
 }
 
