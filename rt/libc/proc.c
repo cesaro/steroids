@@ -50,7 +50,6 @@ void _rt__exit (int status)
    }
 
    // log the EXIT event for the calling thread (will be main at this point)
-   breakme ();
    TRACE0 (RT_THEXIT);
    rt->trace.num_blue[0]++;
 

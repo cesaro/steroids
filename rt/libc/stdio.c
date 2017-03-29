@@ -63,7 +63,7 @@ FILE *_rt_fopen (const char *path, const char *mode)
    FILE *f;
 
    f = fopen (path, mode);
-   __rt_stdio_add (f);
+   if (f) __rt_stdio_add (f);
    STRACE (fs, "fopen (path='%s', mode='%s') = %p", path, mode, f);
    return f;
 }
@@ -82,7 +82,7 @@ FILE *_rt_fdopen(int fd, const char *mode)
    case 2 : f = stderr; break;
    default :
       f = fdopen (fd, mode);
-      __rt_stdio_add (f);
+      if (f) __rt_stdio_add (f);
    }
    STRACE (fs, "fdopen (fd=%d, mode='%s') = %p", fd, mode, f);
    return f;
@@ -95,7 +95,7 @@ FILE *_rt_freopen(const char *path, const char *mode, FILE *f)
    // unnecessary assertion violation
    __rt_stdio_remove (f);
    newf = freopen (path, mode, f);
-   __rt_stdio_add (newf);
+   if (newf) __rt_stdio_add (newf);
    STRACE (fs, "freopen (path='%s', mode='%s', old=%p) = %p", path, mode, f, newf);
    return newf;
 }

@@ -298,6 +298,7 @@ void test5 ()
    conf.memsize = 512 << 20; // 512M
    conf.defaultstacksize = 16 << 20; // 16M
    conf.tracesize = 16 << 20; // 16M events (x 11 bytes per event)
+   conf.strace.fs = 1;
    Executor e (std::move (mod), conf);
 
    // write instrumented code to file, for debugging purposes
@@ -327,8 +328,8 @@ void test5 ()
    //po.print_original_stream ();
 
    // build the partial order and print it
-   po.build ();
-   po.print ();
+   //po.build ();
+   //po.print ();
 
    fflush (stdout);
    fflush (stderr);

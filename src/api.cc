@@ -460,17 +460,20 @@ int stid_cmd (struct stid_handle *s, int cmd, void *arg1, void *arg2, void *arg3
 
 int stid_test ()
 {
-   const char *user = getenv ("USER");
 
+#if 0
+   const char *user = getenv ("USER");
    // for Cesar
    if (user and strcmp (user, "cesar") == 0)
    {
       test6 ();
       return 0;
    }
+#endif
 
    //// for anyone else
-   test5 ();
+   test6 ();
+
 #if 0
    printf ("stid_test: I feel fantastic!\n");
    struct stid *s = stid_init ();
