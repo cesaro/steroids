@@ -142,8 +142,8 @@ YACC:=bison
 
 CC_=clang-3.7
 CXX_=clang++-3.7
-CFLAGS_:=-Wall -Wextra -std=c11 -pthread -g
-CXXFLAGS_:=-Wall -Wextra -std=c++11 -pthread -g
+CFLAGS_:=-Wall -Wextra -std=c11 -pthread
+CXXFLAGS_:=-Wall -Wextra -std=c++11 -pthread
 
 %.ll : %.c
 	@echo "CC  $< (c -> ll)"

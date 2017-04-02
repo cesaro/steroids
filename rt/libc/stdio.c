@@ -68,6 +68,17 @@ FILE *_rt_fopen (const char *path, const char *mode)
    return f;
 }
 
+FILE *_rt_fopen64 (const char *path, const char *mode)
+{
+   // FIXME -- this is almost a copy of _rt_fopen64, this code should be facted out
+
+   FILE *f;
+
+   f = fopen64 (path, mode);
+   if (f) __rt_stdio_add (f);
+   STRACE (fs, "fopen64 (path='%s', mode='%s') = %p", path, mode, f);
+   return f;
+}
 
 FILE *_rt_fdopen(int fd, const char *mode)
 {
@@ -88,7 +99,7 @@ FILE *_rt_fdopen(int fd, const char *mode)
    return f;
 }
 
-FILE *_rt_freopen(const char *path, const char *mode, FILE *f)
+FILE *_rt_freopen (const char *path, const char *mode, FILE *f)
 {
    FILE *newf;
    // BUG: f may not be open, so calling __rt_stdio_remove() will produce an
@@ -97,6 +108,19 @@ FILE *_rt_freopen(const char *path, const char *mode, FILE *f)
    newf = freopen (path, mode, f);
    if (newf) __rt_stdio_add (newf);
    STRACE (fs, "freopen (path='%s', mode='%s', old=%p) = %p", path, mode, f, newf);
+   return newf;
+}
+
+FILE *_rt_freopen64 (const char *path, const char *mode, FILE *f)
+{
+   // FIXME -- this is almost a copy of _rt_freopen, this code should be facted out
+   FILE *newf;
+   // BUG: f may not be open, so calling __rt_stdio_remove() will produce an
+   // unnecessary assertion violation
+   __rt_stdio_remove (f);
+   newf = freopen64 (path, mode, f);
+   if (newf) __rt_stdio_add (newf);
+   STRACE (fs, "freopen64 (path='%s', mode='%s', old=%p) = %p", path, mode, f, newf);
    return newf;
 }
 

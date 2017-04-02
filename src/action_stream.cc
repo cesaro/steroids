@@ -4,21 +4,20 @@
 
 namespace stid {
 
-action_stream_itt::action_stream_itt (const action_streamt &s, bool begin) :
-   trace (s.rt->trace) // we make a copy, this saves 1 memory access in future operations
+action_stream_itt::action_stream_itt (const action_streamt &s, bool begin)
 {
    if (begin)
    {
       // restart the pointers
-      trace.evptr = trace.ev.begin;
-      trace.addrptr = (uint64_t*) trace.addr.begin;
-      trace.valptr = (uint64_t*) trace.val.begin;
-      trace.idptr = (uint16_t*) trace.id.begin;
+      trace.evptr = s.rt->trace.ev.begin;
+      trace.addrptr = (uint64_t*) s.rt->trace.addr.begin;
+      trace.valptr = (uint64_t*) s.rt->trace.val.begin;
+      trace.idptr = (uint16_t*) s.rt->trace.id.begin;
    }
    else
    {
       // event pointer points to the end
-      trace.evptr = trace.ev.begin + trace.size;
+      trace.evptr = s.rt->trace.ev.begin + s.rt->trace.size;
    }
 }
 

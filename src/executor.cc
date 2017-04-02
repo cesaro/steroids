@@ -84,9 +84,21 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    std::unique_ptr<llvm::RTDyldMemoryManager> mm (new MyMemoryManager (rt));
 
    // create a JIT execution engine, using the (new) MCJIT engine
+   llvm::CodeGenOpt::Level ol;
+   switch (conf.optlevel)
+   {
+   case 0 : ol = llvm::CodeGenOpt::Level::None; break;
+   case 1 : ol = llvm::CodeGenOpt::Level::Less; break;
+   case 2 : ol = llvm::CodeGenOpt::Level::Default; break;
+   default :
+      ol = llvm::CodeGenOpt::Level::Aggressive;
+   }
+   //llvm::TargetOptions to;
+   //to.EnableFastISel = 1; // doesn't pay off in O1
    eb.setErrorStr (&errors);
-   eb.setOptLevel (llvm::CodeGenOpt::Level::Aggressive);
-   //eb.setVerifyModules (true);
+   eb.setOptLevel (ol);
+   //eb.setTargetOptions (to);
+   eb.setVerifyModules (false);
    eb.setMCJITMemoryManager(std::move (mm));
    ee = eb.create();
    if (! ee)
@@ -281,12 +293,7 @@ void Executor::optimize ()
    // oportunities for optimization. The code is inspired by that of opt(1), see
    // https://github.com/llvm-mirror/llvm/blob/master/tools/opt/opt.cpp
 
-   if (conf.optlevel == 0)
-   {
-      DEBUG ("stid: executor: skipping optimization");
-      return;
-   }
-   DEBUG ("stid: executor: optimizing, optlevel %u", conf.optlevel);
+   TRACE ("stid: executor: optimizing, optlevel %u...", conf.optlevel);
 
    // a module pass manager and a function pass manager, they will store the
    // sequence of optimization passes that we run; we will insert the
@@ -423,7 +430,13 @@ void Executor::detex_apply ()
 {
    //DEBUG ("stid: executor: detex: starting");
    //DEBUG ("stid: executor: detex: srand(3) seed %u", detex.rseed);
-   srand (detex.rseed);
+   //srand (detex.rseed);
+
+   // FIXME calling srand here seems to be expensive, let's do it only if the
+   // program obtains random numbers, report this back in the rt struct ;)
+   // random
+   // srandom
+   // 
 
    // if this is the first call, we save the program data segments for tuture
    // re-executions of the guest; if it is not, we restore the data segments
@@ -536,6 +549,7 @@ void Executor::add_sleepset (unsigned tid, void *addr)
 void Executor::clear_sleepset ()
 {
    for (auto i : sleepsetidx) rt.replay.sleepset[i] = 0;
+   sleepsetidx.clear ();
 }
 
 struct rt *Executor::get_runtime ()

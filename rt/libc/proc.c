@@ -75,7 +75,7 @@ void _rt__exit (int status)
 
 int _rt_atexit (void (* fun) (void))
 {
-   STRACE (proc, "_exit (fun=%p)", fun);
+   STRACE (proc, "atexit (fun=%p)", fun);
    ASSERT (__rt_atexit_size < RT_MAX_ATEXIT_FUNS);
    __rt_atexit_table[__rt_atexit_size] = fun;
    __rt_atexit_size++;

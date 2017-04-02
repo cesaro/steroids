@@ -32,6 +32,24 @@ int _rt_usleep (useconds_t us)
    }
 }
 
+
+int _rt_clock_nanosleep (clockid_t id, int flags, const struct timespec *req, struct timespec *rem)
+{
+   if (rt->flags.dosleep)
+   {
+      STRACE (others, "clock_nanosleep (id=%d, flags=%#x, req=%p, rem=%p)",
+            id, flags, req, rem);
+      return clock_nanosleep (id, flags, req, rem);
+   }
+   else
+   {
+      STRACE (others, "clock_nanosleep (id=%d, flags=%#x, req=%p, rem=%p) [EINTR]",
+            id, flags, req, rem);
+      if (rem && ! (flags & TIMER_ABSTIME)) *rem = *req;
+      return EINTR;
+   }
+}
+
 int *_rt___errno_location ()
 {
    // for the time being we let the guest access directly glibc's errno, since

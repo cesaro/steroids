@@ -20,7 +20,10 @@ void *__rt_malloc_uninitialized  (size_t size)
 {
    void *ptr;
 
-   if (size == 0) return 0;
+   // GLIBC returns a pointer to addressable memory, we return a pointer to
+   // unaddressable memory; if the program uses it we should segfault
+   if (size == 0) return (void*) 0x10;
+
    // get a free memory area, if any memory is left in the heap
    ptr = __malloc_ptr;
    __malloc_ptr = (uint8_t*) ALIGN16 (__malloc_ptr + size);
@@ -28,7 +31,7 @@ void *__rt_malloc_uninitialized  (size_t size)
    {
       __malloc_ptr = ptr;
       ptr = 0;
-      PRINT ("out of memory: __malloc_ptr %p size %lu, returning null",
+      ALERT ("out of memory: __malloc_ptr %p size %lu, returning null",
             __malloc_ptr, size);
    }
 
