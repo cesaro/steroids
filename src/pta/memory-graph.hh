@@ -36,7 +36,7 @@ private:
    MemoryNode *_invalid;
 
    bool find_type (const llvm::Value *v, MemoryNode::Type &t);
-   MemoryNode *new_node (MemoryNode::Type t, const llvm::Value *v);
+   MemoryNode *new_node (const llvm::Value *v);
    MemoryNode *new_node (MemoryNode::Type t);
 
 public:
@@ -67,8 +67,8 @@ public:
    MemoryNode *nullptr_ () { return _nullptr; }
    MemoryNode *invalid () { return _invalid; }
 
-  void print (llvm::raw_ostream &os) const;
-  void dump () const;
+   void print (llvm::raw_ostream &os) const;
+   void dump () const;
 };
 
 llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const MemoryGraph &g);

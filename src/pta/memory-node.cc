@@ -47,13 +47,18 @@ void MemoryNode::print(llvm::raw_ostream &os, unsigned idt, bool withsucc) const
 {
    os.indent(idt) << "Nod " << this;
    os << ": ty " << _type;
-   os << ", points to " << succ.size();
    if (_value)
-      os << ", val " << *_value;
-   os << "\n";
+      os << ", val \"" << *_value << "\"";
+   os << ", points to " << size() << " objects";
+   os << (size() and withsucc ? ":" : "") << "\n";
    if (withsucc)
+   {
       for (const MemoryNode *n : succ)
-         n->print (os, idt + 2, false);
+      {
+         os.indent(idt) << " -> ";
+         n->print (os, idt, false);
+      }
+   }
 }
 
 void MemoryNode::dump () const

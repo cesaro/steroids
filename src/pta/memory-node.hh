@@ -64,8 +64,11 @@ public :
    }
 
    /// Returns true iff \p n is a memory location (possibly) pointed by this
-   bool points (MemoryNode *n) const { return is_succ (n); }
-   const llvm::Value *value () const { return _value; }
+   /// MemoryNode
+   bool pointsto (MemoryNode *n) const { return is_succ (n); }
+
+   /// Returns the
+   const llvm::Value *llvm_value () const { return _value; }
    Type type () const { return _type; }
 
    /// Two memory nodes are euqual iff their addresses in memory are equal.

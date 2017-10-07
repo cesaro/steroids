@@ -48,8 +48,8 @@ public:
       return it->second;
    }
 
-  void print (llvm::raw_ostream &os) const;
-  void dump () const;
+   void print (llvm::raw_ostream &os) const;
+   void dump () const;
 };
 
 llvm::raw_ostream &operator<< (llvm::raw_ostream &s, const PointerValuation &v);

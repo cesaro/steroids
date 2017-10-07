@@ -498,9 +498,8 @@ void test7 ()
    }
 
    pta::Fixpoint fp (*m);
-   fp.eval ();
 
-   pta::State &s = fp.state();
+   pta::State &s = fp.eval();
    s.mem.dump ();
    s.val.dump ();
 }

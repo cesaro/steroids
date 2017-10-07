@@ -41,10 +41,11 @@ public:
    /// Returns true iff the set of successors is empty
    size_t empty() const { return succ.empty(); }
 
-   /// Adds one more successor
-   void add (T *n)
+   /// Adds one element to the set of successors.
+   /// \returns True iff the added node was already there.
+   bool add (T *n)
    {
-      succ.insert (n);
+      return !succ.insert(n).second;
    }
 };
 

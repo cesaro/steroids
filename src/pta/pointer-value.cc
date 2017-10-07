@@ -16,10 +16,13 @@ llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const PointerValue &v)
 
 void PointerValue::print(llvm::raw_ostream &os) const
 {
-   ASSERT (_ptr);
-   os << "Pointer " << *_ptr << ":\n";
+   ASSERT (ptr);
+   os << "Pointer \"" << *ptr << "\", may point to " << size() << " objects:\n";
    for (const MemoryNode *n : succ)
-      n->print (os, 2, false);
+   {
+      os << " -> ";
+      n->print (os, 0, false);
+   }
 }
 
 void PointerValue::dump () const

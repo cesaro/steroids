@@ -2,18 +2,21 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/CFG.h"
 
 #include <set>
 #include <deque>
+#include <iterator>
 
 #include "pta/fixpoint.hh"
+#include "pta/memory-node.hh"
 #include "misc.hh"
 
 namespace stid {
 namespace pta {
 
-void Fixpoint::eval ()
+State &Fixpoint::eval ()
 {
    DEBUG ("stid: pta: eval: module: %d globals", m.size());
    for (const llvm::Function &f : m)
@@ -22,6 +25,8 @@ void Fixpoint::eval ()
       eval_function (f);
       break;
    }
+
+   return state;
 }
 
 void Fixpoint::fill_frontier_bfs (const llvm::Function &f, Frontier &frontier)
@@ -78,12 +83,16 @@ bool Fixpoint::eval_function (const llvm::Function &f)
       // evaluate it and skip the evaluation of the users if the evaluation
       // result was already subsumed in the state
       subsumed = eval_instruction (in);
+      if (subsumed) DEBUG ("stid: pta: eval: fun: subsumed, skiping users");
       if (subsumed) continue;
 
       // push the users of the instruction to the frontier
+      DEBUG ("stid: pta: eval: fun: not subsumed, pushing %d users",
+         std::distance (in->uses().begin(), in->uses().end()));
       for (const llvm::Use &use : in->uses())
       {
          in2 = llvm::cast <const llvm::Instruction> (use.getUser());
+         DEBUG ("stid: pta: eval: fun: pushing %s", str(in2).c_str());
          frontier.push_back (in2);
       }
    }
@@ -157,10 +166,10 @@ bool Fixpoint::eval_instruction (const llvm::Instruction *in)
 
    // Memory operators...
    case llvm::Instruction::Alloca :
-      return eval_instruction_alloca (in);
+      return eval_instruction_alloca (llvm::cast<llvm::AllocaInst>(in));
 
    case llvm::Instruction::Load :
-      return eval_instruction_load (in);
+      return eval_instruction_load (llvm::cast<llvm::LoadInst>(in));
 
    case llvm::Instruction::Store :
       return eval_instruction_store (in);
@@ -234,9 +243,21 @@ bool Fixpoint::eval_instruction (const llvm::Instruction *in)
    ASSERT (0);
 }
 
-bool Fixpoint::eval_instruction_alloca (const llvm::Instruction *in)
+bool Fixpoint::eval_instruction_alloca (const llvm::AllocaInst *in)
 {
-   return false;
+   bool subsumed;
+   MemoryNode *n = state.mem[in];
+   PointerValue &val = state.val[in];
+
+   ASSERT (n->llvm_value() == in);
+   ASSERT (n->pointsto(state.mem.invalid()));
+   ASSERT (n->size() == 1);
+   ASSERT (val.ptr == in);
+   ASSERT (val.size() <= 1); // empty set or singleton {n}
+
+   // add the Alloca memory object to the set (singleton) of pointers
+   subsumed = val.add (n);
+   return subsumed;
 }
 
 bool Fixpoint::eval_instruction_bitcast (const llvm::Instruction *in)
@@ -259,7 +280,7 @@ bool Fixpoint::eval_instruction_inttoptr (const llvm::Instruction *in)
    return false;
 }
 
-bool Fixpoint::eval_instruction_load (const llvm::Instruction *in)
+bool Fixpoint::eval_instruction_load (const llvm::LoadInst *in)
 {
    return false;
 }

@@ -84,20 +84,76 @@ bool MemoryGraph::find_type (const llvm::Value *v, MemoryNode::Type &t)
    return false;
 }
 
-MemoryNode *MemoryGraph::new_node (MemoryNode::Type t, const llvm::Value *v)
+MemoryNode *MemoryGraph::new_node (const llvm::Value *v)
 {
+   const llvm::Function *f;
    std::pair<Map::iterator,bool> ret;
    MemoryNode *n;
 
-   // construct and insert a new MemoryNode in our container, insert a pointer
-   // to it in the map and return the pointer
-   nodes.emplace_back (t, v);
-   n = &nodes.back ();
+   // the value must be of pointer type
+   ASSERT (v->getType()->isPointerTy());
+   ASSERT (map.find(v) == map.end());
+
+   // FIXME: link here to design notes, in order to justify why these
+   // instruction types trigger the creation of these nodes
+
+   if (llvm::isa<llvm::Function>(v))
+   {
+      nodes.emplace_back (MemoryNode::Type::Function, v);
+      n = &nodes.back ();
+   }
+   else if (llvm::isa<llvm::GlobalVariable>(v))
+   {
+      nodes.emplace_back (MemoryNode::Type::GlobalVariable, v);
+      n = &nodes.back ();
+   }
+   else if (llvm::isa<llvm::AllocaInst>(v))
+   {
+      // we create memory node of type Alloca, and initialize make it point to
+      // *the* single node of type Inval we have in the graph, as when the llvm
+      // instruction "alloca" allocates memory for a pointer, the initial value
+      // is garbage
+      nodes.emplace_back (MemoryNode::Type::Alloca, v);
+      n = &nodes.back ();
+      n->add (_invalid);
+   }
+   else if (auto c = llvm::dyn_cast<llvm::CallInst>(v))
+   {
+      std::string type;
+      llvm::raw_string_ostream os (type);
+
+      f = c->getCalledFunction();
+      f->getType()->print (os);
+      if (_malloc_funs.find ({f->getName().str(), os.str()}) !=
+         _malloc_funs.end())
+      {
+         nodes.emplace_back (MemoryNode::Type::Malloc, v);
+         n = &nodes.back ();
+      }
+      else
+      {
+         // calls to other functions do not correspond to memory locations in
+         // our abstraction
+         return nullptr;
+      }
+   }
+   else
+   {
+      // in our abstraction of the memory, instructions of this type do not
+      // correspond to a memory block
+      return nullptr;
+   }
+
+   // if we get here, then one of the if's above has created a node in the
+   // Container nodes; we now insert a pointer to it in the map and return the
+   // pointer
    ret = map.emplace (v, n);
    ASSERT (ret.second);
    return n;
 }
 
+/// This function is called only 3 times from the ctor of this class. It is not
+/// called anywhere else
 MemoryNode *MemoryGraph::new_node (MemoryNode::Type t)
 {
    // construct a new MemoryNode in our container and return a pointer to it
@@ -107,9 +163,6 @@ MemoryNode *MemoryGraph::new_node (MemoryNode::Type t)
 
 MemoryNode *MemoryGraph::operator[] (const llvm::Value *v)
 {
-   MemoryNode::Type t;
-   bool found;
-
    // if this Value is not pointer-typed, then we shall not have any memory node
    // associated to it
    if (!v->getType()->isPointerTy()) return nullptr;
@@ -120,12 +173,9 @@ MemoryNode *MemoryGraph::operator[] (const llvm::Value *v)
 
    // otherwise examine the type of the value and if it is one for which the
    // analysis needs to associate a memory location (or node), then the
-   // following function will find it and return true
-   found = find_type (v, t);
-   if (! found) return nullptr;
-   
-   // we create MemoryNode, insert it in the map and return its address
-   return new_node (t, v);
+   // following function will find it, create a node in the Container and return
+   // it; if the llvm value is not one of the expected nodes it will return null
+   return new_node (v);
 }
 
 void MemoryGraph::print (llvm::raw_ostream &os) const

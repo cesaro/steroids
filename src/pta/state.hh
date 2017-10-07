@@ -12,6 +12,14 @@ struct State
 {
    MemoryGraph mem;
    PointerValuation val;
+
+#if 0
+   void clear ()
+   {
+      mem.clear ();
+      val.clear ();
+   }
+#endif
 };
 
 } // pta

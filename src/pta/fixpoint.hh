@@ -5,6 +5,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/Instructions.h"
 
 #include <deque>
 
@@ -18,15 +19,10 @@ class Fixpoint
 public:
    Fixpoint (const llvm::Module &m) :
       m (m),
-      _state ()
+      state ()
    {}
 
-   void eval ();
-
-   State &state ()
-   {
-      return _state;
-   }
+   State &eval ();
 
 private:
    typedef std::deque<const llvm::Instruction*> Frontier;
@@ -34,12 +30,12 @@ private:
 
    bool eval_function (const llvm::Function &f);
    bool eval_instruction (const llvm::Instruction *in);
-   bool eval_instruction_alloca (const llvm::Instruction *in);
+   bool eval_instruction_alloca (const llvm::AllocaInst *in);
    bool eval_instruction_bitcast (const llvm::Instruction *in);
    bool eval_instruction_call (const llvm::Instruction *in);
    bool eval_instruction_gep (const llvm::Instruction *in);
    bool eval_instruction_inttoptr (const llvm::Instruction *in);
-   bool eval_instruction_load (const llvm::Instruction *in);
+   bool eval_instruction_load (const llvm::LoadInst *in);
    bool eval_instruction_nop (const llvm::Instruction *in);
    bool eval_instruction_phi (const llvm::Instruction *in);
    bool eval_instruction_ret (const llvm::Instruction *in);
@@ -48,7 +44,7 @@ private:
    bool eval_instruction_unimplemented (const llvm::Instruction *in);
 
    const llvm::Module &m;
-   State _state;
+   State state;
 };
 
 } // pta

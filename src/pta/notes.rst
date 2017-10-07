@@ -8,11 +8,12 @@ This document describes the goals of the analysis, how to use it as well as how
 it is implemented.
 
 Task list:
-- x verificar los ifndef
-- determinar como para el punto fijo: utilizando los Uses de una expresion para
-  ponerlos en la lista, e iterando hasta que todos los uses estan tranquilos?
-- implementar el check the subsumption de 1 instruccion (add devuelve bool?)
-- implementar las instrucciones
+x check #ifndefs
+x can I implement the fix point by adding the uses to the work list instead of
+  the next one? YES!
+x implement subsumption check, NodeBase::add() returns null
+- improve the work list to avoid inserting duplicates
+- implemnt the transformers
 
 
 Memory Objects
