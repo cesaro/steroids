@@ -1,0 +1,116 @@
+
+================
+Pointer Analysis
+================
+
+This folder contains an inter-procedural, flow-sensitive points-to analysis.
+This document describes the goals of the analysis, how to use it as well as how
+it is implemented.
+
+Task list:
+- x verificar los ifndef
+- determinar como para el punto fijo: utilizando los Uses de una expresion para
+  ponerlos en la lista, e iterando hasta que todos los uses estan tranquilos?
+- implementar el check the subsumption de 1 instruccion (add devuelve bool?)
+- implementar las instrucciones
+
+
+Memory Objects
+==============
+
+There is 1 node per:
+- **Top**.
+  Represents all possible memory objects in the graph
+- **Invalid**.
+  Represents an invalid pointer. An uninitialized pointer or one that points to
+  no legal/allocated memory object.
+- **Nullptr**.
+  Represents the `null` pointer
+- **Function**
+  A pointer to a function.
+- **GlobalVariable**
+  A pointer to a global variable, initialized or not.
+- **Alloca**
+  A pointer to the memory space allocated in the stack by some function.
+- **Malloc**
+  A pointer to the memory space allocated a call to malloc(3) (FIXME others?).
+
+
+Transformers
+============
+
+assert:
+- suc(Nullptr) = \empty
+- suc(Invalid) = \empty
+
+ret               FIXME
+br                nop; flow to the 2 branches
+switch (i,l)+     nop; flow to all branches
+indirectbr        nop; flow to all branches
+invoke            Unsupported
+resume            Unsupported
+catchswitch       Unsupported
+catchret          Unsupported
+cleanupret        Unsupported
+unreachable       nop
+add               nop
+fadd              nop
+sub               nop
+fsub              nop
+mul               nop
+fmul              nop
+udiv              nop
+sdiv              nop
+fdiv              nop
+urem              nop
+srem              nop
+frem              nop
+shl               nop
+lshr              nop
+ashr              nop
+and               nop
+or                nop
+xor               nop
+extractelement    Unsupported
+insertelement     Unsupported
+shufflevector     Unsupported
+extractvalue      Unsupported
+insertvalue       Unsupported
+alloca(ty)        let m(v) = n
+                  assert (suc(n) = {Inval})
+                  assert (val(v) is empty or {n})
+                  set val(v) = {n}
+load(ty, addr)    if loaded ty != ptr, then nop;
+                  else, for any n \in val(addr) add suc(n) to val(v)
+store(ty,v,addr)  if stored type != ptr, then nop
+                  else for each node != Inval \in val(addr) add outgoing edges to G
+                  pointing to each of the nodes in suc(val(v))
+fence             nop
+cmpxchg           Unsupported
+atomicrmw         Unsupported
+getelementptr(ptr, i1, i2...)
+                  add each node in val(ptr) to val(v)
+trunc .. to       nop
+zext .. to        nop
+sext .. to        nop
+fptrunc .. to     nop
+fpext .. to       nop
+fptoui .. to      nop
+fptosi .. to      nop
+uitofp .. to      nop
+sitofp .. to      nop
+ptrtoint .. to    nop
+inttoptr .. to    add Top to val(v)
+bitcast .. to     if dst ty != ptr; then nop
+                  if dst ty == ptr && orig ty != ptr, then val(v) u= {Top}
+                  if dst ty == ptr && orig ty == ptr, then val(v) u= val(orig)
+addrspacecast .. to Unsupported
+icmp              nop
+fcmp              nop
+phi               if type != ptr, then nop; else val(v) u= val(left) \cup val(right)
+select            if type != ptr, then nop; else val(v) u= val(left) \cup val(right)
+call              FIXME
+va_arg            FIXME // if type != ptr, then nop; else val(v) u= nex-arg from function call
+landingpad        Unsupported
+catchpad          Unsupported
+cleanuppad        Unsupported

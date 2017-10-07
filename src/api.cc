@@ -472,7 +472,7 @@ int stid_test ()
 #endif
 
    //// for anyone else
-   test6 ();
+   test7 ();
 
 #if 0
    printf ("stid_test: I feel fantastic!\n");

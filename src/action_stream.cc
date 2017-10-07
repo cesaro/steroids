@@ -26,6 +26,7 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
    uint8_t a = *trace.evptr;
    switch (a)
    {
+#if 0 // all of these are currently disabled
    // loads, stores, malloc, alloca, mutex-init: 2 arguments, addr & value
    case RT_RD8:
    case RT_RD16:
@@ -45,10 +46,10 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
    case RT_FREE:
       trace.addrptr++;
       break;
-
    // call, ret, context switch, exitnz: 1 argument, an id
    case RT_CALL:
    case RT_RET:
+#endif
    case RT_THCREAT:
    case RT_THJOIN:
    case RT_THCTXSW:
@@ -66,13 +67,14 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
    case RT_MTXUNLK:
       trace.addrptr++;
       break;
-
+#if 0 // all of these are currently disabled
    // less common RD / WR events: 1 address and multiple words (2-31)
    case RT_RD128:
    case RT_WR128:
       trace.addrptr++;
       trace.valptr += 2;
       break;
+#endif
    default:
       if (RT_IS_MULTIW_RDWR (a))
       {

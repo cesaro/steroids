@@ -29,6 +29,9 @@
 #include "stid/c/steroid.h"
 #include "stid/executor.hh"
 
+#include "pta/fixpoint.hh"
+#include "pta/node-base.hh"
+
 #include "verbosity.h"
 #include "checker.hh"
 #include "../rt/rt.h"
@@ -461,6 +464,45 @@ void test6 ()
    fflush (stdout);
    fflush (stderr);
    return;
+}
+
+void test7 ()
+{
+   // related to the JIT engine, can we move it to some static class constructor
+   // of the Executor??
+   llvm::InitializeNativeTarget();
+   llvm::InitializeNativeTargetAsmPrinter();
+   llvm::InitializeNativeTargetAsmParser();
+
+   // get a context
+   llvm::LLVMContext &context = llvm::getGlobalContext();
+   llvm::SMDiagnostic err;
+   std::string errors;
+
+   // file to load and execute
+   std::string path = "input.ll";
+   //std::string path = "cunf.ll";
+   //std::string path = "invalid.ll";
+
+   // parse the .ll file and get a Module out of it
+   std::unique_ptr<llvm::Module> mod (llvm::parseIRFile (path, err, context));
+   llvm::Module *m = mod.get();
+
+   // if errors found, report and terminate
+   if (! mod.get ()) {
+      llvm::raw_string_ostream os (errors);
+      err.print (path.c_str(), os);
+      os.flush ();
+      printf ("Error: %s\n", errors.c_str());
+      return;
+   }
+
+   pta::Fixpoint fp (*m);
+   //fp.eval ();
+
+   pta::State &s = fp.state();
+
+   s.mem.dump ();
 }
 
 } // namespace

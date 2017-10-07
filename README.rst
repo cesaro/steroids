@@ -2,6 +2,6 @@
 Steroids
 ========
 
-A library for dynamic analysis of multithreaded POSIX C programs.
+A library for dynamic analysis of POSIX multithreaded C programs.
 
 TODO
