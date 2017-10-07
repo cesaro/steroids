@@ -29,4 +29,6 @@ void print_value (const llvm::Value *v, std::string &s);
 void print_value_as_operand (llvm::Value *v, std::string &s);
 void dump_ll (const llvm::Module *m, const char *filename);
 
+std::string str (const llvm::Value *v);
+
 #endif

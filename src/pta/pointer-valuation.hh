@@ -2,6 +2,7 @@
 #ifndef __STID_PTA_POINTERVALUATION_HH_
 #define __STID_PTA_POINTERVALUATION_HH_
 
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Value.h"
 
@@ -46,7 +47,12 @@ public:
       }
       return it->second;
    }
+
+  void print (llvm::raw_ostream &os) const;
+  void dump () const;
 };
+
+llvm::raw_ostream &operator<< (llvm::raw_ostream &s, const PointerValuation &v);
 
 } // pta
 } // stid

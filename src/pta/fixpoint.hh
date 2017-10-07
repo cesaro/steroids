@@ -30,9 +30,22 @@ public:
 
 private:
    typedef std::deque<const llvm::Instruction*> Frontier;
+   void fill_frontier_bfs (const llvm::Function &f, Frontier &frontier);
+
    bool eval_function (const llvm::Function &f);
    bool eval_instruction (const llvm::Instruction *in);
-   void fill_frontier_bfs (const llvm::Function &f, Frontier &frontier);
+   bool eval_instruction_alloca (const llvm::Instruction *in);
+   bool eval_instruction_bitcast (const llvm::Instruction *in);
+   bool eval_instruction_call (const llvm::Instruction *in);
+   bool eval_instruction_gep (const llvm::Instruction *in);
+   bool eval_instruction_inttoptr (const llvm::Instruction *in);
+   bool eval_instruction_load (const llvm::Instruction *in);
+   bool eval_instruction_nop (const llvm::Instruction *in);
+   bool eval_instruction_phi (const llvm::Instruction *in);
+   bool eval_instruction_ret (const llvm::Instruction *in);
+   bool eval_instruction_store (const llvm::Instruction *in);
+   bool eval_instruction_va_arg (const llvm::Instruction *in);
+   bool eval_instruction_unimplemented (const llvm::Instruction *in);
 
    const llvm::Module &m;
    State _state;

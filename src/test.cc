@@ -498,11 +498,11 @@ void test7 ()
    }
 
    pta::Fixpoint fp (*m);
-   //fp.eval ();
+   fp.eval ();
 
    pta::State &s = fp.state();
-
    s.mem.dump ();
+   s.val.dump ();
 }
 
 } // namespace

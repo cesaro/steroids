@@ -39,20 +39,27 @@ There is 1 node per:
 Transformers
 ============
 
+Full listing of instructions in <llvm/IR/Instruction.def>
+
 assert:
 - suc(Nullptr) = \empty
 - suc(Invalid) = \empty
 
+
+
+// Terminator Instructions
 ret               FIXME
 br                nop; flow to the 2 branches
 switch (i,l)+     nop; flow to all branches
 indirectbr        nop; flow to all branches
 invoke            Unsupported
 resume            Unsupported
-catchswitch       Unsupported
-catchret          Unsupported
-cleanupret        Unsupported
+//catchswitch       Unsupported v6
+//catchret          Unsupported v6
+//cleanupret        Unsupported v6
 unreachable       nop
+
+// Standard binary operators...
 add               nop
 fadd              nop
 sub               nop
@@ -65,17 +72,16 @@ fdiv              nop
 urem              nop
 srem              nop
 frem              nop
+
+// Logical operators (integer operands)
 shl               nop
 lshr              nop
 ashr              nop
 and               nop
 or                nop
 xor               nop
-extractelement    Unsupported
-insertelement     Unsupported
-shufflevector     Unsupported
-extractvalue      Unsupported
-insertvalue       Unsupported
+
+// Memory operators...
 alloca(ty)        let m(v) = n
                   assert (suc(n) = {Inval})
                   assert (val(v) is empty or {n})
@@ -85,11 +91,13 @@ load(ty, addr)    if loaded ty != ptr, then nop;
 store(ty,v,addr)  if stored type != ptr, then nop
                   else for each node != Inval \in val(addr) add outgoing edges to G
                   pointing to each of the nodes in suc(val(v))
+getelementptr(ptr, i1, i2...)
+                  add each node in val(ptr) to val(v)
 fence             nop
 cmpxchg           Unsupported
 atomicrmw         Unsupported
-getelementptr(ptr, i1, i2...)
-                  add each node in val(ptr) to val(v)
+
+// Cast operators ...
 trunc .. to       nop
 zext .. to        nop
 sext .. to        nop
@@ -105,12 +113,19 @@ bitcast .. to     if dst ty != ptr; then nop
                   if dst ty == ptr && orig ty != ptr, then val(v) u= {Top}
                   if dst ty == ptr && orig ty == ptr, then val(v) u= val(orig)
 addrspacecast .. to Unsupported
+
+// Other operators...
 icmp              nop
 fcmp              nop
 phi               if type != ptr, then nop; else val(v) u= val(left) \cup val(right)
-select            if type != ptr, then nop; else val(v) u= val(left) \cup val(right)
 call              FIXME
+select            if type != ptr, then nop; else val(v) u= val(left) \cup val(right)
 va_arg            FIXME // if type != ptr, then nop; else val(v) u= nex-arg from function call
+extractelement    Unsupported
+insertelement     Unsupported
+shufflevector     Unsupported
+extractvalue      Unsupported
+insertvalue       Unsupported
 landingpad        Unsupported
-catchpad          Unsupported
-cleanuppad        Unsupported
+//catchpad          Unsupported v6
+//cleanuppad        Unsupported v6

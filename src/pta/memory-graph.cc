@@ -130,11 +130,11 @@ MemoryNode *MemoryGraph::operator[] (const llvm::Value *v)
 
 void MemoryGraph::print (llvm::raw_ostream &os) const
 {
-   os << "== memory graph begin ==\n";
+   os << "== begin memory graph ==\n";
    os << "* " << nodes.size() << " nodes, ";
    os << map.size() << " mapped values\n";
    for (const MemoryNode &n : nodes) os << n;
-   os << "== memory graph end ==\n";
+   os << "== begin memory graph ==\n";
 }
 
 void MemoryGraph::dump () const

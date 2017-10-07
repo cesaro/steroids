@@ -2,7 +2,12 @@
 #ifndef __STID_PTA_POINTERVALUE_HH_
 #define __STID_PTA_POINTERVALUE_HH_
 
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Value.h"
+
 #include "pta/node-base.hh"
+#include "pta/memory-node.hh"
 
 namespace stid {
 namespace pta {
@@ -24,7 +29,7 @@ public :
       _ptr (v)
    {
       ASSERT (v);
-      ASSERT (v->getType()->isPointerType());
+      ASSERT (v->getType()->isPointerTy());
    }
 
    /// Constructs a PointerValuation for a llvm value \p v of type pointer. The
@@ -34,7 +39,7 @@ public :
       _ptr (v)
    {
       ASSERT (v);
-      ASSERT (v->getType()->isPointerType());
+      ASSERT (v->getType()->isPointerTy());
 
       add (n);
    }
@@ -53,10 +58,15 @@ public :
    /// Two pointer valuations are equal if they point to the same memory objects
    bool operator== (const PointerValue &other) { return succ == other.succ; }
 
+  void print(llvm::raw_ostream &s) const;
+  void dump () const;
+
 private:
    /// The llvm value (of type pointer) for which we keep here a valuation
    const llvm::Value *_ptr;
 };
+
+llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const PointerValue &v);
 
 } // pta
 } // stid

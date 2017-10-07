@@ -736,6 +736,14 @@ int main15 ()
    return 0;
 }
 
+int main16 ()
+{
+   int x;
+   //int *p;
+   x = 123;
+   return 0;
+}
+
 int main (int argc, char **argv)
 //int main ()
 {

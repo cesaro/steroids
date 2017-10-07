@@ -98,6 +98,13 @@ void print_value_as_operand (llvm::Value *v, std::string &s)
    buff.flush ();
 }
 
+std::string str (const llvm::Value *v)
+{
+   std::string s;
+   print_value (v, s);
+   return s;
+}
+
 void dump_ll (const llvm::Module *m, const char *filename)
 {
    int fd = open (filename, O_WRONLY | O_TRUNC | O_CREAT, 0644);
