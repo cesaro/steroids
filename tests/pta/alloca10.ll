@@ -2,7 +2,7 @@
 ; TEST: % fun
 
 ; Function Attrs: nounwind uwtable
-define i32 @fun() #0 {
+define i32 @fun() {
   %x = alloca i32, align 4
   %y = alloca i32, align 4
   %p = alloca i32*, align 8
