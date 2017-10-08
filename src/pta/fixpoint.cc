@@ -284,7 +284,31 @@ bool Fixpoint::eval_instruction_inttoptr (const llvm::Instruction *in)
 
 bool Fixpoint::eval_instruction_load (const llvm::LoadInst *in)
 {
-   return false;
+   const llvm::Value *ptr;
+   bool subsumed = true;
+
+   ptr = in->getPointerOperand();
+
+   // if the loaded value is not pointer-typed, this is a nop and there is no
+   // need to evaluate the users
+   if (! in->getType()->isPointerTy()) DEBUG ("not ptr");
+   if (! in->getType()->isPointerTy()) return true;
+
+   PointerValue &ptrval = state.valuation[ptr];
+   PointerValue &valueval = state.valuation[in];
+
+   DEBUG ("ptrval before:");
+   for (auto *n : ptrval) n->dump ();
+   DEBUG ("valueval before:");
+   for (auto *n : valueval) n->dump ();
+
+   for (MemoryNode *read_nod : ptrval)
+      subsumed = valueval.include (read_nod) && subsumed;
+
+   DEBUG ("valueval after:");
+   for (auto *n : valueval) n->dump ();
+
+   return subsumed;
 }
 
 bool Fixpoint::eval_instruction_nop (const llvm::Instruction *in)
@@ -312,8 +336,6 @@ bool Fixpoint::eval_instruction_store (const llvm::StoreInst *in)
    value = in->getValueOperand();
    ptr = in->getPointerOperand();
 
-   breakme ();
-
    // if the value to store is not of pointer type, this is a nop and there is
    // no need to evaluate the users
    if (! value->getType()->isPointerTy()) DEBUG ("not ptr");
@@ -322,16 +344,16 @@ bool Fixpoint::eval_instruction_store (const llvm::StoreInst *in)
    PointerValue &ptrval = state.valuation[ptr];
    PointerValue &valueval = state.valuation[value];
 
-   DEBUG ("ptrval before:");
-   for (auto *n : ptrval) n->dump ();
-   DEBUG ("valueval before:");
-   for (auto *n : valueval) n->dump ();
+   //DEBUG ("ptrval before:");
+   //for (auto *n : ptrval) n->dump ();
+   //DEBUG ("valueval before:");
+   //for (auto *n : valueval) n->dump ();
 
    for (MemoryNode *written_nod : ptrval)
       subsumed = written_nod->include (&valueval) && subsumed;
 
-   DEBUG ("ptrval after:");
-   for (auto *n : ptrval) n->dump ();
+   //DEBUG ("ptrval after:");
+   //for (auto *n : ptrval) n->dump ();
 
    return subsumed;
 }

@@ -742,12 +742,11 @@ int main16 ()
    int y;
    int *p;
 
-   p = &x;
-   //if (x)
-   //   p = &x;
-   //else
-   //   p = &y;
-   //*p = 123;
+   if (x)
+      p = &x;
+   else
+      p = &y;
+   *p = 123;
    x = 123;
    return 0;
 }
