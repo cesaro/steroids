@@ -66,22 +66,22 @@ int verb_get ();
 #ifndef VERB_LEVEL_DEBUG
 #undef DEBUG
 #undef DEBUG_
-#define DEBUG(fmt,args...)
-#define DEBUG_(fmt,args...)
+#define DEBUG(fmt,args...) do {} while (0)
+#define DEBUG_(fmt,args...) do {} while (0)
 #endif
 
 #ifndef VERB_LEVEL_TRACE
 #undef TRACE
 #undef TRACE_
-#define TRACE(fmt,args...)
-#define TRACE_(fmt,args...)
+#define TRACE(fmt,args...) do {} while (0)
+#define TRACE_(fmt,args...) do {} while (0)
 #endif
 
 #ifndef VERB_LEVEL_INFO
 #undef INFO
 #undef INFO_
-#define INFO(fmt,args...)
-#define INFO_(fmt,args...)
+#define INFO(fmt,args...) do {} while (0)
+#define INFO_(fmt,args...) do {} while (0)
 #endif
 
 // the implementation
@@ -102,16 +102,18 @@ void breakme (void);
 #define BREAK(expr) if (expr) breakme ()
 #ifdef CONFIG_DEBUG
 #define ASSERT(expr) \
-   {if (! (expr)) { \
-      PRINT (__FILE__ ":%d: %s: Assertion `" #expr "' failed.\n", \
-            __LINE__, __func__); \
-      fflush (stdout); \
-      fflush (stderr); \
-      breakme (); \
-      exit (1); \
-   }}
+	do { \
+      if (! (expr)) { \
+         PRINT (__FILE__ ":%d: %s: Assertion `" #expr "' failed.\n", \
+               __LINE__, __func__); \
+         fflush (stdout); \
+         fflush (stderr); \
+         breakme (); \
+         exit (1); \
+	   } \
+   } while (0)
 #else
-#define ASSERT(expr)
+#define ASSERT(expr) do {} while (0)
 #endif
 #define DEBUG2(fmt,args...) \
    DEBUG (__FILE__ ":%d: %s: " fmt, __LINE__, __func__, ##args)

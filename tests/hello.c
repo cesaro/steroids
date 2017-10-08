@@ -739,7 +739,15 @@ int main15 ()
 int main16 ()
 {
    int x;
-   //int *p;
+   int y;
+   int *p;
+
+   p = &x;
+   //if (x)
+   //   p = &x;
+   //else
+   //   p = &y;
+   //*p = 123;
    x = 123;
    return 0;
 }

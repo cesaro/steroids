@@ -24,16 +24,18 @@
 // assertion checking + DEBUG macro
 #ifdef CONFIG_DEBUG
 #define ASSERT(expr) \
-	{if (! (expr)) { \
-		ALERT ("Assertion `" #expr "' failed.\n"); \
-		breakme (); \
-      fflush (stdout); \
-		exit (1); \
-	}}
+	do { \
+      if (! (expr)) { \
+         ALERT ("Assertion `" #expr "' failed.\n"); \
+         breakme (); \
+         fflush (stdout); \
+         exit (1); \
+	   } \
+   } while (0)
 #define DEBUG(fmt,args...) PRINT (fmt,##args)
 #else
-#define ASSERT(expr)
-#define DEBUG(fmt,args...)
+#define ASSERT(expr) do {} while (0)
+#define DEBUG(fmt,args...) do {} while (0)
 #endif
 
 // DEBUG macro that remains enabled when we disable CONFIG_DEBUG
