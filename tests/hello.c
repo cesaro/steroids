@@ -592,7 +592,6 @@ int main11 ()
    pthread_exit (0);
    return 0;
 }
-#endif
 
 int __thread a = 0x11223344;
 int __thread b = 0x55667788;
@@ -690,6 +689,7 @@ int main14 ()
 
    pthread_exit (0);
 }
+#endif
 
 int main15 ()
 {
@@ -736,19 +736,25 @@ int main15 ()
    return 0;
 }
 
-int *main16 (int a, float f, int *pp, const char *str)
-{
-   int x;
-   int y;
-   int *p;
 
-   if (x)
-      p = &x;
-   else
-      p = &y;
-   *p = 123;
-   x = 123;
-   return 0;
+void main16 ()
+{
+   int x = "hello world"[3];
+   //int y;
+   //x = 123;
+   //y = x;
+
+   //int x;
+   //int y;
+   //int *p;
+
+   //if (x)
+   //   p = &x;
+   //else
+   //   p = &y;
+   //*p = 123;
+   //x = 123;
+   //return 0;
 }
 
 int main (int argc, char **argv)

@@ -17,10 +17,10 @@ x annotated bitcode output
 x Fixpoint need to evaluate a function, not a module!
 x pta-dump file.ll
 x test folder + Makefile changes
-- implemnt branches, phi, select
-- test ifs
-- test loops
-- test with ints
+x implemnt branches, phi, select
+x test with ints
+x test ifs
+x test loops
 - implemnt gep, intoptr/bitcast
 - test arrays, structs
 - test mallocs
@@ -143,3 +143,17 @@ insertvalue       Unsupported
 landingpad        Unsupported
 //catchpad          Unsupported v6
 //cleanuppad        Unsupported v6
+
+
+Design
+======
+
+- There are two kinds of llvm::Value's in LLVM: global constants (functions,
+  global variables, null pointer, constant expressions) and Instructions.
+- Inside of a function, all uses of an instraction are dominated by the
+  Instruction definition, so the BFS search will necessarily find first the
+  definition and then the use.
+- However, that's not the case for global constants, which can be used
+  anywhere in body of a function.
+- For this reason the constructo of the State class needs to initialize the
+  valuation and the memory graph with all global llvm values. 

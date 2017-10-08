@@ -4,6 +4,7 @@
 #include "llvm/IR/Function.h"
 
 #include "pta/state.hh"
+#include "misc.hh"
 
 namespace stid {
 namespace pta {
@@ -11,8 +12,13 @@ namespace pta {
 void State::print(llvm::raw_ostream &os) const
 {
    os << "== begin pta analysis result ==\n";
-   // print the memory graph
+
+   // print the memory graph and the valuation
+   os << "\n";
    memory.print (os);
+   os << "\n";
+   valuation.print (os);
+
    // print the global variables found during the analysis
    for (auto &kv : valuation.map)
    {
@@ -102,6 +108,8 @@ void State::print(llvm::raw_ostream &os, const llvm::Instruction &in) const
    int opn, i;
    const PointerValue *val;
    const llvm::Value *v;
+   std::string prefix;
+   bool first = true;
 
    // for every pointer operand, print the pointed memory locations
    opn = in.getNumOperands();
@@ -110,13 +118,30 @@ void State::print(llvm::raw_ostream &os, const llvm::Instruction &in) const
       v = in.getOperand(i);
       if (! v->getType()->isPointerTy()) continue;
       val = valuation.get(v);
+      prefix = fmt ("  ; op%d: ", i);
+      if (first) { os << "\n"; first = false; }
       if (val)
-         val->print (os, "  ; ");
+         val->print (os, prefix);
       else
       {
-         os << "; Pointer ";
+         os << prefix << "Pointer '";
          v->printAsOperand (os);
-         os << ": no info\n";
+         os << "': no info\n";
+      }
+   }
+
+   // return value of the instruction
+   if (in.getType()->isPointerTy())
+   {
+      val = valuation.get(&in);
+      prefix = "  ; ret: ";
+      if (val)
+         val->print (os, prefix);
+      else
+      {
+         os << prefix << "Pointer '";
+         in.printAsOperand (os);
+         os << "': no info\n";
       }
    }
 

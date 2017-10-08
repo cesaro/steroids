@@ -27,15 +27,16 @@ using namespace stid;
 
 int main (int argc, char **argv)
 {
-   if (argc != 3)
+   if (argc != 3 and argc != 2)
    {
-      std::cerr << "Usage: pta-dump <input file.{ll,bc}> <function name>\n";
+      std::cerr << "Usage: pta-dump INPUT.{ll,bc} [FUNNAME]\n";
+      std::cerr << "FUNNAME is optional. Function 'main' will be used when not provided\n";
       return 1;
    }
 
    // file to load and execute
    std::string path = argv[1];
-   std::string function_name = argv[2];
+   std::string function_name = (argc == 3) ? argv[2] : "main";
 
    // related to the JIT engine, can we move it to some static class constructor
    // of the Executor??
@@ -71,6 +72,8 @@ int main (int argc, char **argv)
    pta::State &s = fp.run ();
 
    // print
+   llvm::outs() << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n";
    s.print (llvm::outs());
-   return 1;
+   return 0;
+
 }

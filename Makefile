@@ -17,12 +17,12 @@ include defs.mk
 
 .PHONY: fake all g test clean distclean prof dist compile tags run
 
-all : compile run
+all : compile test.pta
 
 compile: $(TARGETS)
 
 r run: compile input.ll
-	./tools/test/main
+	./tools/pta-dump/pta-dump tests/pta/alloca1.ll
 
 input.ll : program.ll rt/rt.bc
 	llvm-link-$(LLVMVERS) -S $^ -o $@
@@ -72,12 +72,15 @@ g gdb : $(TARGETS)
 c cgdb : $(TARGETS)
 	cgdb ./tools/test/main
 
-t test : pta.test
+t test : test.pta
 
-pta.test : $(TOOLS_PTADUMP_MOBJS) $(patsubst %.c,%.ll,$(wildcard tests/pta/*.c))
-	export PATH=$$PATH:./tools/pta-dump; cd ./tests/pta; ./run.sh
+test.pta : $(TOOLS_PTADUMP_TARGETS) $(patsubst %.c,%.ll,$(wildcard tests/pta/*.c))
+	export PATH=$$PWD/tools/pta-dump:$$PATH; cd ./tests/pta; ./run.sh
 
 vars :
+	@echo xxxxxxxxxxxx
+	@echo $(patsubst %.c,%.ll,$(wildcard tests/pta/*.c))
+	@echo xxxxxxxxxxxx
 	@echo "CC       $(CC)"
 	@echo "CXX      $(CXX)"
 	@echo "CFLAGS   $(CFLAGS)"

@@ -48,6 +48,17 @@ public :
       add (n);
    }
 
+   /// Adds all memory nodes represented by \p v to our set. Use the inherited
+   /// method include (MemoryNode *) to add the "successors" of a MemoryNode.
+   /// Use this method to add all MemoryNodes pointed by a PointerValue.
+   /// \returns True iff every added node was already a successor of this node.
+   bool merge (PointerValue &v)
+   {
+      bool already = true;
+      for (MemoryNode *n : v) already = add (n) && already;
+      return already;
+   }
+
    /// Returns true iff \p n is a memory location (possibly) pointed by this
    bool contains (MemoryNode *n) const
    {

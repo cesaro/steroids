@@ -58,6 +58,9 @@ void MemoryNode::print_oneline (llvm::raw_ostream &os,
          os << ", " << *llvm_value;
    }
    os << "; stores " << size() << " pointers";
+
+   if (type == Type::Invalid) ASSERT (size() == 0);
+   if (type == Type::Nullptr) ASSERT (size() == 0);
 }
 
 void MemoryNode::print (llvm::raw_ostream &os, const std::string &pref,
