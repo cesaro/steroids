@@ -14,9 +14,9 @@ x can I implement the fix point by adding the uses to the work list instead of
 x implement subsumption check, NodeBase::add() returns null
 x improve the work list to avoid inserting duplicates; deque + set
 x annotated bitcode output
-- Fixpoint need to evaluate a function, not a module!
-- pta-dump file.llvm
-- test folder + Makefile changes
+x Fixpoint need to evaluate a function, not a module!
+x pta-dump file.ll
+x test folder + Makefile changes
 - implemnt branches, phi, select
 - test ifs
 - test loops

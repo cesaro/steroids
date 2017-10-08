@@ -48,6 +48,9 @@ $(TOOLS_STID_TARGETS) : $(TOOLS_STID_OBJS) $(TOOLS_STID_MOBJS) src/libsteroids.a
 	@echo "LD  $@"
 	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+$(TOOLS_PTADUMP_TARGETS) : $(TOOLS_PTADUMP_OBJS) $(TOOLS_PTADUMP_MOBJS) src/libsteroids.a
+	@echo "LD  $@"
+	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 $(RT_TARGETS) : $(RT_OBJS) $(RT_MOBJS)
 	@echo "LD  $@"
@@ -69,6 +72,10 @@ g gdb : $(TARGETS)
 c cgdb : $(TARGETS)
 	cgdb ./tools/test/main
 
+t test : pta.test
+
+pta.test : $(TOOLS_PTADUMP_MOBJS) $(patsubst %.c,%.ll,$(wildcard tests/pta/*.c))
+	export PATH=$$PATH:./tools/pta-dump; cd ./tests/pta; ./run.sh
 
 vars :
 	@echo "CC       $(CC)"
@@ -119,6 +126,7 @@ dist : compile
 	mkdir dist/lib
 	mkdir dist/lib/stid
 	cp tools/stid/main dist/bin/stid
+	cp tools/pta-dump/pta-dump dist/bin/pta-dump
 	cp src/*.a dist/lib/stid
 	cp src/*.so dist/lib/stid
 
