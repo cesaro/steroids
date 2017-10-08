@@ -10,54 +10,58 @@
 #include <iterator>
 
 #include "pta/fixpoint.hh"
+#include "pta/worklist.hh"
 #include "pta/memory-node.hh"
 #include "misc.hh"
+#include "verbosity.h"
 
 namespace stid {
 namespace pta {
 
-State &Fixpoint::eval ()
-{
-   DEBUG ("stid: pta: eval: module: %d globals", m.size());
-   for (const llvm::Function &f : m)
-   {
-      if (f.getName() != "main16") continue;
-      eval_function (f);
-      break;
-   }
-
-   return state;
-}
-
 void Fixpoint::fill_frontier_bfs (const llvm::Function &f, Frontier &frontier)
 {
-   std::deque<const llvm::BasicBlock*> bbfrontier;
+   Worklist<const llvm::BasicBlock*> bblist;
    std::set<const llvm::BasicBlock*> visited;
    const llvm::BasicBlock *bb;
 
-   frontier.clear ();
-   bbfrontier.push_back (&f.getEntryBlock());
-   while (!bbfrontier.empty())
+   ASSERT (frontier.empty());
+   bblist.push (&f.getEntryBlock());
+   while (!bblist.empty())
    {
       // pop a BB from the BB frontier and mark it as visited
-      bb = bbfrontier.front();
-      bbfrontier.pop_front();
+      bb = bblist.pop();
+      DEBUG ("stid: pta: eval: fun: bbs: pop %s", str2(bb).c_str());
       if (visited.find (bb) != visited.end ()) continue;
       visited.insert (bb);
 
       // insert all instructions from the BB into the frontier
-      for (const llvm::Instruction &in : *bb) frontier.push_back (&in);
+      for (const llvm::Instruction &in : *bb) frontier.push (&in);
 
       // push the unvisited BB successors
       for (const llvm::BasicBlock *nbb : llvm::successors(bb))
          if (visited.find (nbb) == visited.end ())
-            bbfrontier.push_back (nbb);
+         {
+            bool b = bblist.push (nbb);
+            DEBUG ("stid: pta: eval: fun: bbs: push %s: %s",
+               str2(nbb).c_str(), b ? "added" : "skipped");
+         }
    }
 
 #ifdef CONFIG_DEBUG
    for (const llvm::Instruction *in : frontier)
       llvm::dbgs() << *in << "\n";
 #endif
+}
+
+State &Fixpoint::run ()
+{
+   DEBUG ("stid: pta: eval: module: %d globals", m.size());
+
+   ASSERT (state.valuation[root].size() <= 1);
+   state.valuation[root].add (state.memory[root]);
+   eval_function (root);
+
+   return state;
 }
 
 bool Fixpoint::eval_function (const llvm::Function &f)
@@ -77,8 +81,7 @@ bool Fixpoint::eval_function (const llvm::Function &f)
    while (!frontier.empty())
    {
       // pop an instruction from the frontier
-      in = frontier.front();
-      frontier.pop_front();
+      in = frontier.pop();
 
       // evaluate it and skip the evaluation of the users if the evaluation
       // result was already subsumed in the state
@@ -92,8 +95,9 @@ bool Fixpoint::eval_function (const llvm::Function &f)
       for (const llvm::Use &use : in->uses())
       {
          in2 = llvm::cast <const llvm::Instruction> (use.getUser());
-         DEBUG ("stid: pta: eval: fun: pushing %s", str(in2).c_str());
-         frontier.push_back (in2);
+         bool b = frontier.push (in2);
+         DEBUG ("stid: pta: eval: fun: push %s: %s",
+            str(in2).c_str(), b ? "added" : "skipped");
       }
    }
    return false; // arbitrayr

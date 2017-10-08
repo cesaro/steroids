@@ -105,12 +105,22 @@ public :
    /// this class, enforces this constraint.
    bool operator== (const MemoryNode &other) { return this == &other; }
 
-   void print(llvm::raw_ostream &s, unsigned indent=0, bool withsucc=true) const;
+   void print (llvm::raw_ostream &s, const std::string &pref = "",
+      bool showsuc = true) const;
    void dump () const;
+
+private:
+   void print_oneline(llvm::raw_ostream &os, const std::string &pref) const;
 };
 
 llvm::raw_ostream &operator<< (llvm::raw_ostream &os, MemoryNode::Type t);
-llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const MemoryNode &n);
+
+static inline
+llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const MemoryNode &n)
+{
+   n.print (os);
+   return os;
+}
 
 } // pta
 } // stid

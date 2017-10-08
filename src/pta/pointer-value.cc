@@ -8,19 +8,18 @@
 namespace stid {
 namespace pta {
 
-llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const PointerValue &v)
-{
-   v.print (os);
-   return os;
-}
-
-void PointerValue::print(llvm::raw_ostream &os) const
+void PointerValue::print(llvm::raw_ostream &os, const std::string &prefix) const
 {
    ASSERT (ptr);
-   os << "Pointer \"" << *ptr << "\" may point to " << size() << " objects:\n";
+   os << prefix;
+   os << "Pointer '";
+   ptr->printAsOperand (os);
+   os << "' may point to " << size() << " objects";
+   if (size()) os << ":";
+   os << "\n";
    for (const MemoryNode *n : succ)
    {
-      n->print (os, 2, false);
+      n->print (os, prefix + " ", false);
    }
 }
 

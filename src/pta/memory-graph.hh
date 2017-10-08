@@ -62,6 +62,12 @@ public:
    /// call to malloc()
    MemoryNode *operator[] (const llvm::Value *);
 
+   /// Same as above but receives a reference instead of a pointer
+   MemoryNode *operator[] (const llvm::Value &v)
+   {
+      return operator[] (&v);
+   }
+
    // Return the unique memory node of type Top, Invalid, or Nullptr
    MemoryNode *top () { return _top; }
    MemoryNode *nullptr_ () { return _nullptr; }
@@ -71,7 +77,12 @@ public:
    void dump () const;
 };
 
-llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const MemoryGraph &g);
+static inline
+llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const MemoryGraph &g)
+{
+   g.print (os);
+   return os;
+}
 
 #if 0
    /// An iterator through the list of nodes in the map.

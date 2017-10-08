@@ -1,5 +1,8 @@
 
 #include "llvm/IR/Value.h"
+#include "llvm/IR/Instruction.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Function.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Debug.h"
 
@@ -16,13 +19,13 @@ llvm::raw_ostream &operator<< (llvm::raw_ostream &os, MemoryNode::Type t)
       os << "Function";
       break;
    case MemoryNode::Type::GlobalVariable :
-      os << "Global-variable";
+      os << "Global location";
       break;
    case MemoryNode::Type::StackVariable :
-      os << "Stack-variable";
+      os << "Stack location";
       break;
    case MemoryNode::Type::HeapVariable :
-      os << "Heap-variable";
+      os << "Heap location";
       break;
    case MemoryNode::Type::Top :
       os << "Top";
@@ -37,26 +40,38 @@ llvm::raw_ostream &operator<< (llvm::raw_ostream &os, MemoryNode::Type t)
    return os;
 }
 
-llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const MemoryNode &n)
+void MemoryNode::print_oneline (llvm::raw_ostream &os,
+   const std::string &pref) const
 {
-   n.print (os);
-   return os;
+   os << pref << "Loc " << this << ": " << type;
+   if (llvm_value)
+   {
+      if (type == Type::Function)
+         os << " '" << llvm_value->getName() << "'";
+      else if (type != Type::GlobalVariable)
+      {
+         auto in = llvm::cast<const llvm::Instruction>(llvm_value);
+         os << "," << *llvm_value << " at fun '";
+         os << in->getParent()->getParent()->getName() << "'";
+      }
+      else
+         os << ", " << *llvm_value;
+   }
+   os << "; stores " << size() << " pointers";
 }
 
-void MemoryNode::print(llvm::raw_ostream &os, unsigned idt, bool withsucc) const
+void MemoryNode::print (llvm::raw_ostream &os, const std::string &pref,
+   bool showsuc) const
 {
-   os.indent(idt) << "Nod " << this;
-   os << ": ty " << type;
-   if (llvm_value)
-      os << ", val \"" << *llvm_value << "\"";
-   os << ", points to " << size() << " objects";
-   os << (size() and withsucc ? ":" : "") << "\n";
-   if (withsucc)
+   print_oneline (os, pref);
+   os << (size() and showsuc ? ":" : "") << "\n";
+   if (showsuc)
    {
       for (const MemoryNode *n : succ)
       {
-         os.indent(idt) << " -> ";
-         n->print (os, idt, false);
+         os << pref << " -> ";
+         n->print_oneline (os, "");
+         os << "\n";
       }
    }
 }

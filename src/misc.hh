@@ -26,9 +26,10 @@ std::string quoted_str (const char * str);
 
 void print_type (llvm::Type *t, std::string &s);
 void print_value (const llvm::Value *v, std::string &s);
-void print_value_as_operand (llvm::Value *v, std::string &s);
+void print_value_as_operand (const llvm::Value *v, std::string &s);
 void dump_ll (const llvm::Module *m, const char *filename);
 
 std::string str (const llvm::Value *v);
+std::string str2 (const llvm::Value *v);
 
 #endif

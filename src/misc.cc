@@ -91,7 +91,7 @@ void print_value (const llvm::Value *v, std::string &s)
    buff.flush ();
 }
 
-void print_value_as_operand (llvm::Value *v, std::string &s)
+void print_value_as_operand (const llvm::Value *v, std::string &s)
 {
    llvm::raw_string_ostream buff (s);
    v->printAsOperand (buff);
@@ -102,6 +102,13 @@ std::string str (const llvm::Value *v)
 {
    std::string s;
    print_value (v, s);
+   return s;
+}
+
+std::string str2 (const llvm::Value *v)
+{
+   std::string s;
+   print_value_as_operand (v, s);
    return s;
 }
 

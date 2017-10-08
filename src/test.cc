@@ -497,11 +497,12 @@ void test7 ()
       return;
    }
 
-   pta::Fixpoint fp (*m);
+   llvm::Function *f = m->getFunction ("main16");
+   ASSERT (f);
 
-   pta::State &s = fp.eval();
-   s.memory.dump ();
-   s.valuation.dump ();
+   pta::Fixpoint fp (*f);
+   pta::State &s = fp.run ();
+   s.dump();
 }
 
 } // namespace

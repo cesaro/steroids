@@ -10,17 +10,11 @@
 namespace stid {
 namespace pta {
 
-llvm::raw_ostream &operator<< (llvm::raw_ostream &s, const PointerValuation &v)
-{
-   v.print (s);
-   return s;
-}
-
 void PointerValuation::print (llvm::raw_ostream &os) const
 {
    os << "== begin pointer valuation ==\n";
    os << "* " << map.size() << " pointers\n";
-   for (const Map::value_type &kv : map) os << kv.second;
+   for (const Map::value_type &kv : map) kv.second.print (os);
    os << "== end pointer valuation ==\n";
 }
 

@@ -35,12 +35,7 @@ std::set<NameType> _malloc_funs = {
    {"malloc", "void*(i64)"}
 };
 
-llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const MemoryGraph &g)
-{
-   g.print (os);
-   return os;
-}
-
+#if 0
 bool MemoryGraph::find_type (const llvm::Value *v, MemoryNode::Type &t)
 {
    const llvm::Function *f;
@@ -83,6 +78,7 @@ bool MemoryGraph::find_type (const llvm::Value *v, MemoryNode::Type &t)
 
    return false;
 }
+#endif
 
 MemoryNode *MemoryGraph::new_node (const llvm::Value *v)
 {
@@ -185,8 +181,8 @@ void MemoryGraph::print (llvm::raw_ostream &os) const
    os << "== begin memory graph ==\n";
    os << "* " << nodes.size() << " nodes, ";
    os << map.size() << " mapped values\n";
-   for (const MemoryNode &n : nodes) os << n;
-   os << "== begin memory graph ==\n";
+   for (const MemoryNode &n : nodes) n.print (os);
+   os << "== end memory graph ==\n";
 }
 
 void MemoryGraph::dump () const

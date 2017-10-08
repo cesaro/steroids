@@ -10,6 +10,7 @@
 #include <deque>
 
 #include "pta/state.hh"
+#include "pta/worklist.hh"
 
 namespace stid {
 namespace pta {
@@ -17,15 +18,16 @@ namespace pta {
 class Fixpoint
 {
 public:
-   Fixpoint (const llvm::Module &m) :
-      m (m),
-      state ()
+   Fixpoint (const llvm::Function &root) :
+      m (*root.getParent()),
+      root (root),
+      state (root)
    {}
 
-   State &eval ();
+   State &run ();
 
 private:
-   typedef std::deque<const llvm::Instruction*> Frontier;
+   typedef Worklist<const llvm::Instruction*> Frontier;
    void fill_frontier_bfs (const llvm::Function &f, Frontier &frontier);
 
    bool eval_function (const llvm::Function &f);
@@ -44,6 +46,7 @@ private:
    bool eval_instruction_unimplemented (const llvm::Instruction *in);
 
    const llvm::Module &m;
+   const llvm::Function &root;
    State state;
 };
 
@@ -51,5 +54,3 @@ private:
 } // stid
 
 #endif
-
-

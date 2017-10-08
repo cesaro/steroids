@@ -57,11 +57,16 @@ public :
    /// Two pointer valuations are equal if they point to the same memory objects
    bool operator== (const PointerValue &other) { return succ == other.succ; }
 
-   void print(llvm::raw_ostream &s) const;
+   void print(llvm::raw_ostream &s, const std::string &pref = "") const;
    void dump () const;
 };
 
-llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const PointerValue &v);
+static inline
+llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const PointerValue &v)
+{
+   v.print (os);
+   return os;
+}
 
 } // pta
 } // stid

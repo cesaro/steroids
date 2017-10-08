@@ -736,7 +736,7 @@ int main15 ()
    return 0;
 }
 
-int main16 ()
+int *main16 (int a, float f, int *pp, const char *str)
 {
    int x;
    int y;

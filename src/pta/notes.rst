@@ -12,8 +12,20 @@ x check #ifndefs
 x can I implement the fix point by adding the uses to the work list instead of
   the next one? YES!
 x implement subsumption check, NodeBase::add() returns null
-- improve the work list to avoid inserting duplicates
-- implemnt the transformers
+x improve the work list to avoid inserting duplicates; deque + set
+x annotated bitcode output
+- Fixpoint need to evaluate a function, not a module!
+- pta-dump file.llvm
+- test folder + Makefile changes
+- implemnt branches, phi, select
+- test ifs
+- test loops
+- test with ints
+- implemnt gep, intoptr/bitcast
+- test arrays, structs
+- test mallocs
+- how to do realloc? free? which others?
+- design support for function calls / rets
 
 
 Memory Objects
