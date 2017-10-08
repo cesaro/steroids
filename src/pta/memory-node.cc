@@ -16,13 +16,13 @@ llvm::raw_ostream &operator<< (llvm::raw_ostream &os, MemoryNode::Type t)
       os << "Function";
       break;
    case MemoryNode::Type::GlobalVariable :
-      os << "GlobalVariable";
+      os << "Global-variable";
       break;
-   case MemoryNode::Type::Alloca :
-      os << "Alloca";
+   case MemoryNode::Type::StackVariable :
+      os << "Stack-variable";
       break;
-   case MemoryNode::Type::Malloc :
-      os << "Malloc";
+   case MemoryNode::Type::HeapVariable :
+      os << "Heap-variable";
       break;
    case MemoryNode::Type::Top :
       os << "Top";
@@ -46,9 +46,9 @@ llvm::raw_ostream &operator<< (llvm::raw_ostream &os, const MemoryNode &n)
 void MemoryNode::print(llvm::raw_ostream &os, unsigned idt, bool withsucc) const
 {
    os.indent(idt) << "Nod " << this;
-   os << ": ty " << _type;
-   if (_value)
-      os << ", val \"" << *_value << "\"";
+   os << ": ty " << type;
+   if (llvm_value)
+      os << ", val \"" << *llvm_value << "\"";
    os << ", points to " << size() << " objects";
    os << (size() and withsucc ? ":" : "") << "\n";
    if (withsucc)

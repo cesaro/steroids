@@ -3,7 +3,7 @@
 Pointer Analysis
 ================
 
-This folder contains an inter-procedural, flow-sensitive points-to analysis.
+This folder contains an inter-procedural, flow-insensitive points-to analysis.
 This document describes the goals of the analysis, how to use it as well as how
 it is implemented.
 
@@ -84,14 +84,15 @@ xor               nop
 
 // Memory operators...
 alloca(ty)        let m(v) = n
-                  assert (suc(n) = {Inval})
+                  if ty == pointer: assert (suc(n) == {Inval})
+                  if ty != pointer: assert (suc(n) == empty)
                   assert (val(v) is empty or {n})
                   set val(v) = {n}
-load(ty, addr)    if loaded ty != ptr, then nop;
-                  else, for any n \in val(addr) add suc(n) to val(v)
-store(ty,v,addr)  if stored type != ptr, then nop
-                  else for each node != Inval \in val(addr) add outgoing edges to G
-                  pointing to each of the nodes in suc(val(v))
+load(ty, ptr)     if loaded ty != pointer, then nop;
+                  else, for any n \in val(ptr) add suc(n) to val(v)
+store(ty,v,ptr)   if stored type != pointer, then nop; else:
+                  for each n != Inval, Nullptr \in val(ptr)
+                     make n point to all nodes in val(v)
 getelementptr(ptr, i1, i2...)
                   add each node in val(ptr) to val(v)
 fence             nop

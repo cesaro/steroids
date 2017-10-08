@@ -172,7 +172,7 @@ bool Fixpoint::eval_instruction (const llvm::Instruction *in)
       return eval_instruction_load (llvm::cast<llvm::LoadInst>(in));
 
    case llvm::Instruction::Store :
-      return eval_instruction_store (in);
+      return eval_instruction_store (llvm::cast<llvm::StoreInst>(in));
 
    case llvm::Instruction::GetElementPtr :
       return eval_instruction_gep (in);
@@ -246,12 +246,14 @@ bool Fixpoint::eval_instruction (const llvm::Instruction *in)
 bool Fixpoint::eval_instruction_alloca (const llvm::AllocaInst *in)
 {
    bool subsumed;
-   MemoryNode *n = state.mem[in];
-   PointerValue &val = state.val[in];
+   MemoryNode *n = state.memory[in];
+   PointerValue &val = state.valuation[in];
 
-   ASSERT (n->llvm_value() == in);
-   ASSERT (n->pointsto(state.mem.invalid()));
-   ASSERT (n->size() == 1);
+   ASSERT (n->llvm_value == in);
+   if (in->getAllocatedType()->isPointerTy())
+      ASSERT (n->pointsto(state.memory.invalid()));
+   else
+      ASSERT (n->empty());
    ASSERT (val.ptr == in);
    ASSERT (val.size() <= 1); // empty set or singleton {n}
 
@@ -288,7 +290,7 @@ bool Fixpoint::eval_instruction_load (const llvm::LoadInst *in)
 bool Fixpoint::eval_instruction_nop (const llvm::Instruction *in)
 {
    DEBUG ("stid: pta: eval: instruction: nop");
-   return false;
+   return true;
 }
 
 bool Fixpoint::eval_instruction_phi (const llvm::Instruction *in)
@@ -301,9 +303,37 @@ bool Fixpoint::eval_instruction_ret (const llvm::Instruction *in)
    return false;
 }
 
-bool Fixpoint::eval_instruction_store (const llvm::Instruction *in)
+bool Fixpoint::eval_instruction_store (const llvm::StoreInst *in)
 {
-   return false;
+   const llvm::Value *value;
+   const llvm::Value *ptr;
+   bool subsumed = true;
+
+   value = in->getValueOperand();
+   ptr = in->getPointerOperand();
+
+   breakme ();
+
+   // if the value to store is not of pointer type, this is a nop and there is
+   // no need to evaluate the users
+   if (! value->getType()->isPointerTy()) DEBUG ("not ptr");
+   if (! value->getType()->isPointerTy()) return true;
+
+   PointerValue &ptrval = state.valuation[ptr];
+   PointerValue &valueval = state.valuation[value];
+
+   DEBUG ("ptrval before:");
+   for (auto *n : ptrval) n->dump ();
+   DEBUG ("valueval before:");
+   for (auto *n : valueval) n->dump ();
+
+   for (MemoryNode *written_nod : ptrval)
+      subsumed = written_nod->include (&valueval) && subsumed;
+
+   DEBUG ("ptrval after:");
+   for (auto *n : ptrval) n->dump ();
+
+   return subsumed;
 }
 
 bool Fixpoint::eval_instruction_unimplemented (const llvm::Instruction *in)

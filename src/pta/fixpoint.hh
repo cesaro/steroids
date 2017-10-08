@@ -39,7 +39,7 @@ private:
    bool eval_instruction_nop (const llvm::Instruction *in);
    bool eval_instruction_phi (const llvm::Instruction *in);
    bool eval_instruction_ret (const llvm::Instruction *in);
-   bool eval_instruction_store (const llvm::Instruction *in);
+   bool eval_instruction_store (const llvm::StoreInst *in);
    bool eval_instruction_va_arg (const llvm::Instruction *in);
    bool eval_instruction_unimplemented (const llvm::Instruction *in);
 

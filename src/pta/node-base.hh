@@ -47,6 +47,15 @@ public:
    {
       return !succ.insert(n).second;
    }
+
+   /// Adds every successor of \p n to the set of successors of this node.
+   /// \returns True iff every added node was already a successor of this node.
+   bool include (T *n)
+   {
+      bool already = true;
+      for (T *sn : *n) already = add (sn) && already;
+      return already;
+   }
 };
 
 } // pta

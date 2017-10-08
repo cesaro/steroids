@@ -10,8 +10,8 @@ namespace pta {
 
 struct State
 {
-   MemoryGraph mem;
-   PointerValuation val;
+   MemoryGraph memory;
+   PointerValuation valuation;
 
 #if 0
    void clear ()

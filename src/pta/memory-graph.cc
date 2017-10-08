@@ -63,7 +63,7 @@ bool MemoryGraph::find_type (const llvm::Value *v, MemoryNode::Type &t)
    }
    else if (llvm::isa<llvm::AllocaInst>(v))
    {
-      t = MemoryNode::Type::Alloca;
+      t = MemoryNode::Type::StackVariable;
       return true;
    }
    else if (auto c = llvm::dyn_cast<llvm::CallInst>(v))
@@ -76,7 +76,7 @@ bool MemoryGraph::find_type (const llvm::Value *v, MemoryNode::Type &t)
       if (_malloc_funs.find ({f->getName().str(), os.str()}) !=
          _malloc_funs.end())
       {
-         t = MemoryNode::Type::Malloc;
+         t = MemoryNode::Type::HeapVariable;
          return true;
       }
    }
@@ -107,15 +107,17 @@ MemoryNode *MemoryGraph::new_node (const llvm::Value *v)
       nodes.emplace_back (MemoryNode::Type::GlobalVariable, v);
       n = &nodes.back ();
    }
-   else if (llvm::isa<llvm::AllocaInst>(v))
+   else if (auto in = llvm::dyn_cast<llvm::AllocaInst>(v))
    {
-      // we create memory node of type Alloca, and initialize make it point to
-      // *the* single node of type Inval we have in the graph, as when the llvm
-      // instruction "alloca" allocates memory for a pointer, the initial value
-      // is garbage
-      nodes.emplace_back (MemoryNode::Type::Alloca, v);
+      // We create memory node of type Local. If the allocated type is a
+      // pointer, we make it point to *the* single node of type Inval we have in
+      // the graph, as when the llvm instruction "alloca" allocates memory for a
+      // pointer, the initial value is garbage. If it is not a pointer, then the
+      // set of successors remains empty.
+      nodes.emplace_back (MemoryNode::Type::StackVariable, v);
       n = &nodes.back ();
-      n->add (_invalid);
+      if (in->getAllocatedType()->isPointerTy())
+         n->add (_invalid);
    }
    else if (auto c = llvm::dyn_cast<llvm::CallInst>(v))
    {
@@ -127,7 +129,7 @@ MemoryNode *MemoryGraph::new_node (const llvm::Value *v)
       if (_malloc_funs.find ({f->getName().str(), os.str()}) !=
          _malloc_funs.end())
       {
-         nodes.emplace_back (MemoryNode::Type::Malloc, v);
+         nodes.emplace_back (MemoryNode::Type::HeapVariable, v);
          n = &nodes.back ();
       }
       else
