@@ -41,6 +41,9 @@ public:
    /// Returns true iff the set of successors is empty
    size_t empty() const { return succ.empty(); }
 
+   /// Removes all successors
+   void clear () { succ.clear (); }
+
    /// Adds one element to the set of successors.
    /// \returns True iff the added node was already there.
    bool add (T *n)

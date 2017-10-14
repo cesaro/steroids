@@ -56,7 +56,7 @@ static void __rt_debug_trace3 (uint8_t a, uint16_t v)
 
 static void __rt_debug_rdwr (uint8_t a, const void *addr, uint32_t size)
 {
-   return;
+   return; // FIXME - currently disabled
    uint64_t v;
    switch (size)
    {
@@ -285,7 +285,7 @@ void __rt_storeld (long double *addr, long double v)
 //
 void __rt_store_pre (const void *addr, uint32_t size)
 {
-   return; // FIXME - we currently disable this
+   if (! do_load_store) return;
    uint8_t a = __rt_rdwr_get_action (0, size);
    __rt_log_action (a);
    __rt_log_addr (addr);
@@ -294,7 +294,7 @@ void __rt_store_pre (const void *addr, uint32_t size)
 
 void __rt_store_post (const void *addr, uint32_t size)
 {
-   return; // FIXME - we currently disable this
+   if (! do_load_store) return;
    __rt_log_rdwr_val (addr, size);
    uint8_t a = __rt_rdwr_get_action (0, size);
    __rt_debug_rdwr (a, addr, size);
@@ -305,7 +305,7 @@ void __rt_store_post (const void *addr, uint32_t size)
 //
 void __rt_load_pre   (const void *addr, uint32_t size)
 {
-   return; // FIXME - we currently disable this
+   if (! do_load_store) return;
    uint8_t a = __rt_rdwr_get_action (1, size);
    __rt_log_action (a);
    __rt_log_addr (addr);
@@ -314,8 +314,7 @@ void __rt_load_pre   (const void *addr, uint32_t size)
 
 void __rt_load_post  (const void *addr, uint32_t size)
 {
-   return; // FIXME - we currently disable this
-   __rt_log_rdwr_val (addr, size);
+   if (! do_load_store) return;
    uint8_t a = __rt_rdwr_get_action (1, size);
    __rt_debug_rdwr (a, addr, size);
 }
@@ -397,10 +396,9 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
    ASSERT (sizeof (double) == 8);
    ASSERT (sizeof (long double) == 16);
 
-   // our little tribute to how everything started ... ;)
-
    if (rt->flags.verbose)
    {
+      // our little tribute to how everything started ... ;)
       PRINT ("stid: rt: main: I feel fantaastic... I feel the PUMP!");
       PRINT ("stid: rt: main: guest's address space:");
       __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");

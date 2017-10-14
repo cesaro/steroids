@@ -47,7 +47,7 @@ bool Instrumenter::instrument (llvm::Module &m, Tlsoffsetmap &tlsoffsetmap)
    do_tls_variables (tlsoffsetmap);
 
 #if 0
-   DEBUG ("saving to before.ll...");
+   DEBUG ("saving to after-tls.ll...");
    dump_ll (&m, "after-tls.ll");
 #endif
    // instrument every function
@@ -66,22 +66,13 @@ bool Instrumenter::instrument (llvm::Module &m, Tlsoffsetmap &tlsoffsetmap)
    }
 
 #if 0
-   DEBUG ("saving to after.ll...");
+   DEBUG ("saving to after-instr.ll...");
    dump_ll (&m, "after-instr.ll");
 #endif
 
-
    // check that we didn't do anything stupid
 #ifdef CONFIG_DEBUG
-   DEBUG ("stid: instrumenter: verifying module after instrumentation ...");
-#if 0
-   for (auto &f : m) 
-   {
-      if (f.isDeclaration()) continue;
-      llvm::outs() << " verifying fun " << f.getName() << "\n";
-      llvm::verifyFunction (f, &llvm::outs());
-   }
-#endif
+   PRINT ("stid: instrumenter: verifying module after instrumentation ...");
    llvm::verifyModule (m, &llvm::outs());
 #endif
    DEBUG ("stid: instrumenter: done");

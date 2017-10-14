@@ -200,7 +200,7 @@ bool Fixpoint::eval_instruction (const llvm::Instruction *in)
       return eval_instruction_store (llvm::cast<llvm::StoreInst>(in));
 
    case llvm::Instruction::GetElementPtr :
-      return eval_instruction_gep (in);
+      return eval_instruction_gep (llvm::cast<llvm::GetElementPtrInst>(in));
 
    case llvm::Instruction::Fence :
       return eval_instruction_nop (in);
@@ -223,10 +223,10 @@ bool Fixpoint::eval_instruction (const llvm::Instruction *in)
       return eval_instruction_nop (in);
 
    case llvm::Instruction::IntToPtr :
-      return eval_instruction_inttoptr (in);
+      return eval_instruction_inttoptr (llvm::cast<llvm::IntToPtrInst>(in));
 
    case llvm::Instruction::BitCast :
-      return eval_instruction_bitcast (in);
+      return eval_instruction_bitcast (llvm::cast<llvm::BitCastInst>(in));
 
    case llvm::Instruction::AddrSpaceCast :
       return eval_instruction_unimplemented (in);
@@ -287,10 +287,30 @@ bool Fixpoint::eval_instruction_alloca (const llvm::AllocaInst *in)
    return subsumed;
 }
 
-bool Fixpoint::eval_instruction_bitcast (const llvm::Instruction *in)
+bool Fixpoint::eval_instruction_bitcast (const llvm::BitCastInst *in)
 {
-   ASSERT (0);
-   return true;
+   bool subsumed;
+
+   // if the result type is not a pointer, this is a nop
+   if (! in->getType()->isPointerTy()) return true;
+
+   ASSERT (in->getType() == in->getDestTy());
+
+   // if the result type is a pointer but the original type is not, then we add
+   // Top; the evaluation was is subsumed iff Top was already (in) the set of
+   // values for the pointer
+   if (! in->getSrcTy()->isPointerTy())
+   {
+      PointerValue &val = state.valuation[in];
+      subsumed = val.contains (state.memory.top());
+      val.clear ();
+      val.add (state.memory.top());
+      return subsumed;
+   }
+
+   // both the source and destination types are pointer types, merge the value
+   // of the source pointer to the destination pointer
+   return state.valuation[in].merge (state.valuation[in->getOperand(0)]);
 }
 
 bool Fixpoint::eval_instruction_call (const llvm::Instruction *in)
@@ -299,16 +319,18 @@ bool Fixpoint::eval_instruction_call (const llvm::Instruction *in)
    return true;
 }
 
-bool Fixpoint::eval_instruction_gep (const llvm::Instruction *in)
+bool Fixpoint::eval_instruction_gep (const llvm::GetElementPtrInst *in)
 {
-   ASSERT (0);
-   return true;
+   ASSERT (in->getPointerOperand()->getType()->isPointerTy());
+   // a GEP instruction returns a pointer within the same memory block as the
+   // argument it takes
+   return state.valuation[in].merge (state.valuation[in->getPointerOperand()]);
 }
 
-bool Fixpoint::eval_instruction_inttoptr (const llvm::Instruction *in)
+bool Fixpoint::eval_instruction_inttoptr (const llvm::IntToPtrInst *in)
 {
-   ASSERT (0);
-   return true;
+   // conversion from integer to pointer yields a valid unknown memory location
+   return state.valuation[in].add (state.memory.top());
 }
 
 bool Fixpoint::eval_instruction_load (const llvm::LoadInst *in)

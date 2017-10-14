@@ -65,6 +65,7 @@ static struct rt * const rt; // stored in the Executor object, in the host
 static const uint64_t memstart;
 static const uint64_t memend;
 static const uint64_t evend;
+static const uint64_t do_load_store;
 
 uint64_t __rt_force_memstart_present ()
 {

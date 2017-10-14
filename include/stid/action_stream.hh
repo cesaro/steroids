@@ -43,8 +43,8 @@ public:
 private:
    action_stream_itt (const action_streamt &s, bool begin);
 
-   // a copy of the relevantthat in the "struct eventrace" in the stream, this
-   // will save 1 memory access to get the info during iteration
+   // a copy of the relevant information present the "struct eventrace" in the
+   // stream, this will save 1 memory access to get the info during iteration
    struct {
       uint8_t  *evptr;
       uint64_t *addrptr;

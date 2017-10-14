@@ -17,12 +17,13 @@ include defs.mk
 
 .PHONY: fake all g test clean distclean prof dist compile tags run
 
-all : compile test.pta
+all : compile run
 
 compile: $(TARGETS)
 
 r run: compile input.ll
-	./tools/pta-dump/pta-dump tests/pta/alloca1.ll
+	#./tools/pta-dump/pta-dump tests/pta/alloca1.ll
+	./tools/test/main
 
 input.ll : program.ll rt/rt.bc
 	llvm-link-$(LLVMVERS) -S $^ -o $@

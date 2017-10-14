@@ -25,7 +25,7 @@ void _rt_abort ()
    STRACE (proc, "abort()");
 
    ALERT ("Function abort() was called, but current support for abort() is very limited");
-   ALERT ("Resorting to pthread_exit(), you might experience unexpected errors from this point on");
+   ALERT ("Doing pthread_exit() instead of exit(), you might experience unexpected errors from this point on");
 
    TRACE0 (RT_ABORT);
    _rt_pthread_exit (0);

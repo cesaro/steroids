@@ -35,10 +35,10 @@ private:
    bool eval_function_allinstr (const llvm::Function &f, Frontier &front);
    bool eval_instruction (const llvm::Instruction *in);
    bool eval_instruction_alloca (const llvm::AllocaInst *in);
-   bool eval_instruction_bitcast (const llvm::Instruction *in);
+   bool eval_instruction_bitcast (const llvm::BitCastInst *in);
    bool eval_instruction_call (const llvm::Instruction *in);
-   bool eval_instruction_gep (const llvm::Instruction *in);
-   bool eval_instruction_inttoptr (const llvm::Instruction *in);
+   bool eval_instruction_gep (const llvm::GetElementPtrInst *in);
+   bool eval_instruction_inttoptr (const llvm::IntToPtrInst *in);
    bool eval_instruction_load (const llvm::LoadInst *in);
    bool eval_instruction_nop (const llvm::Instruction *in);
    bool eval_instruction_phi (const llvm::PHINode *in);

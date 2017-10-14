@@ -196,6 +196,7 @@ void test3 ()
    conf.memsize = 1 << 30; // 1G
    conf.defaultstacksize = 16 << 20; // 16M
    conf.tracesize = 8 << 20; // 8M events (x 11 bytes per event)
+   // FIXME: fill other fields of conf
    Executor e (std::move (mod), conf);
 
    // write instrumented code to file, for debugging purposes
@@ -302,6 +303,7 @@ void test5 ()
    conf.defaultstacksize = 16 << 20; // 16M
    conf.tracesize = 16 << 20; // 16M events (x 11 bytes per event)
    conf.strace.fs = 1;
+   // FIXME: fill other fields of conf
    Executor e (std::move (mod), conf);
 
    // write instrumented code to file, for debugging purposes
@@ -385,6 +387,8 @@ void test6 ()
    conf.strace.malloc = 1;
    conf.strace.proc = 1;
    conf.strace.others = 1;
+
+   conf.do_load_store = false;
 
    Executor e (std::move (mod), conf);
 

@@ -21,8 +21,22 @@ x implemnt branches, phi, select
 x test with ints
 x test ifs
 x test loops
-- implemnt gep, intoptr/bitcast
+x implemnt gep, intoptr/bitcast
+
+CONTINUAR AQUI:
+
+x ya tengo la instrumentacion de ld/st funcionando; comprender lo que guarda
+- probar que pasa con dos o tres bench de tabla 1 y con 1 o 2 de los debian
+- si es necesario optimizarla un poco y asegurarme de que guarda "lo minimo";
+  por ejemplo, el valor de la posicion memoria no lo necesito par data races (si
+  para cutoff); tampoco necesito la verificacion oom
+
+- CONTINUAR AQUI: implementar Fixpoint::type_contains_pointers
+- inicializar alloca correctamente en eval_instr_alloca
+- probar de nuevo con gep3.ll
+- test gep, intoptr, bitcast
 - test arrays, structs
+- implement malloc
 - test mallocs
 - how to do realloc? free? which others?
 - design support for function calls / rets

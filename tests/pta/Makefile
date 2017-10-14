@@ -5,7 +5,10 @@ CFLAGS:=-std=c11 -pthread
 
 LL=$(patsubst %.c,%.ll,$(wildcard *.c))
 
-all : $(LL)
+all : run
+
+run : $(LL)
+	./run.sh
 
 clean :
 	rm -f $(LL)

@@ -245,9 +245,12 @@ void Executor::initialize_and_instrument_rt ()
 
    // similarly for the other const global variables
    std::vector<std::pair<const char*, uint64_t>> pairs =
-      { std::make_pair ("memstart", (uint64_t) rt.mem.begin),
-        std::make_pair ("memend", (uint64_t) rt.mem.end),
-        std::make_pair ("evend", (uint64_t) rt.trace.ev.end) };
+   {
+      std::make_pair ("memstart", (uint64_t) rt.mem.begin),
+      std::make_pair ("memend", (uint64_t) rt.mem.end),
+      std::make_pair ("evend", (uint64_t) rt.trace.ev.end),
+      std::make_pair ("do_load_store", (uint64_t) conf.do_load_store)
+   };
    for (auto &p : pairs)
    {
       g = m->getGlobalVariable (p.first, true);
@@ -256,7 +259,7 @@ void Executor::initialize_and_instrument_rt ()
             (llvm::Type::getInt64Ty (ctx), p.second));
       s.clear();
       print_value (g, s);
-      TRACE ("stid: executor: - %s", s.c_str());
+      TRACE ("stid: executor: %s", s.c_str());
    }
 }
 
@@ -438,7 +441,7 @@ void Executor::detex_apply ()
    // srandom
    // 
 
-   // if this is the first call, we save the program data segments for tuture
+   // if this is the first call, we save the program data segments for future
    // re-executions of the guest; if it is not, we restore the data segments
    // from the first execution
    if (detex.dataseg.size() == 0)
@@ -462,12 +465,15 @@ void Executor::detex_apply ()
    
    // restart optget(3)
    optind = 1;
+   // FIXME: which other libc variables we need to restart?
 
    //DEBUG ("stid: executor: detex: done");
 }
 
 void Executor::run ()
 {
+   std::string s;
+
    // reinitialize the action stream
    restart_trace ();
 
@@ -479,29 +485,28 @@ void Executor::run ()
    //DEBUG ("stid: executor: checking argv, argp");
    if (argv.size() == 0)
    {
-      std::string s = fmt ("stid: executor: argv needs to contain at least one argument");
+      s = "stid: executor: argv needs to contain at least one argument";
       throw std::runtime_error (s);
    }
    if (argv[0] == 0)
    {
-      std::string s = fmt ("stid: executor: argv[0] cannot be a null pointer");
+      s = "stid: executor: argv[0] cannot be a null pointer";
       throw std::runtime_error (s);
    }
    if (environ.size() == 0)
    {
-      std::string s = fmt ("stid: executor: environ needs to contain at least one entry");
+      s = "stid: executor: environ needs to contain at least one entry";
       throw std::runtime_error (s);
    }
    if (environ.back() != 0)
    {
-      std::string s = fmt ("stid: executor: environ: last entry should be a null pointer");
+      s = "stid: executor: environ: last entry should be a null pointer";
       throw std::runtime_error (s);
    }
 
    // run the user program!!
    DEBUG ("stid: executor: starting guest execution");
    //DEBUG ("stid: executor: ====================================================");
-   breakme ();
    exitcode = entry (argv.size(), argv.data(), environ.data());
    //DEBUG ("stid: executor: ====================================================");
    //DEBUG ("stid: executor: guest execution terminated");

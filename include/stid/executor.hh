@@ -29,15 +29,18 @@ struct ExecutorConfig
    /// Size of the whole memory area used to hold the guest program, including
    /// the jitted code, data, bss, heap, and stacks of each thread.
    uint64_t memsize;
+
    /// Default size for the stack of each thread. The stack of the main guest thread is
    /// allocated on the highest portion of the memory area allocated for the
    /// guest. The stack of every other thread is allocated by the runtime
    /// using malloc(3), they are thus in the guest's heap.
    uint64_t defaultstacksize;
+
    /// Maximum number of actions that runtime will log during one execution of
    /// the guest.
    uint64_t tracesize;;
-   // Set to 0, 1, 2, or 3 to optimize as "opt -Oxx" would do
+
+   /// Set to 0, 1, 2, or 3 to optimize as "opt -Oxx" would do
    unsigned optlevel;
 
    // flags 
@@ -54,6 +57,21 @@ struct ExecutorConfig
       unsigned proc : 1;      /// process related
       unsigned others : 1;    /// all others
    } strace;
+
+   /// True iff the runtime shall record actions for load and store llvm
+   /// instructions
+   bool do_load_store;
+
+   /// Constructor with default sensible values
+   ExecutorConfig () :
+      memsize (128 * 1024  * 1024),
+      defaultstacksize (1024 * 1024),
+      tracesize (1024 * 1024),
+      optlevel (1),
+      flags {0, 1},
+      strace {0, 0, 0, 0},
+      do_load_store (false)
+   {}
 };
 
 class Executor

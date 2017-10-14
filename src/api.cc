@@ -131,6 +131,18 @@ int stid_load_bytecode (struct stid_handle *s, const char *path)
    conf.memsize = 128 << 20;
    conf.defaultstacksize = 8 << 20;
    conf.tracesize = 16 << 20;
+   conf.optlevel = 1;
+
+   conf.flags.dosleep = 0;
+   conf.flags.verbose = 0;
+
+   conf.strace.fs = 0;
+   conf.strace.pthreads = 0;
+   conf.strace.malloc = 0;
+   conf.strace.proc = 0;
+   conf.strace.others = 0;
+
+   conf.do_load_store = false;
 
    DEBUG ("stid: load-bytecode: creating a bytecode executor...", s, path);
    try {
@@ -472,7 +484,7 @@ int stid_test ()
 #endif
 
    //// for anyone else
-   test7 ();
+   test6 ();
 
 #if 0
    printf ("stid_test: I feel fantastic!\n");

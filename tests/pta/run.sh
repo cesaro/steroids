@@ -18,7 +18,11 @@ set -x
 #pta-dump inval1.ll
 
 #pta-dump fixpoint1.ll
-pta-dump fixpoint2.ll
+#pta-dump fixpoint2.ll
+
+#pta-dump gep1.ll
+#pta-dump gep2.ll
+pta-dump gep3.ll
 
 #WILDCARD=*.ll
 #

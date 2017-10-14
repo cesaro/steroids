@@ -24,9 +24,12 @@ action_stream_itt::action_stream_itt (const action_streamt &s, bool begin)
 action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
 {
    uint8_t a = *trace.evptr;
+
+#define ENABLE_LOAD_STORE_CALLS 1
+
    switch (a)
    {
-#if 0 // all of these are currently disabled
+#if ENABLE_LOAD_STORE_CALLS
    // loads, stores, malloc, alloca, mutex-init: 2 arguments, addr & value
    case RT_RD8:
    case RT_RD16:
@@ -67,7 +70,7 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
    case RT_MTXUNLK:
       trace.addrptr++;
       break;
-#if 0 // all of these are currently disabled
+#if ENABLE_LOAD_STORE_CALLS
    // less common RD / WR events: 1 address and multiple words (2-31)
    case RT_RD128:
    case RT_WR128:
@@ -75,6 +78,7 @@ action_stream_itt &action_stream_itt::action_stream_itt::operator++ ()
       trace.valptr += 2;
       break;
 #endif
+#undef ENABLE_LOAD_STORE_CALLS
    default:
       if (RT_IS_MULTIW_RDWR (a))
       {
