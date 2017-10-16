@@ -4,6 +4,9 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <pthread.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -2,6 +2,8 @@
 #ifndef __STID_REPLAY_HH_
 #define __STID_REPLAY_HH_
 
+#include <vector>
+
 #include "../../rt/rt.h"
 
 namespace stid {
