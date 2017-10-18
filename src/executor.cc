@@ -237,11 +237,15 @@ void Executor::initialize_and_instrument_rt ()
    llvm::Type *t;
    std::string s;
    g = m->getGlobalVariable ("rt", true);
-   t = m->getTypeByName ("struct.rt");
-   if (!g or !t) throw std::runtime_error ("Executor: input missing runtime: no struct.rt type found");
+   if (!g)
+   {
+      s = "Executor: input missing runtime: global variable 'rt' not found";
+      throw std::runtime_error (s);
+   }
+   t = llvm::cast<llvm::PointerType>(g->getType())->getElementType();
    g->setInitializer (ptr_to_llvm (&rt, t));
    print_value (g, s);
-   TRACE ("stid: executor: - %s", s.c_str());
+   TRACE ("stid: executor: %s", s.c_str());
 
    // similarly for the other const global variables
    std::vector<std::pair<const char*, uint64_t>> pairs =
@@ -372,7 +376,7 @@ void Executor::jit_compile ()
    rt.heap.end = rt.t0stack.begin;
    rt.heap.size = rt.heap.end - rt.heap.begin;
 
-   INFO ("stid: executor: ready: %zu%s total memory, "
+   INFO ("stid: executor: ready, %zu%s total memory, "
          "%zu%s data, %zu%s heap, %zu%s default stack size",
          UNITS_SIZE (rt.mem.size),
          UNITS_UNIT (rt.mem.size),
@@ -398,7 +402,7 @@ void Executor::jit_compile ()
       print_memreg (&rt.t0stack, "stid: executor:  ", ", stack (main thread)\n");
    }
 
-   TRACE ("stid: exeutor: thread-local storage initializers:");
+   TRACE ("stid: executor: thread-local storage initializers:");
    if (verb_trace)
       print_memreg (&rt.tdata, "stid: executor:  ", ", .tdata/.tbss\n");
 
@@ -524,10 +528,14 @@ llvm::Constant *Executor::ptr_to_llvm (void *ptr, llvm::Type *t)
 {
    llvm::Constant *c;
 
+   // t has to be a pointer type
+   ASSERT (t->isPointerTy());
+   //t = t->getPointerTo(0); // if it wasn't ;)
+
    // generate integer
    c = llvm::ConstantInt::get (llvm::Type::getInt64Ty (ctx), (uint64_t) ptr);
    // convert it into pointer to type t
-   c = llvm::ConstantExpr::getIntToPtr (c, t->getPointerTo (0));
+   c = llvm::ConstantExpr::getIntToPtr (c, t);
    return c;
 }
 
