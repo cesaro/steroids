@@ -27,8 +27,6 @@ namespace stid {
 
 bool Instrumenter::instrument (llvm::Module &m, Tlsoffsetmap &tlsoffsetmap)
 {
-   bool errors;
-
    // cleanup
    reset (m);
    if (not find_rt ()) return false;
@@ -75,7 +73,7 @@ bool Instrumenter::instrument (llvm::Module &m, Tlsoffsetmap &tlsoffsetmap)
    // check that we didn't do anything stupid
 #ifdef CONFIG_DEBUG
    PRINT ("stid: instrumenter: verifying module after instrumentation ...");
-   errors = llvm::verifyModule (m, &llvm::outs());
+   bool errors = llvm::verifyModule (m, &llvm::outs());
    if (errors)
    {
       PRINT ("stid: instrumentation: saving instrumented bitcode to /tmp/err.ll");
