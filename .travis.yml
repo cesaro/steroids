@@ -1,0 +1,21 @@
+language: cpp
+sudo: false
+
+git:
+   depth: 3
+
+addons:
+   apt:
+      sources:
+         - sourceline: "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main"
+      packages:
+         - llvm-3.7-dev
+         - clang-3.7
+
+install :
+   - make compile -j2
+
+script :
+   - make unittest -j2
+   - make regression
+   - cd doc/example; make run

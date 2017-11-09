@@ -39,6 +39,9 @@ program.ll : tests/unit/input/hello.ll
 	#opt-3.7 -S -O3 -mem2reg $< > $@
 	opt-3.7 -S -verify $< > $@
 
+test.pta : $(TOOLS_PTADUMP_TARGETS) $(patsubst %.c,%.ll,$(wildcard tests/pta/*.c))
+	export PATH=$$PWD/tools/pta-dump:$$PATH; cd ./tests/pta; ./run.sh
+
 src/libsteroids.a : $(LIB_OBJS) $(LIB_MOBJS)
 	@echo "AR  $@"
 	@$(AR) r $@ $^
@@ -78,11 +81,6 @@ g gdb : $(TARGETS)
 
 c cgdb : $(TARGETS)
 	cgdb ./tools/test/main
-
-t test : test.pta
-
-test.pta : $(TOOLS_PTADUMP_TARGETS) $(patsubst %.c,%.ll,$(wildcard tests/pta/*.c))
-	export PATH=$$PWD/tools/pta-dump:$$PATH; cd ./tests/pta; ./run.sh
 
 vars :
 	@echo xxxxxxxxxxxx

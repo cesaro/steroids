@@ -1,6 +1,10 @@
+
 ========
 Steroids
 ========
+
+.. image:: https://travis-ci.org/cesaro/steroids.svg?branch=master
+    :target: https://travis-ci.org/cesaro/steroids
 
 Steroids is a library for dynamic analysis of multithreaded POSIX C programs. It
 can instrument, JIT-compile, and execute a C program in a controlled manner,
@@ -68,13 +72,13 @@ can interleave:
 | Replay 1: (0, 4), (1, 4), (0, 2)
 | Replay 2: (0, 2), (1, 4), (0, 4)
 
-Example Code
+Example code
 ============
 
 See folder `<doc/example/>`__ for an example of user code using the Steroids API
 to instrument and run (2 times) a program.
 
-Assumptions About the Input Program
+Assumptions about the input program
 ===================================
 
 Steroids assumes that the input program is data-deterministic. That is, the only
@@ -89,7 +93,7 @@ Compilation
 Instructions for compiling from the sources are available in the
 `<COMPILING.rst>`__ file.
 
-Related Tools
+Related tools
 =============
 
 - `DPU <https://github.com/cesaro/dpu>`__
