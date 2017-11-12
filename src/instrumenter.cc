@@ -107,8 +107,7 @@ bool Instrumenter::is_rt_fun (llvm::Function *f)
 {
    return \
       f->getName().startswith ("_rt_") or
-      f->getName().startswith ("__rt_") or
-      f->getName().startswith ("__VERIFIER_");
+      f->getName().startswith ("__rt_");
 }
 
 void Instrumenter::reset (llvm::Module &m)
