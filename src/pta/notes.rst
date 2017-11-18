@@ -31,7 +31,7 @@ x ya tengo la instrumentacion de ld/st funcionando; comprender lo que guarda
   por ejemplo, el valor de la posicion memoria no lo necesito par data races (si
   para cutoff); tampoco necesito la verificacion oom
 
-- CONTINUAR AQUI: implementar Fixpoint::type_contains_pointers
+- implementar Fixpoint::type_contains_pointers
 - inicializar alloca correctamente en eval_instr_alloca
 - probar de nuevo con gep3.ll
 - test gep, intoptr, bitcast
