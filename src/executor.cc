@@ -285,8 +285,11 @@ void Executor::emit_tdata ()
 
 #ifdef CONFIG_DEBUG
    for (auto &kv : tlsdata.map)
+   {
       DEBUG ("stid: executor: tls: var '%s' -> offset %p",
             kv.first->getName().str().c_str(), kv.second);
+      (void) kv;
+   }
 #endif
 
    // move the map from the Tlsdata object to the Executor

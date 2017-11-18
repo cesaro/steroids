@@ -53,6 +53,7 @@ void Fixpoint::fill_frontier_bfs (Frontier &frontier, const llvm::Function &f)
    Worklist<const llvm::BasicBlock*> bblist;
    std::set<const llvm::BasicBlock*> visited;
    const llvm::BasicBlock *bb;
+   bool b;
 
    ASSERT (frontier.empty());
    ASSERT (! f.isDeclaration());
@@ -74,7 +75,7 @@ void Fixpoint::fill_frontier_bfs (Frontier &frontier, const llvm::Function &f)
       for (const llvm::BasicBlock *nbb : llvm::successors(bb))
          if (visited.find (nbb) == visited.end ())
          {
-            bool b = bblist.push (nbb);
+            b = bblist.push (nbb);
             DEBUG ("stid: pta: eval: fun: bbs: push %s: %s",
                str2(nbb).c_str(), b ? "added" : "skipped");
          }
@@ -82,7 +83,10 @@ void Fixpoint::fill_frontier_bfs (Frontier &frontier, const llvm::Function &f)
 
 #ifdef CONFIG_DEBUG
    for (const llvm::Instruction *in : frontier)
+   {
       DEBUG ("stid: pta: eval: fun: bbs: frontier: %s", str(in).c_str());
+      (void) in;
+   }
 #endif
 }
 
