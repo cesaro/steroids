@@ -1,11 +1,15 @@
 
-#ifndef _UTIL_MISC_H_
-#define _UTIL_MISC_H_
+#ifndef __VERBOSITY_H_
+#define __VERBOSITY_H_
+
+// this header file should not be confused with include/stid/verbosity.h !!
 
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <stid/c/config.h>
+
+#include "stid/c/config.h"
+#include "stid/verbosity.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,12 +25,6 @@ extern "C" {
 #undef ASSERT
 #endif
 
-// the different levels of verbosity in the program
-#define VERB_DEBUG   3
-#define VERB_TRACE   2
-#define VERB_INFO    1
-#define VERB_PRINT   0
-
 // the "verbosity" of the program; initially set to VERB_DEBUG
 extern int __verb_level;
 
@@ -34,10 +32,6 @@ extern int __verb_level;
 extern int verb_debug;
 extern int verb_trace;
 extern int verb_info;
-
-// setting and getting the verbosity level
-void verb_set (int i);
-int verb_get ();
 
 // we define macros according to the maximum level of information the user wants
 // to see
@@ -133,4 +127,4 @@ void breakme (void);
 
 #endif // __cplusplus
 
-#endif // _UTIL_MISC_H_
+#endif // __VERBOSITY_H_

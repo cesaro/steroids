@@ -134,11 +134,13 @@ dist : compile
 	mkdir dist
 	mkdir dist/bin
 	mkdir dist/lib
-	mkdir dist/lib/stid
 	cp tools/stid/main dist/bin/stid
 	cp tools/pta-dump/pta-dump dist/bin/pta-dump
-	cp src/*.a dist/lib/stid
-	cp src/*.so dist/lib/stid
+	cp src/*.a dist/lib/
+	cp src/libsteroids.so dist/lib/libsteroids-0.2.0.so
+	cp -Rv include dist/
+	cp rt/rt.bc dist/lib/
+	-find dist | grep swp$$ | xargs rm -f
 
 PREFIX = ~/x/local
 

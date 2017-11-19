@@ -1,5 +1,6 @@
 
-Design notes
+Unfinished design notes that should constitute some day the base of
+user/developer documentation.
 
 Runtime
 -------
@@ -9,7 +10,7 @@ Runtime
   a call to _rt_* or something
 
 - Limitation: the size the log trace cannot be greater than 2^31, as otherwise,
-  at the end of a replay sequence, the current.count coulds decrease 2^31 times,
+  at the end of a replay sequence, the current.count could decrease 2^31 times,
   overflow and become positive.
 
 Synchronization algorithm::

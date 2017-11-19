@@ -63,7 +63,7 @@ UNIT_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(UNIT_MSRCS)))
 UNIT_TARGETS:=$(UNIT_MOBJS:.o=)
 
 # ### rt ###
-RT_SRCS:=$(wildcard $R/rt/main.c $R/rt/lsd.c $R/rt/verifier.c $R/rt/*.s)
+RT_SRCS:=$(wildcard $R/rt/main.c $R/rt/lsd.c $R/rt/*.s)
 #RT_SRCS:=$(wildcard $R/rt/*.c $R/rt/*.s)
 RT_MSRCS:=
 RT_OBJS:=$(patsubst %.c,%.ll,$(patsubst %.s,%.ll,$(RT_SRCS)))
