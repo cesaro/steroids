@@ -2,7 +2,7 @@
 Example Code
 ============
 
-The files in this folder exemplifies how to use the public API of Steroids to
+The files in this folder exemplify how to use the public API of Steroids to
 implement a basic analysis.
 
 To run the example, just type ``make run``.

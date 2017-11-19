@@ -59,5 +59,5 @@ The following steps assume that you have a Debian/Ubuntu distribution:
 Steroids is now installed in the ``dist/`` folder. See `<doc/example>`__ for an
 example project that compiles and link against Steroids.
 
-.. _latest release : https://github.com/cesaro/dpu/releases/latest
+.. _latest release : https://github.com/cesaro/steroids/releases/latest
 
