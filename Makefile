@@ -119,6 +119,31 @@ vars :
 	@echo "MOBJS    $(RT_MOBJS)"
 	@echo "TARGETS  $(RT_TARGETS)"
 
+dist : compile
+	rm -Rf dist/
+	mkdir dist
+	mkdir dist/bin
+	mkdir dist/lib
+	mkdir dist/doc
+	cp tools/stid/main dist/bin/stid
+	cp tools/pta-dump/pta-dump dist/bin/pta-dump
+	cp src/*.a dist/lib/
+	cp src/libsteroids.so dist/lib/libsteroids-0.2.0.so
+	cp -Rv include dist/
+	cp -Rv doc/example dist/doc/
+	cp rt/rt.bc dist/lib/
+	-find dist | grep .swp$$ | xargs rm -f
+
+CONFIG_VERSION=0.2.0
+REL:=steroids-$(shell uname -p)-$(CONFIG_VERSION)
+
+release : dist
+	rm -Rf $(REL)
+	cp -Rv dist $(REL)
+	cp LICENSE $(REL)
+	cp README.rst $(REL)
+	tar czvf $(REL).tar.gz $(REL)
+
 clean :
 	rm -f $(TARGETS) $(MOBJS) $(OBJS)
 	rm -f rt/*.ll rt/start.c input.ll
@@ -127,20 +152,8 @@ clean :
 
 distclean : clean
 	rm -f $(DEPS)
-	rm -Rf dist/
-
-dist : compile
-	rm -Rf dist/
-	mkdir dist
-	mkdir dist/bin
-	mkdir dist/lib
-	cp tools/stid/main dist/bin/stid
-	cp tools/pta-dump/pta-dump dist/bin/pta-dump
-	cp src/*.a dist/lib/
-	cp src/libsteroids.so dist/lib/libsteroids-0.2.0.so
-	cp -Rv include dist/
-	cp rt/rt.bc dist/lib/
-	-find dist | grep swp$$ | xargs rm -f
+	rm -Rf dist/ $(REL)
+	rm -Rf $(REL).tar.gz
 
 PREFIX = ~/x/local
 
