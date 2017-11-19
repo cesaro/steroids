@@ -64,7 +64,7 @@ $(RT_TARGETS) : $(RT_OBJS) $(RT_MOBJS)
 	@llvm-link-$(LLVMVERS) $(if $(findstring .ll, $@), -S, ) -o $@ $^
 
 $R/rt/start.c : $R/rt/start.s
-	./utils/as2c.py < $< > $@
+	./scripts/as2c.py < $< > $@
 
 prof : $(TARGETS)
 	rm gmon.out.*
