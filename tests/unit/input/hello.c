@@ -739,7 +739,7 @@ int main15 ()
 
 void main16 ()
 {
-   int x = "hello world"[3];
+   //int x = "hello world"[3];
    //int y;
    //x = 123;
    //y = x;

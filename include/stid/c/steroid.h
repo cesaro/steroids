@@ -106,10 +106,6 @@ int stid_event_print (const struct stid_event *e, unsigned tid, unsigned idx);
 int stid_action_print (struct stid_action *act);
 const char *stid_action_type2str (int a);
 
-// testing
-int stid_test ();
-int stid_test_checker ();
-
 // arbitrary commands to the internals of the steroids engine
 int stid_cmd (struct stid_handle *s, int cmd, void *arg1, void *arg2, void *arg3);
 

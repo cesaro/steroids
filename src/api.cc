@@ -35,7 +35,6 @@
 
 #include "verbosity.h"
 #include "checker.hh"
-#include "test.hh"
 
 // we export C bindings for this whole file
 extern "C"
@@ -468,45 +467,6 @@ int stid_cmd (struct stid_handle *s, int cmd, void *arg1, void *arg2, void *arg3
       ASSERT (0);
    }
    return 0;
-}
-
-int stid_test ()
-{
-
-#if 0
-   const char *user = getenv ("USER");
-   // for Cesar
-   if (user and strcmp (user, "cesar") == 0)
-   {
-      test6 ();
-      return 0;
-   }
-#endif
-
-   //// for anyone else
-   test6 ();
-
-#if 0
-   printf ("stid_test: I feel fantastic!\n");
-   struct stid *s = stid_init ();
-   int r = stid_load_bytecode (s, "input.ll"); 
-   printf ("stid_test: result of load %2d\n", r);
-   stid_run (s, nullptr);
-   struct stid_po *po = stid_get_poexec (s);
-   printf ("stid_test: exited stid_get_poexec\n");
-   r = stid_print_po (po); 
-   printf ("stid_test: result of print %2d\n", r);
-   fflush(stdout);
-#endif
-   return 0;
-}
-
-int stid_test_checker ()
-{
-   //int res = test_checker ();
-   int res = 0;
-   test6 ();
-   return res;
 }
 
 } // extern "C"

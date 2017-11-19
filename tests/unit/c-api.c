@@ -178,9 +178,3 @@ void test9 ()
 #endif
 }
 
-int main (int argc, char **argv)
-{
-   //test9 ();
-   stid_test ();
-   return 0;
-}

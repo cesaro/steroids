@@ -41,34 +41,34 @@ LIB_OBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(LIB_SRCS)))
 LIB_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(LIB_MSRCS)))
 LIB_TARGETS:=src/libsteroids.a src/libsteroids.so
 
-# ### tools/test ###
-TOOLS_TEST_SRCS:=$(wildcard tools/test/*.c tools/test/*.cc)
-TOOLS_TEST_MSRCS:=tools/test/main.c
-TOOLS_TEST_OBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(TOOLS_TEST_SRCS)))
-TOOLS_TEST_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(TOOLS_TEST_MSRCS)))
-TOOLS_TEST_TARGETS:=$(TOOLS_TEST_MOBJS:.o=)
-
 # ### tools/stid ###
-TOOLS_STID_SRCS:=$(wildcard tools/stid/*.c tools/stid/*.cc)
-TOOLS_STID_MSRCS:=tools/stid/main.cc
+TOOLS_STID_SRCS:=$(wildcard $R/tools/stid/*.c $R/tools/stid/*.cc)
+TOOLS_STID_MSRCS:=$R/tools/stid/main.cc
 TOOLS_STID_OBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(TOOLS_STID_SRCS)))
 TOOLS_STID_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(TOOLS_STID_MSRCS)))
 TOOLS_STID_TARGETS:=$(TOOLS_STID_MOBJS:.o=)
 
 # ### tools/pta-dump ###
-TOOLS_PTADUMP_SRCS:=$(wildcard tools/pta-dump/*.c tools/pta-dump/*.cc)
-TOOLS_PTADUMP_MSRCS:=tools/pta-dump/pta-dump.cc
+TOOLS_PTADUMP_SRCS:=$(wildcard $R/tools/pta-dump/*.c $R/tools/pta-dump/*.cc)
+TOOLS_PTADUMP_MSRCS:=$R/tools/pta-dump/pta-dump.cc
 TOOLS_PTADUMP_OBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(TOOLS_PTADUMP_SRCS)))
 TOOLS_PTADUMP_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(TOOLS_PTADUMP_MSRCS)))
 TOOLS_PTADUMP_TARGETS:=$(TOOLS_PTADUMP_MOBJS:.o=)
 
+# ### tests/unit ###
+UNIT_SRCS:=$(wildcard $R/tests/unit/*.c $R/tests/unit/*.cc)
+UNIT_MSRCS:=$R/tests/unit/main.cc
+UNIT_OBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(UNIT_SRCS)))
+UNIT_MOBJS:=$(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(UNIT_MSRCS)))
+UNIT_TARGETS:=$(UNIT_MOBJS:.o=)
+
 # ### rt ###
-RT_SRCS:=$(wildcard rt/main.c rt/lsd.c rt/verifier.c rt/*.s)
-#RT_SRCS:=$(wildcard rt/*.c rt/*.s)
+RT_SRCS:=$(wildcard $R/rt/main.c $R/rt/lsd.c $R/rt/verifier.c $R/rt/*.s)
+#RT_SRCS:=$(wildcard $R/rt/*.c $R/rt/*.s)
 RT_MSRCS:=
 RT_OBJS:=$(patsubst %.c,%.ll,$(patsubst %.s,%.ll,$(RT_SRCS)))
 RT_MOBJS:=
-RT_TARGETS:=rt/rt.ll rt/rt.bc
+RT_TARGETS:=$R/rt/rt.ll $R/rt/rt.bc
 
 #TOOLS_TEST_SRCS:=$(wildcard tools/test/*.c tools/test/*.cc)
 #TOOLS_TEST_MSRCS:=tools/test/main.c
@@ -81,7 +81,7 @@ RT_TARGETS:=rt/rt.ll rt/rt.bc
 # ### global ###
 OBJS=$(LIB_OBJS) $(TOOLS_TEST_OBJS) $(TOOLS_STID_OBJS) rt/main.o
 MOBJS=$(LIB_MOBJS) $(TOOLS_TEST_MOBJS) $(TOOLS_STID_MOBJS)
-TARGETS=$(LIB_TARGETS) $(TOOLS_TEST_TARGETS) $(TOOLS_STID_TARGETS) \
+TARGETS=$(LIB_TARGETS) $(UNIT_TARGETS) $(TOOLS_STID_TARGETS) \
    $(TOOLS_PTADUMP_TARGETS) $(RT_TARGETS)
 DEPS:=$(patsubst %.o,%.d,$(OBJS) $(MOBJS))
 
@@ -153,16 +153,16 @@ CFLAGS_:=-Wall -Wextra -std=c11 -pthread
 CXXFLAGS_:=-Wall -Wextra -std=c++11 -pthread
 
 %.ll : %.c
-	@echo "CC  $< (c -> ll)"
-	$(CC_) $(CFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
+	@echo "LL  $<"
+	@$(CC_) $(CFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
 %.bc : %.c
-	@echo "CC  $< (c -> bc)"
+	@echo "BC  $<"
 	@$(CC_) $(CFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
 %.ll : %.cc
-	@echo "CXX $< (cc -> ll)"
+	@echo "LL  $<"
 	$(CXX_) $(CXXFLAGS_) $(CPPFLAGS) -S -flto $< -o $@
 %.bc : %.cc
-	@echo "CXX $< (cc -> bc)"
+	@echo "BC  $<"
 	@$(CXX_) $(CXXFLAGS_) $(CPPFLAGS) -c -flto $< -o $@
 %.bc : %.ll
 	@echo "AS  $<"

@@ -11,8 +11,6 @@
 //#include <sys/time.h>
 //#include <sys/resource.h>
 
-pthread_mutex_t mut = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-
 void *start1 (void *arg)
 {
    printf ("t1: sleeping 2 second...\n");

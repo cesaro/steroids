@@ -510,3 +510,9 @@ void test7 ()
 }
 
 } // namespace
+
+int main (int argc, char **argv)
+{
+   stid::test6 ();
+   return 0;
+}

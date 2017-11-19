@@ -21,15 +21,21 @@ all : compile
 
 compile: $(TARGETS)
 
+unittest ut : compile input.ll
+	./tests/unit/main
+
+regression : dist
+	make -f tests/regression/Makefile R=.
+
 r run: compile input.ll
 	#./tools/pta-dump/pta-dump tests/pta/alloca1.ll
-	./tools/test/main
+	./tests/unit/main
 
 input.ll : program.ll rt/rt.bc
 	llvm-link-$(LLVMVERS) -S $^ -o $@
 
 #program.ll : /tmp/cunf3.ll
-program.ll : tests/hello.ll
+program.ll : tests/unit/input/hello.ll
 	#opt-3.7 -S -O3 -mem2reg $< > $@
 	opt-3.7 -S -verify $< > $@
 
@@ -41,7 +47,7 @@ src/libsteroids.so : $(LIB_OBJS) $(LIB_MOBJS)
 	@echo "LD  $@"
 	@$(CXX) -shared $(CXXFLAGS) -o $@ $^
 
-$(TOOLS_TEST_TARGETS) : $(TOOLS_TEST_OBJS) $(TOOLS_TEST_MOBJS) src/libsteroids.a
+$(UNIT_TARGETS) : $(UNIT_OBJS) $(UNIT_MOBJS) src/libsteroids.a
 	@echo "LD  $@"
 	@$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
@@ -57,7 +63,7 @@ $(RT_TARGETS) : $(RT_OBJS) $(RT_MOBJS)
 	@echo "LD  $@"
 	@llvm-link-$(LLVMVERS) $(if $(findstring .ll, $@), -S, ) -o $@ $^
 
-rt/start.c : rt/start.s
+$R/rt/start.c : $R/rt/start.s
 	./utils/as2c.py < $< > $@
 
 prof : $(TARGETS)
@@ -99,12 +105,12 @@ vars :
 	@echo "MOBJS    $(LIB_MOBJS)"
 	@echo "TARGETS  $(LIB_TARGETS)"
 	@echo ""
-	@echo "tools/test:"
-	@echo "SRCS     $(TOOLS_TEST_SRCS)"
-	@echo "MSRCS    $(TOOLS_TEST_MSRCS)"
-	@echo "OBJS     $(TOOLS_TEST_OBJS)"
-	@echo "MOBJS    $(TOOLS_TEST_MOBJS)"
-	@echo "TARGETS  $(TOOLS_TEST_TARGETS)"
+	@echo "tests/unit:"
+	@echo "SRCS     $(UNIT_SRCS)"
+	@echo "MSRCS    $(UNIT_MSRCS)"
+	@echo "OBJS     $(UNIT_OBJS)"
+	@echo "MOBJS    $(UNIT_MOBJS)"
+	@echo "TARGETS  $(UNIT_TARGETS)"
 	@echo ""
 	@echo "rt:"
 	@echo "SRCS     $(RT_SRCS)"
@@ -114,14 +120,14 @@ vars :
 	@echo "TARGETS  $(RT_TARGETS)"
 
 clean :
-	@rm -f $(TARGETS) $(MOBJS) $(OBJS)
-	@rm -f rt/*.ll rt/start.c input.ll
-	@echo Cleaning done.
+	rm -f $(TARGETS) $(MOBJS) $(OBJS)
+	rm -f rt/*.ll rt/start.c input.ll
+	rm -f regression.log*
+	make -f tests/regression/Makefile R=. clean
 
 distclean : clean
-	@rm -f $(DEPS)
-	@rm -Rf dist/
-	@echo Mr. Proper done.
+	rm -f $(DEPS)
+	rm -Rf dist/
 
 dist : compile
 	rm -Rf dist/
