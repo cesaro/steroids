@@ -21,7 +21,6 @@
 #include "llvm/IR/InstIterator.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IRReader/IRReader.h"
-#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/TargetSelect.h"
@@ -45,6 +44,7 @@ using namespace stid;
 struct stid_handle
 {
    const char *path;
+   llvm::LLVMContext context;
    Executor *e;
    std::vector<std::string> storage;
 };
@@ -107,11 +107,8 @@ int stid_load_bytecode (struct stid_handle *s, const char *path)
       llvm::InitializeNativeTargetAsmParser();
    }
 
-   // get a context
-   llvm::LLVMContext &context = llvm::getGlobalContext();
-
    // parse the .ll file and get a Module out of it
-   std::unique_ptr<llvm::Module> mod (llvm::parseIRFile (path, err, context));
+   std::unique_ptr<llvm::Module> mod (llvm::parseIRFile (path, err, s->context));
    m = mod.get();
 
    // if errors found, report and terminate

@@ -36,8 +36,8 @@ input.ll : program.ll rt/rt.bc
 
 #program.ll : /tmp/cunf3.ll
 program.ll : tests/unit/input/hello.ll
-	#opt-3.7 -S -O3 -mem2reg $< > $@
-	opt-3.7 -S -verify $< > $@
+	#opt-6.0 -S -O3 -mem2reg $< > $@
+	opt-6.0 -S -verify $< > $@
 
 test.pta : $(TOOLS_PTADUMP_TARGETS) $(patsubst %.c,%.ll,$(wildcard tests/pta/*.c))
 	export PATH=$$PWD/tools/pta-dump:$$PATH; cd ./tests/pta; ./run.sh

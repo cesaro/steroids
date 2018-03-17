@@ -2,7 +2,7 @@
 R ?= ../..
 D := $R/tests/regression
 
-VERS=3.7
+VERS=6.0
 CC=clang-$(VERS)
 CXX=clang++-$(VERS)
 

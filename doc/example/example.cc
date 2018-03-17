@@ -17,6 +17,7 @@
 
 int main (int argc, char **argv)
 {
+   llvm::LLVMContext context;
    llvm::SMDiagnostic err;
    stid::Executor *ex;
    std::string errors;
@@ -32,9 +33,6 @@ int main (int argc, char **argv)
    llvm::InitializeNativeTarget();
    llvm::InitializeNativeTargetAsmPrinter();
    llvm::InitializeNativeTargetAsmParser();
-
-   // get an LLVM context
-   llvm::LLVMContext &context = llvm::getGlobalContext();
 
    // parse a bitcode file and get a llvm::Module representing it
    printf ("%s: loading '%s' ...\n", NAME, path);

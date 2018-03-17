@@ -14,7 +14,6 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IRReader/IRReader.h"
-#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -44,8 +43,7 @@ int main (int argc, char **argv)
    //llvm::InitializeNativeTargetAsmPrinter();
    //llvm::InitializeNativeTargetAsmParser();
 
-   // get a context
-   llvm::LLVMContext &context = llvm::getGlobalContext();
+   llvm::LLVMContext context;
    llvm::SMDiagnostic err;
 
    // parse the .ll file and get a Module out of it

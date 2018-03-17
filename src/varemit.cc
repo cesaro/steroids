@@ -37,15 +37,12 @@ void Varemit::clear ()
 
 void *Varemit::emit_or_size (void *base)
 {
-   bool emit;
-   char *ptr;
-   const llvm::DataLayout *dl;
    llvm::GlobalVariable *g;
    llvm::Type *t;
 
-   ptr = (char*) base;
-   emit = base != nullptr;
-   dl = ee->getDataLayout ();
+   char *ptr = (char*) base;
+   bool emit = base != nullptr;
+   const llvm::DataLayout &dl = ee->getDataLayout ();
 
    for (llvm::GlobalValue &gg : m->globals())
    {
@@ -63,17 +60,17 @@ void *Varemit::emit_or_size (void *base)
       //std::string s; print_value (g, s); SHOW (s.c_str(), "s"); s.clear();
       //SHOW (ptr, "p");
       //g->getType()->dump ();
-      //SHOW (dl->getTypeStoreSize (t), "u");
-      //SHOW (dl->getTypeAllocSize (t), "u");
+      //SHOW (dl.getTypeStoreSize (t), "u");
+      //SHOW (dl.getTypeAllocSize (t), "u");
 
       // align the pointer as requested by the symbol
-      ptr = (char*) llvm::alignAddr (ptr, dl->getABITypeAlignment (t));
+      ptr = (char*) llvm::alignAddr (ptr, dl.getABITypeAlignment (t));
 
       // we emit the initial value only if we have been requested so
       if (emit) emit_var (g, ptr);
 
       // consume the size of the symbol
-      ptr += dl->getTypeAllocSize (t);
+      ptr += dl.getTypeAllocSize (t);
    }
 
    return ptr;

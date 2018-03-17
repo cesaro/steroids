@@ -14,7 +14,7 @@
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-LLVMVERS=3.7
+LLVMVERS=6.0
 #LLVMCXXFLAGS=-I$(shell llvm-config-$(LLVMVERS) --includedir)
 LLVMCXXFLAGS=$(shell llvm-config-$(LLVMVERS) --cppflags)
 LLVMLDFLAGS=$(shell llvm-config-$(LLVMVERS) --ldflags)
@@ -90,7 +90,7 @@ DEPS:=$(patsubst %.o,%.d,$(OBJS) $(MOBJS))
 
 # define the toolchain
 CROSS:=
-VERS:=-3.7
+VERS:=-6.0
 #VERS:=
 
 LD:=$(CROSS)ld$(VERS)
@@ -147,8 +147,8 @@ YACC:=bison
 	@echo "DOT $<"
 	@dot -T jpg < $< > $@
 
-CC_=clang-3.7
-CXX_=clang++-3.7
+CC_=clang-6.0
+CXX_=clang++-6.0
 CFLAGS_:=-Wall -Wextra -std=c11 -pthread
 CXXFLAGS_:=-Wall -Wextra -std=c++11 -pthread
 

@@ -14,7 +14,6 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
-#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
@@ -108,7 +107,7 @@ Executor::Executor (std::unique_ptr<llvm::Module> mod, ExecutorConfig c) :
    }
 
    // tell the module the way the target lays out data structures
-   m->setDataLayout (*ee->getDataLayout());
+   m->setDataLayout (ee->getDataLayout());
 
    // initialize guest memory area and instrument the llvm module
    initialize_and_instrument_rt ();
@@ -323,7 +322,7 @@ void Executor::optimize ()
    llvm::PassManagerBuilder builder;
    builder.OptLevel = conf.optlevel;
    builder.SizeLevel = sizelevel;
-   builder.Inliner = llvm::createFunctionInliningPass (conf.optlevel, sizelevel);
+   builder.Inliner = llvm::createFunctionInliningPass (conf.optlevel, sizelevel, false);
 
    // fill the pass managers with the standard compiler optimizations
    builder.populateFunctionPassManager (fpm);

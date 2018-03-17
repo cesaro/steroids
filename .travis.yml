@@ -7,10 +7,14 @@ git:
 addons:
    apt:
       sources:
-         - sourceline: "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main"
+         # add the LLVM 6.0 repository
+         - llvm-toolchain-trusty-6.0
+         # add a repository with a more recent version of the libstdc++ package
+         # (required for LLVM 6.0)
+         - ubuntu-toolchain-r-test
       packages:
-         - llvm-3.7-dev
-         - clang-3.7
+         - llvm-6.0-dev
+         - clang-6.0
 
 install :
    - make compile -j2

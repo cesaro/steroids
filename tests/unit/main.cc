@@ -18,7 +18,7 @@
 #include "llvm/IR/InstIterator.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IRReader/IRReader.h"
-#include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/TargetSelect.h"
@@ -80,9 +80,9 @@ public:
       for (llvm::inst_iterator i = llvm::inst_begin (f), e = llvm::inst_end (f); i != e; ++i)
       {
          DEBUG ("  i %p", &*i);
+         i->print(llvm::outs());
+         llvm::outs().flush();
          fflush (stdout);
-         i->dump ();
-         llvm::errs().flush();
       }
 #endif
       return false;
@@ -95,8 +95,7 @@ static llvm::RegisterPass<HelloFunctionPass> tmp
 
 void test1 ()
 {
-   // get a context
-   llvm::LLVMContext &context = llvm::getGlobalContext();
+   llvm::LLVMContext context;
    llvm::SMDiagnostic err;
 
    // file to load and execute
@@ -156,8 +155,7 @@ void test3 ()
    llvm::InitializeNativeTargetAsmPrinter();
    llvm::InitializeNativeTargetAsmParser();
 
-   // get a context
-   llvm::LLVMContext &context = llvm::getGlobalContext();
+   llvm::LLVMContext context;
    llvm::SMDiagnostic err;
    std::string errors;
 
@@ -223,12 +221,12 @@ void test4 ()
 {
    llvm::SMDiagnostic err;
    std::string errors;
-   llvm::LLVMContext &ctx = llvm::getGlobalContext();
+   llvm::LLVMContext context;
    std::string path = "tests/hello.ll";
 
    printf ("test4\n");
 
-   std::unique_ptr<llvm::Module> mod (llvm::parseIRFile (path, err, ctx));
+   std::unique_ptr<llvm::Module> mod (llvm::parseIRFile (path, err, context));
 
    // if errors found, report and terminate
    if (! mod.get ()) {
@@ -246,7 +244,7 @@ void test4 ()
    {
       llvm::errs() << "======================\n";
       llvm::errs() << f.getName() << "\n";
-      f.getType()->dump();
+      f.getType()->print(llvm::errs());
       llvm::errs() << "users:\n";
       for (auto user : f.users ())
       {
@@ -263,8 +261,7 @@ void test5 ()
    llvm::InitializeNativeTargetAsmPrinter();
    llvm::InitializeNativeTargetAsmParser();
 
-   // get a context
-   llvm::LLVMContext &context = llvm::getGlobalContext();
+   llvm::LLVMContext context;
    llvm::SMDiagnostic err;
    std::string errors;
 
@@ -348,8 +345,7 @@ void test6 ()
    llvm::InitializeNativeTargetAsmPrinter();
    llvm::InitializeNativeTargetAsmParser();
 
-   // get a context
-   llvm::LLVMContext &context = llvm::getGlobalContext();
+   llvm::LLVMContext context;
    llvm::SMDiagnostic err;
    std::string errors;
 
@@ -478,8 +474,7 @@ void test7 ()
    llvm::InitializeNativeTargetAsmPrinter();
    llvm::InitializeNativeTargetAsmParser();
 
-   // get a context
-   llvm::LLVMContext &context = llvm::getGlobalContext();
+   llvm::LLVMContext context;
    llvm::SMDiagnostic err;
    std::string errors;
 
