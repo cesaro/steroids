@@ -144,6 +144,10 @@ release : dist
 
 clean :
 	rm -f $(TARGETS) $(MOBJS) $(OBJS)
+	rm -f $(RT_OBJS) $(RT_MOBJS)
+	rm -f $(TOOLS_PTADUMP_OBJS) $(TOOLS_PTADUMP_MOBJS)
+	rm -f $(TOOLS_STID_OBJS) $(TOOLS_STID_MOBJS)
+	rm -f $(UNIT_OBJS) $(UNIT_MOBJS)
 	rm -f rt/*.ll rt/start.c input.ll
 	rm -f regression.log*
 	make -f tests/regression/Makefile R=. clean

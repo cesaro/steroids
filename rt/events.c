@@ -398,7 +398,7 @@ int __rt_mainn (int argc, const char * const *argv, const char * const *env)
 
    if (rt->flags.verbose)
    {
-      // our little tribute to how everything started ... ;)
+      // our little tribute to how all of this started... ;)
       PRINT ("stid: rt: main: I feel fantaastic... I feel the PUMP!");
       PRINT ("stid: rt: main: guest's address space:");
       __rt_memreg_print (&rt->mem, "stid: rt: main:  ", ", total guest memory\n");
