@@ -61,16 +61,16 @@ main ()
    echo "replay '$REPLAY'"
 
    echo Optimizing "$FILE"...
-   opt-3.7 -strip-debug -O3 $FILE > /tmp/program.bc
+   opt-6.0 -strip-debug -O3 $FILE > /tmp/program.bc
    if test $? != 0; then exit $?; fi
-   llvm-dis-3.7 /tmp/program.bc
+   llvm-dis-6.0 /tmp/program.bc
    if test $? != 0; then exit $?; fi
    echo 'Done, see /tmp/program.{bc,ll}'
 
    echo Linking runtime...
-	llvm-link-3.7 /tmp/program.bc $ROOT/rt/rt.ll -o /tmp/input.bc
+	llvm-link-6.0 /tmp/program.bc $ROOT/rt/rt.ll -o /tmp/input.bc
    if test $? != 0; then exit $?; fi
-   llvm-dis-3.7 /tmp/input.bc
+   llvm-dis-6.0 /tmp/input.bc
    if test $? != 0; then exit $?; fi
    echo 'Done, see /tmp/input.{bc,ll}'
 
