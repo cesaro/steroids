@@ -32,7 +32,7 @@ CPPFLAGS:=-I src/ -I include/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D
 LDFLAGS:=$(LLVMLDFLAGS) -L src
 LDLIBS=$(LLVMLIBS)
 
-R=$(PWD)
+R=$(CURDIR)
 
 # ### library ###
 LIB_SRCS:=$(wildcard $R/src/*.c $R/src/*.cc $R/src/*/*.c $R/src/*/*.cc $R/src/*/*/*.c $R/src/*/*/*.cc)
@@ -68,7 +68,7 @@ RT_SRCS:=$(wildcard $R/rt/main.c $R/rt/lsd.c $R/rt/*.s)
 RT_MSRCS:=
 RT_OBJS:=$(patsubst %.c,%.ll,$(patsubst %.s,%.ll,$(RT_SRCS)))
 RT_MOBJS:=
-RT_TARGETS:=$R/rt/rt.ll $R/rt/rt.bc
+RT_TARGETS:=rt/rt.ll rt/rt.bc
 
 #TOOLS_TEST_SRCS:=$(wildcard tools/test/*.c tools/test/*.cc)
 #TOOLS_TEST_MSRCS:=tools/test/main.c
