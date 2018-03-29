@@ -27,10 +27,10 @@ should be easy, but has not been tried.
 We first instrument the bitcode with a Steroids-provided runtime that gets
 control on every call to a ``pthread_*`` function. The runtime also controls the
 calls to many other functions of the libc (e.g. ``exit``, ``abort``, ``malloc``,
-file access system calls and others).  To control a call to function ``foo`` we
+file access system calls and others).  To hijack a call to function ``foo`` we
 define a function named ``_rt_foo`` with the same type signature.  Steroids
 automatically scans the input program for calls to ``foo`` and substitutes them
-for calls to ``_rt_foo``.  Thus controlling new functions is very easy.
+for calls to ``_rt_foo``.  Thus adding new functions is very simple.
 
 The user then specifies the command line of the program (array ``argv``) and the
 environment variables (array ``environ``). It then asks Steroids to run the
