@@ -21,6 +21,8 @@ Dependencies
 - Python 2
 - Clang 6.0
 - LLVM 6.0
+- libncurses
+- zlib
 
 Optional:
 
@@ -42,17 +44,25 @@ The following steps assume that you have a Debian/Ubuntu distribution:
 
     sudo apt-get install llvm-6.0-dev clang-6.0
 
-   After the installation, the command ``llvm-config-6.0`` should be in your
-   ``PATH``, and typing ``llvm-config-6.0 --prefix`` should print the
+   If the above command fails, you might want to update your APT configuration
+   (``/etc/apt/sources.list``) with the repositories listed in
+   http://apt.llvm.org/ for your distribution.
+
+   After a successful installation, the command ``llvm-config-6.0`` should be in
+   your ``PATH``, and typing ``llvm-config-6.0 --prefix`` should print the
    installation path of LLVM 6.0.
 
-3. Download and compile the sources of the `latest release`_ available.
+3. Install additional libraries::
+   
+    sudo apt-get install libncurses5-dev zlib1g-dev
 
-6. Compile::
+4. Download and compile the sources of the `latest release`_ available.
+
+5. Compile::
 
     make dist
 
-7. Optional: run regression tests (note: currently we dont' have any)::
+6. Optional: run regression tests (note: currently we do not have any)::
 
     make regression
 
